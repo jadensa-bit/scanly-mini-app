@@ -2,14 +2,13 @@
 
 import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
+import Image from "next/image";
 import {
   ArrowRight,
-  QrCode,
   ScanLine,
   CalendarClock,
   Download,
   Store,
-  Zap,
   Sparkles,
   CreditCard,
   ShieldCheck,
@@ -263,8 +262,9 @@ export default function Home() {
     setOrigin(window.location.origin);
   }, []);
 
+  // ✅ FIX: demos live under /u/[handle]
   const demoUrl = useMemo(() => {
-    return origin ? `${origin}/${active.handle}` : "";
+    return origin ? `${origin}/u/${active.handle}` : "";
   }, [origin, active.handle]);
 
   // Demo modal state
@@ -283,12 +283,30 @@ export default function Home() {
         <header className="sticky top-4 z-20">
           <div className="glass ring-soft flex items-center justify-between rounded-3xl px-4 py-3">
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-2xl border border-white/15 bg-white/10">
-                <QrCode className="h-4 w-4 opacity-90" />
+              {/* ✅ My Scanly Logo (drop your file into /public/my-scanly-logo.png) */}
+              <div className="relative">
+                <div
+                  className="pointer-events-none absolute -inset-2 rounded-3xl blur-xl opacity-55"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 30% 30%, rgba(34,211,238,0.35), transparent 60%), radial-gradient(circle at 70% 80%, rgba(167,139,250,0.18), transparent 55%)",
+                  }}
+                />
+                <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-2xl border border-white/15 bg-black/30">
+                  <Image
+                    src="/my-scanly-logo.png"
+                    alt="My Scanly"
+                    width={40}
+                    height={40}
+                    priority
+                    className="h-full w-full object-contain p-1"
+                  />
+                </div>
               </div>
+
               <div className="leading-tight">
                 <div className="text-sm font-semibold tracking-tight">
-                  Scanly
+                  My Scanly
                 </div>
                 <div className="text-xs text-white/60">QR mini-app builder</div>
               </div>
@@ -329,8 +347,8 @@ export default function Home() {
               </h1>
 
               <p className="mt-4 max-w-xl text-base text-white/70">
-                Not just a “QR shop.” Scanly creates a focused mini-app based on
-                your use-case — so people scan and instantly know what to do.
+                Not just a “QR shop.” My Scanly creates a focused mini-app based
+                on your use-case — so people scan and instantly know what to do.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
@@ -378,7 +396,6 @@ export default function Home() {
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 <div className="glass ring-soft rounded-3xl p-4">
                   <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
                     <div className="text-sm font-semibold">Made to convert</div>
                   </div>
                   <div className="mt-1 text-xs text-white/60">
@@ -462,7 +479,7 @@ export default function Home() {
                       {origin ? (
                         <>
                           Link:{" "}
-                          <span className="font-semibold text-white/80">{`/${active.handle}`}</span>
+                          <span className="font-semibold text-white/80">{`/u/${active.handle}`}</span>
                         </>
                       ) : (
                         <>Loading link…</>
@@ -501,7 +518,7 @@ export default function Home() {
                         "rounded-2xl border p-4 text-left transition active:scale-[0.99]",
                         selected
                           ? "border-white/30 bg-white/10"
-                          : "border-white/10 bg-white/5 hover:bg-white/8"
+                          : "border-white/10 bg-white/5 hover:bg-white/10"
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -689,7 +706,7 @@ export default function Home() {
                     "group rounded-3xl border p-5 text-left transition-transform hover:-translate-y-0.5 active:scale-[0.99]",
                     d.id === activeId
                       ? "border-white/30 bg-white/10"
-                      : "border-white/10 bg-white/5 hover:bg-white/8"
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
                   )}
                 >
                   <div className="text-base font-semibold">{d.title}</div>
@@ -706,7 +723,9 @@ export default function Home() {
               <div className="text-sm font-semibold">
                 QR codes shouldn’t open websites.
               </div>
-              <div className="mt-1 text-sm text-white/70">They should open actions.</div>
+              <div className="mt-1 text-sm text-white/70">
+                They should open actions.
+              </div>
             </div>
           </div>
         </section>
@@ -769,8 +788,9 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* ✅ FIX: open demo route under /u */}
                   <a
-                    href={`/${active.handle}`}
+                    href={`/u/${active.handle}`}
                     className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90 transition active:scale-[0.97]"
                   >
                     Open full demo <ArrowRight className="ml-2 h-4 w-4" />
@@ -820,8 +840,8 @@ export default function Home() {
                   <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                     <div className="text-sm font-semibold">The point</div>
                     <div className="mt-1 text-sm text-white/70">
-                      This preview is what your customers see after scanning your QR —
-                      clean, fast, and obvious.
+                      This preview is what your customers see after scanning your
+                      QR — clean, fast, and obvious.
                     </div>
                   </div>
 
@@ -842,7 +862,7 @@ export default function Home() {
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <div className="text-xs text-white/60">Scan link</div>
                       <div className="mt-1 text-sm font-semibold text-white/85">
-                        {origin ? `/${active.handle}` : "Loading…"}
+                        {origin ? `/u/${active.handle}` : "Loading…"}
                       </div>
                       <div className="mt-2 text-xs text-white/60">
                         Tip: scan this on your phone while the modal is open.
@@ -887,7 +907,7 @@ export default function Home() {
 
                       {/* scrollable content */}
                       <div className="h-[520px] overflow-y-auto px-4 pb-5 pt-4">
-                        {/* ✅ Scroll cue (ONLY ADDITION) */}
+                        {/* ✅ Scroll cue */}
                         <motion.div
                           initial={{ opacity: 0, y: -6 }}
                           animate={{ opacity: [0, 1, 1, 0], y: [-6, 0, 0, -6] }}
@@ -907,7 +927,8 @@ export default function Home() {
                             One tap. One action. Get paid.
                           </div>
                           <div className="mt-2 text-sm text-white/70">
-                            This is what a Scanly QR opens. Not a site — a focused mini-app built for the moment.
+                            This is what a Scanly QR opens. Not a site — a focused
+                            mini-app built for the moment.
                           </div>
 
                           <div className="mt-3 flex gap-2">
@@ -936,7 +957,7 @@ export default function Home() {
 
                           <div className="mt-2 grid gap-2">
                             <button
-                              className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/8 transition active:scale-[0.99]"
+                              className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/10 transition active:scale-[0.99]"
                               onClick={() => {}}
                               title="Demo only"
                             >
@@ -954,7 +975,7 @@ export default function Home() {
                             </button>
 
                             <button
-                              className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/8 transition active:scale-[0.99]"
+                              className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left hover:bg-white/10 transition active:scale-[0.99]"
                               onClick={() => {}}
                               title="Demo only"
                             >
@@ -1032,14 +1053,16 @@ export default function Home() {
                             Want yours to look like this?
                           </div>
                           <div className="mt-1 text-sm text-white/70">
-                            Tell Scanly what you sell — we generate the mini-app + QR.
+                            Tell Scanly what you sell — we generate the mini-app +
+                            QR.
                           </div>
 
                           <a
                             href="/create"
                             className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90 transition active:scale-[0.98]"
                           >
-                            Build your own <ArrowRight className="ml-2 h-4 w-4" />
+                            Build your own{" "}
+                            <ArrowRight className="ml-2 h-4 w-4" />
                           </a>
                         </div>
 
@@ -1059,7 +1082,8 @@ export default function Home() {
                   </div>
 
                   <div className="mt-2 text-center text-[11px] text-white/60">
-                    Scroll the phone screen — this is the experience your customers get after scanning.
+                    Scroll the phone screen — this is the experience your
+                    customers get after scanning.
                   </div>
                 </div>
               </div>

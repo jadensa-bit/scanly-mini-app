@@ -11,7 +11,7 @@ if (!stripeSecret) {
 }
 
 const stripe = new Stripe(stripeSecret || "sk_test_missing", {
-  apiVersion: "2024-06-20",
+  apiVersion: "2025-12-15.clover",
 });
 
 function jsonError(message: string, status = 400, extra?: any) {

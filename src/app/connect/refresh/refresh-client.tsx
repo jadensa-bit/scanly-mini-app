@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ConnectRefreshPage() {
+export default function RefreshClient() {
   const sp = useSearchParams();
   const router = useRouter();
   const handle = sp.get("handle") || "";

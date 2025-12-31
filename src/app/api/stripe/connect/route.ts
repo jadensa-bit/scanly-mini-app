@@ -21,7 +21,7 @@ const SUPABASE_SERVICE_ROLE_KEY = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
 /* --------------------
    clients
 -------------------- */
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
+const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-12-15.clover" });
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -50,59 +50,66 @@ function originFromReq(req: Request) {
   return `${proto}://${host}`.replace(/\/+$/, "");
 }
 
-async function ensureSiteRow(handle: string) {
-  // Load existing row
+type SiteRow = {
+  handle: string;
+  config: any;
+  owner_email: string | null;
+  stripe_account_id: string | null;
+};
+
+async function ensureSiteRow(handle: string, ownerEmail?: string) {
+  const baseConfig = {
+    handle,
+    brandName: "My Scanly",
+    tagline: "Scan → tap → done.",
+    mode: "services",
+    items: [],
+    active: true,
+    createdAt: Date.now(),
+  };
+
+  // ✅ Upsert prevents duplicates if two requests happen at once
   const { data, error } = await supabase
     .from("sites")
-    .select("handle, config, owner_email, stripe_account_id")
-    .eq("handle", handle)
-    .maybeSingle();
-
-  if (error) throw new Error(`Supabase error loading site: ${error.message}`);
-
-  // Create if missing
-  if (!data) {
-    const baseConfig = {
-      handle,
-      brandName: "My Scanly",
-      tagline: "Scan → tap → done.",
-      mode: "services",
-      items: [],
-      active: true,
-      createdAt: Date.now(),
-    };
-
-    const { data: inserted, error: insErr } = await supabase
-      .from("sites")
-      .insert({
+    .upsert(
+      {
         handle,
         config: baseConfig,
+        // only set owner_email if provided
+        ...(ownerEmail ? { owner_email: ownerEmail } : {}),
         updated_at: new Date().toISOString(),
-      })
-      .select("handle, config, owner_email, stripe_account_id")
-      .single();
+      },
+      { onConflict: "handle" }
+    )
+    .select("handle, config, owner_email, stripe_account_id")
+    .single();
 
-    if (insErr) throw new Error(`Failed creating site row: ${insErr.message}`);
-    return inserted;
-  }
+  if (error) throw new Error(`Supabase error ensuring site row: ${error.message}`);
 
-  // If row exists but config is null-ish (safety)
-  if (!data.config) {
-    const { data: updated, error: updErr } = await supabase
+  // Safety: if config is missing, repair it
+  if (!data?.config) {
+    const { data: repaired, error: updErr } = await supabase
       .from("sites")
-      .update({
-        config: { handle },
-        updated_at: new Date().toISOString(),
-      })
+      .update({ config: { handle }, updated_at: new Date().toISOString() })
       .eq("handle", handle)
       .select("handle, config, owner_email, stripe_account_id")
       .single();
 
     if (updErr) throw new Error(`Failed repairing site config: ${updErr.message}`);
-    return updated;
+    return repaired as SiteRow;
   }
 
-  return data;
+  return data as SiteRow;
+}
+
+async function verifyStripeAccount(accountId: string) {
+  try {
+    const acct = await stripe.accounts.retrieve(accountId);
+    // if Stripe returns an object with an id, we consider it valid
+    return !!(acct && typeof acct === "object" && "id" in acct && (acct as any).id);
+  } catch {
+    return false;
+  }
 }
 
 /* --------------------
@@ -116,25 +123,37 @@ export async function POST(req: Request) {
     const emailFromBody = String(body?.email ?? "").trim();
     if (!handle) return jsonError("Missing handle", 400);
 
-    // 1) Make sure the site exists
-    const site = await ensureSiteRow(handle);
+    // 1) Ensure the site exists (and optionally store owner_email)
+    const site = await ensureSiteRow(handle, emailFromBody || undefined);
 
-    // Prefer explicit email, otherwise owner_email (if you store it), otherwise nothing
+    // prefer explicit email, otherwise owner_email, otherwise undefined
     const email = emailFromBody || String(site?.owner_email ?? "").trim() || undefined;
 
-    // 2) Ensure Stripe connected account exists
+    // 2) Ensure Stripe connected account exists + is valid
     let accountId = (site?.stripe_account_id as string | null) || null;
 
+    if (accountId) {
+      const ok = await verifyStripeAccount(accountId);
+      if (!ok) {
+        // saved ID is stale/broken; recreate
+        accountId = null;
+      }
+    }
+
     if (!accountId) {
-      const acct = await stripe.accounts.create({
-        type: "express",
-        email,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
+      const acct = await stripe.accounts.create(
+        {
+          type: "express",
+          email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          metadata: { handle },
         },
-        metadata: { handle },
-      });
+        // ✅ prevents duplicates on retries
+        { idempotencyKey: `scanly_acct_${handle}` }
+      );
 
       accountId = acct.id;
 
@@ -142,6 +161,8 @@ export async function POST(req: Request) {
         .from("sites")
         .update({
           stripe_account_id: accountId,
+          // if caller provided email, store it
+          ...(emailFromBody ? { owner_email: emailFromBody } : {}),
           updated_at: new Date().toISOString(),
         })
         .eq("handle", handle);
@@ -152,7 +173,6 @@ export async function POST(req: Request) {
     // 3) Create onboarding link
     const origin = originFromReq(req);
 
-    // These pages can be simple routes that just redirect back to /create and show a toast.
     const refresh_url = `${origin}/connect/refresh?handle=${encodeURIComponent(handle)}`;
     const return_url = `${origin}/connect/return?handle=${encodeURIComponent(handle)}`;
 

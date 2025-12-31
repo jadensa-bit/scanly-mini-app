@@ -1,26 +1,21 @@
-"use client";
+import { Suspense } from "react";
+import RefreshClient from "./refresh-client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+export const dynamic = "force-dynamic";
 
 export default function ConnectRefreshPage() {
-  const router = useRouter();
-  const sp = useSearchParams();
-  const handle = sp.get("handle") || "";
-
-  useEffect(() => {
-    // if they hit refresh, just restart connect from the builder
-    const dest = handle ? `/create?handle=${encodeURIComponent(handle)}&reconnect=1` : "/create?reconnect=1";
-    router.replace(dest);
-    router.refresh();
-  }, [handle, router]);
-
   return (
-    <main className="min-h-screen bg-black text-white grid place-items-center px-6">
-      <div className="text-center">
-        <div className="text-2xl font-semibold">Let’s finish setup…</div>
-        <div className="mt-2 text-white/70">Sending you back…</div>
-      </div>
-    </main>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-black text-white grid place-items-center p-6">
+          <div className="max-w-md w-full rounded-3xl border border-white/10 bg-white/5 p-6">
+            <div className="text-lg font-semibold">Stripe onboarding</div>
+            <div className="mt-2 text-sm text-white/70">Loading…</div>
+          </div>
+        </main>
+      }
+    >
+      <RefreshClient />
+    </Suspense>
   );
 }

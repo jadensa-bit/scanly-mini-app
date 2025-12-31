@@ -38,7 +38,7 @@ const PLATFORM_FEE_BPS = Number(getEnv("PLATFORM_FEE_BPS") || "0");
 /* --------------------
    clients
 -------------------- */
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-12-15.clover" });
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
@@ -140,14 +140,16 @@ export async function POST(req: Request) {
     const destinationAccountId = await fetchStripeAccountIdByHandle(handle);
 
     if (!destinationAccountId) {
+      // Changed status from 409 to 400 for better semantics (409 implies conflict, but here it's a setup issue).
+      // Added more details for debugging.
+      console.error(`No Stripe account found for handle: ${handle}`);
       return NextResponse.json(
         {
-          error: "Creator is not connected to Stripe yet",
-          detail:
-            "This mini-app owner needs to finish Stripe Connect onboarding so we have their acct_... id saved for this handle.",
+          error: "Creator not set up for payments",
+          detail: "The site owner needs to complete Stripe Connect onboarding.",
           handle,
         },
-        { status: 409 }
+        { status: 400 }
       );
     }
 
@@ -156,6 +158,36 @@ export async function POST(req: Request) {
         { error: "Invalid connected account id", detail: destinationAccountId, handle },
         { status: 400 }
       );
+    }
+
+    // Optional: Check for duplicate pending orders to prevent spam/retry conflicts
+    const { data: existingOrder } = await supabase
+      .from("scanly_orders")
+      .select("id")
+      .eq("handle", handle)
+      .eq("status", "pending")
+      .eq("item_title", item_title)
+      .eq("amount_cents", amountSafe)
+      .maybeSingle();
+
+    if (existingOrder) {
+      // Return existing session URL instead of creating a new one
+      const { data: sessionData } = await supabase
+        .from("scanly_orders")
+        .select("stripe_session_id")
+        .eq("id", existingOrder.id)
+        .single();
+
+      if (sessionData?.stripe_session_id) {
+        const session = await stripe.checkout.sessions.retrieve(sessionData.stripe_session_id);
+        return NextResponse.json({
+          ok: true,
+          url: session.url,
+          orderId: existingOrder.id,
+          connectedAccountId: destinationAccountId,
+          platformFeeCents: calcFee(amountSafe),
+        });
+      }
     }
 
     // Optional platform fee (0 by default)
@@ -173,8 +205,8 @@ export async function POST(req: Request) {
         paid: false,
         amount_cents: amountSafe,
         currency: "usd",
-        stripe_connected_account_id: destinationAccountId, // ✅ add this column if you want
-        platform_fee_cents: applicationFee, // ✅ add this column if you want
+        stripe_connected_account_id: destinationAccountId,
+        platform_fee_cents: applicationFee,
       })
       .select()
       .single();

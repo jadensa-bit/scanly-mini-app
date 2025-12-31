@@ -28,11 +28,13 @@ function safeProjectRef(url: string) {
   }
 }
 
+// ✅ MUST match your builder + stripe routes (allow dash + underscore)
 function normalizeHandle(input: unknown) {
-  return String(input || "")
+  return String(input ?? "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-_]/g, "")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 32);
@@ -52,21 +54,18 @@ function getSupabase() {
 }
 
 /**
- * If you're not sure what your table is named, this tries common candidates.
- * Preferred: create ONE table called "sites" with columns:
+ * Preferred: one table called "sites" with columns:
  * - handle (text, unique)
  * - config (jsonb)
+ * - owner_email (text, nullable)   ✅ optional
+ * - stripe_account_id (text, nullable) ✅ optional
  * - updated_at (timestamptz)
  */
 const TABLE_CANDIDATES = ["sites", "scanly_sites", "site"];
 
 async function findSiteByHandle(supabase: any, handle: string) {
   for (const table of TABLE_CANDIDATES) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
-      .eq("handle", handle)
-      .maybeSingle();
+    const { data, error } = await supabase.from(table).select("*").eq("handle", handle).maybeSingle();
 
     const msg = String(error?.message || "").toLowerCase();
 
@@ -84,11 +83,22 @@ async function findSiteByHandle(supabase: any, handle: string) {
   return { table: null, data: null, error: null };
 }
 
-async function upsertSite(supabase: any, handle: string, body: any) {
-  // Store the whole config JSON under config column
+function extractOwnerEmail(config: any) {
+  // Your builder has both ownerEmail (legacy) and notifications.email (new)
+  const a = String(config?.notifications?.email ?? "").trim();
+  const b = String(config?.ownerEmail ?? "").trim();
+  const c = String(config?.owner_email ?? "").trim();
+  return a || b || c || null;
+}
+
+async function upsertSite(supabase: any, handle: string, config: any) {
+  const owner_email = extractOwnerEmail(config);
+
+  // store full config JSON under config column
   const payload = {
     handle,
-    config: body,
+    config,
+    ...(owner_email ? { owner_email } : {}),
     updated_at: new Date().toISOString(),
   };
 
@@ -148,7 +158,13 @@ export async function GET(req: Request) {
       return jsonError("Not found", 404, { handle, triedTables: TABLE_CANDIDATES });
     }
 
-    return noStoreJson({ ok: true, site: out.data, table: out.table });
+    // ✅ Return the config cleanly (but keep site row too for stripe fields etc.)
+    return noStoreJson({
+      ok: true,
+      site: out.data,
+      config: out.data.config ?? null,
+      table: out.table,
+    });
   } catch (e: any) {
     console.error("GET /api/site server error:", e);
     return jsonError("Server error", 500, { detail: e?.message || String(e) });
@@ -171,7 +187,7 @@ export async function POST(req: Request) {
     if (!handle) return jsonError("handle is required", 400);
     if (!brandName) return jsonError("brandName is required", 400);
 
-    // Ensure stored config uses normalized handle (prevents mismatch)
+    // ✅ Ensure stored config uses normalized handle + trimmed brandName
     const config = { ...body, handle, brandName };
 
     const out = await upsertSite(supabase, handle, config);
