@@ -3,7 +3,7 @@ import path from "path";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 
-export const runtime = "node";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
