@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Sparkles,
   Wand2,
@@ -39,6 +40,7 @@ type BuildItem = {
   price: string;
   note?: string;
   badge?: ItemBadge;
+  image?: string; // data URL for item image
 };
 
 type ThemePreset = "neon" | "minimal" | "warm" | "luxe" | "custom";
@@ -63,6 +65,7 @@ type Appearance = {
   bgColor?: string;
   gradient?: { c1: string; c2: string; angle: number };
   bgImage?: string; // data URL
+  bgImageFit?: "cover" | "contain";
   bgOverlay?: number; // 0..0.9
   layout?: LayoutMode;
   ctaStyle?: CtaStyle;
@@ -70,11 +73,18 @@ type Appearance = {
 
   // ✅ ADVANCED (dope builder extras)
   logoShape?: "square" | "circle";
+  logoFit?: "contain" | "cover";
+  quickPreset?: "glassy" | "modern";
   headerStyle?: "hero" | "minimal";
   showPoweredBy?: boolean;
   showStaff?: boolean;
   showSocials?: boolean;
+  showHours?: boolean;
   ctaText?: string;
+  
+  // Accent gradient
+  accentMode?: "solid" | "gradient";
+  accentGradient?: { c1: string; c2: string; angle: number };
 };
 
 type StaffProfile = {
@@ -84,6 +94,12 @@ type StaffProfile = {
   bio: string;
   specialties: string[];
   next: string[];
+  photo?: string; // data URL
+  availability?: {
+    start?: string; // "09:00"
+    end?: string; // "17:00"
+    slotMinutes?: number;
+  };
 };
 
 type SocialLinks = {
@@ -148,7 +164,6 @@ function clamp(n: number, min: number, max: number) {
 function slugify(input: string) {
   return input
     .toLowerCase()
-    .trim()
     .replace(/['"]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -156,11 +171,11 @@ function slugify(input: string) {
 }
 
 function storageKey(handle: string) {
-  return `scanly:site:${handle}`;
+  return `piqo:site:${handle}`;
 }
 
 function buildPublicUrl(handle: string) {
-  if (typeof window === "undefined") return `https://scanly.app/u/${handle}`;
+  if (typeof window === "undefined") return `https://piqo.app/u/${handle}`;
   return `${window.location.origin}/u/${handle}`;
 }
 
@@ -186,11 +201,10 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number) {
   };
 }
 
-const MODE_CARDS: Array<{ id: ModeId; title: string; sub: string; vibe: string }> = [
-  { id: "services", title: "Services", sub: "Barbers, nails, detailing, etc.", vibe: "Book & pay" },
-  { id: "booking", title: "Booking", sub: "Pick a time + pay deposit", vibe: "Lock it in" },
-  { id: "digital", title: "Digital", sub: "Pay → instant access/download", vibe: "Instant unlock" },
-  { id: "products", title: "Products", sub: "Short list → fast checkout", vibe: "Fast buy" },
+const MODE_CARDS: Array<{ id: ModeId; title: string; sub: string; vibe: string; icon: string; color: string }> = [
+  { id: "services", title: "Services", sub: "Barbers, salons, trainers", vibe: "Book & pay", icon: "✂️", color: "#06b6d4" },
+  { id: "products", title: "Products", sub: "Pop-ups, merch, markets", vibe: "Fast checkout", icon: "🛍️", color: "#f97316" },
+  { id: "digital", title: "Digital", sub: "Courses, templates, files", vibe: "Instant access", icon: "⚡", color: "#d946ef" },
 ];
 
 const PRESETS: Array<{
@@ -250,32 +264,35 @@ const PRESETS: Array<{
   },
 ];
 
+
+
 function pickDefaultItemsForMode(mode: ModeId): BuildItem[] {
   if (mode === "services") {
     return [
-      { title: "Signature Service", price: "$35", note: "30 min • Clean + quick", badge: "popular" },
-      { title: "Premium Service", price: "$50", note: "45 min • Extra detail", badge: "none" },
-      { title: "VIP Service", price: "$70", note: "60 min • Full experience", badge: "limited" },
+      { title: "Signature Fade + Lineup", price: "$45", note: "45 min • Most popular", badge: "popular" },
+      { title: "Beard Trim + Hot Towel", price: "$35", note: "30 min • Premium add-on", badge: "none" },
+      { title: "VIP Treatment", price: "$85", note: "90 min • Full experience", badge: "limited" },
     ];
   }
-  if (mode === "booking") {
+  if (mode === "products") {
     return [
-      { title: "Deposit (standard)", price: "$15", note: "Locks your time • policy shown", badge: "popular" },
-      { title: "Deposit (priority)", price: "$25", note: "Priority slot • faster confirmation", badge: "none" },
-      { title: "Consultation", price: "$0", note: "Free consult • limited availability", badge: "limited" },
+      { title: "Signature Tee (Black)", price: "$28", note: "100% cotton • Limited edition", badge: "popular" },
+      { title: "Holographic Sticker Pack", price: "$8", note: "Pack of 5 • Waterproof", badge: "none" },
+      { title: "Premium Bundle", price: "$45", note: "Tee + Cap + Stickers", badge: "limited" },
     ];
   }
   if (mode === "digital") {
     return [
-      { title: "Starter Pack", price: "$9", note: "Instant access • beginner friendly", badge: "none" },
-      { title: "Pro Guide", price: "$19", note: "Most popular • step-by-step", badge: "popular" },
-      { title: "Bundle", price: "$29", note: "Best value • everything included", badge: "limited" },
+      { title: "8-Week Shred Program", price: "$29", note: "Instant access • Video guides", badge: "popular" },
+      { title: "Macro Calculator + Guide", price: "$15", note: "PDF download • Lifetime access", badge: "none" },
+      { title: "Complete Bundle", price: "$39", note: "Everything included • Best value", badge: "limited" },
     ];
   }
+  // Fallback for booking or other modes
   return [
-    { title: "Item 1", price: "$15", note: "Best seller", badge: "popular" },
-    { title: "Item 2", price: "$25", note: "Limited drop", badge: "limited" },
-    { title: "Item 3", price: "$40", note: "Premium", badge: "none" },
+    { title: "Standard Booking", price: "$25", note: "Locks your time slot", badge: "popular" },
+    { title: "Priority Booking", price: "$40", note: "Faster confirmation", badge: "none" },
+    { title: "Consultation", price: "$0", note: "Free • Limited slots", badge: "limited" },
   ];
 }
 
@@ -291,25 +308,53 @@ function StepPill({
   done: boolean;
 }) {
   return (
-    <div
+    <motion.div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold relative overflow-hidden",
         done
-          ? "border-white/25 bg-white/12 text-white/90"
+          ? "border-green-500/40 bg-green-500/15 text-white/90 shadow-lg shadow-green-500/20"
           : active
-          ? "border-white/25 bg-white/10 text-white/90"
-          : "border-white/12 bg-black/30 text-white/70"
+          ? "border-cyan-500/40 bg-cyan-500/15 text-white/90 shadow-lg shadow-cyan-500/20"
+          : "border-white/12 bg-black/30 text-white/60"
       )}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.05 }}
     >
+      {(active || done) && (
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background: done
+              ? "linear-gradient(90deg, transparent, rgba(34,197,94,0.3), transparent)"
+              : "linear-gradient(90deg, transparent, rgba(34,211,238,0.3), transparent)",
+          }}
+          animate={{
+            x: [-100, 200],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      )}
       {done ? (
-        <CheckCircle2 className="h-3.5 w-3.5" />
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", bounce: 0.5 }}
+        >
+          <CheckCircle2 className="h-3.5 w-3.5 relative z-10" />
+        </motion.div>
       ) : (
-        <span className="grid h-4 w-4 place-items-center rounded-full border border-white/18 text-[11px] text-white/80">
+        <span className="grid h-4 w-4 place-items-center rounded-full border border-white/18 text-[11px] text-white/80 relative z-10">
           {n}
         </span>
       )}
-      {label}
-    </div>
+      <span className="relative z-10">{label}</span>
+    </motion.div>
   );
 }
 
@@ -351,8 +396,8 @@ export default function CreatePage() {
   const router = useRouter();
 
   const [mode, setMode] = useState<ModeId>("services");
-  const [brandName, setBrandName] = useState("My Scanly");
-  const [handleRaw, setHandleRaw] = useState("my-scanly");
+  const [brandName, setBrandName] = useState("My Piqo");
+  const [handleRaw, setHandleRaw] = useState("my-piqo");
   const [tagline, setTagline] = useState("Scan → tap → done.");
 
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -366,11 +411,24 @@ export default function CreatePage() {
     address: "",
   });
   // 🔁 Restore draft on load (CRITICAL FIX)
+const _restoredFor = useRef<string | null>(null);
+useEffect(() => {
+  // read optional ?handle= from URL and prefill the handle input (use window instead of next hook)
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const param = params.get("handle") || "";
+    if (param) setHandleRaw(param);
+  } catch {}
+}, []);
+
 useEffect(() => {
   if (typeof window === "undefined") return;
 
   const h = slugify(handleRaw);
   if (!h) return;
+  if (_restoredFor.current === h) return;
+  _restoredFor.current = h;
 
   try {
     const raw = localStorage.getItem(storageKey(h));
@@ -393,11 +451,9 @@ useEffect(() => {
     setOwnerEmail(saved.ownerEmail || "");
 
   } catch (e) {
-    console.warn("Failed to restore Scanly draft", e);
+    console.warn("Failed to restore Piqo draft", e);
   }
-  // run ONCE
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+}, [handleRaw]);
 
 
   // ✅ Availability + notifications (new)
@@ -432,6 +488,9 @@ useEffect(() => {
   const cleanHandle = useMemo(() => slugify(handleRaw), [handleRaw]);
   const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
 
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState<"setup" | "design" | "details" | "payment">("setup");
+
   const [appearance, setAppearance] = useState<Appearance>({
     preset: "neon",
     accent: "#22D3EE",
@@ -457,6 +516,7 @@ useEffect(() => {
     showPoweredBy: true,
     showStaff: true,
     showSocials: true,
+    showHours: true,
     ctaText: "",
   });
 
@@ -587,6 +647,20 @@ async function startStripeConnect() {
     if (!file.type.startsWith("image/")) return;
     const url = await fileToDataUrl(file);
     setBrandLogo(url);
+    // write instant preview draft so the preview iframe updates immediately
+    try {
+      const h = cleanHandle;
+      if (typeof window !== "undefined" && h) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: url, createdAt: Date.now() }));
+          } catch {}
+          skipNextPreviewTickRef.current = true;
+          setPreviewTick((x) => x + 1);
+        }
+      }
+    } catch {}
   }
 
   async function onPickBgImage(file?: File | null) {
@@ -594,6 +668,56 @@ async function startStripeConnect() {
     if (!file.type.startsWith("image/")) return;
     const url = await fileToDataUrl(file);
     setAppearance((p) => ({ ...p, bgMode: "image", bgImage: url }));
+  }
+
+  async function onPickStaffPhoto(file: File | null, idx: number) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    // show an instant preview first
+    const preview = await fileToDataUrl(file);
+    updateStaff(idx, { photo: preview });
+
+    try {
+      const h = cleanHandle;
+      if (typeof window !== "undefined" && h) {
+        const base = configDraft;
+        if (base) {
+          const updated = { ...base, staffProfiles: (base.staffProfiles || []).map((p, i) => (i === idx ? { ...p, photo: preview } : p)) };
+          try {
+            localStorage.setItem(storageKey(h), JSON.stringify({ ...updated, createdAt: Date.now() }));
+          } catch {}
+          skipNextPreviewTickRef.current = true;
+          setPreviewTick((x) => x + 1);
+        }
+      }
+    } catch {}
+
+    // upload to server to get hosted URL (resized)
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name || "upload.jpg");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.url) {
+        updateStaff(idx, { photo: data.url });
+
+        // persist hosted URL to local draft
+        try {
+          const h = cleanHandle;
+          if (typeof window !== "undefined" && h) {
+            const base = configDraft;
+            if (base) {
+              const updated = { ...base, staffProfiles: (base.staffProfiles || []).map((p, i) => (i === idx ? { ...p, photo: data.url } : p)) };
+              try {
+                localStorage.setItem(storageKey(h), JSON.stringify({ ...updated, createdAt: Date.now() }));
+              } catch {}
+              skipNextPreviewTickRef.current = true;
+              setPreviewTick((x) => x + 1);
+            }
+          }
+        } catch {}
+      }
+    } catch {}
   }
 
   // draft config for live preview
@@ -605,7 +729,7 @@ async function startStripeConnect() {
 
     return {
       mode,
-      brandName: brandName.trim() || "My Scanly",
+      brandName: brandName.trim() || "My Piqo",
       handle: h,
       tagline: tagline.trim(),
       items: items.filter((x) => (x.title || "").trim().length > 0),
@@ -653,10 +777,89 @@ async function startStripeConnect() {
         try {
           localStorage.setItem(storageKey(cfg.handle), JSON.stringify(cfg));
         } catch {}
+
+        // Avoid a second iframe refresh when we already refreshed instantly.
+        if (skipNextPreviewTickRef.current) {
+          skipNextPreviewTickRef.current = false;
+          return;
+        }
+
         setPreviewTick((x) => x + 1);
       }, 220),
     []
   );
+
+  // Debounced server-side save so edits persist to the published handle
+  const [savingServer, setSavingServer] = useState(false);
+  const saveDraftServerDebounced = useMemo(
+    () =>
+      debounce(async (cfg: BuildConfig) => {
+        try {
+          setSavingServer(true);
+
+          // best-effort: POST to /api/site to upsert the draft on server
+          const res = await postJson("/api/site", cfg).catch(() => null);
+
+          // If POST succeeded and site not published yet, auto-publish once
+          try {
+            const raw = res?.data || {};
+            const ok = res?.res?.ok && raw?.ok !== false;
+            const hasPublished = (cfg as any).publishedAt || raw?.site?.config?.publishedAt || raw?.config?.publishedAt;
+
+            if (ok && !hasPublished) {
+              // track auto-publish per handle using local flag to avoid repeats
+              try {
+                const key = `${storageKey(cfg.handle)}|autopub`;
+                const seen = localStorage.getItem(key);
+                if (!seen) {
+                  const pub = await postJson("/api/site/publish", { handle: cfg.handle }).catch(() => null);
+                  if (pub?.res?.ok && pub?.data?.ok) {
+                    const publishedAt = pub.data.publishedAt || new Date().toISOString();
+                    // persist publishedAt into local draft so we won't re-publish
+                    try {
+                      const storedRaw = localStorage.getItem(storageKey(cfg.handle));
+                      const stored = storedRaw ? JSON.parse(storedRaw) : cfg;
+                      stored.publishedAt = publishedAt;
+                      stored.active = true;
+                      localStorage.setItem(storageKey(cfg.handle), JSON.stringify(stored));
+                      localStorage.setItem(key, "1");
+                    } catch {}
+                  }
+                }
+              } catch {}
+            }
+          } catch {}
+
+        } catch {}
+        try {
+          setSavingServer(false);
+        } catch {}
+      }, 1500),
+    []
+  );
+
+  const skipNextPreviewTickRef = useRef(false);
+
+  function applyAppearancePatchInstant(patch: Partial<Appearance>) {
+    const nextAppearance: Appearance = { ...appearance, ...patch };
+    setAppearance(nextAppearance);
+
+    // Make the live preview feel instant (don’t wait for debounced autosave)
+    if (typeof window !== "undefined" && cleanHandle) {
+      const base = configDraft;
+      if (base) {
+        try {
+          localStorage.setItem(
+            storageKey(cleanHandle),
+            JSON.stringify({ ...base, appearance: nextAppearance, createdAt: Date.now() })
+          );
+        } catch {}
+      }
+      skipNextPreviewTickRef.current = true;
+      setPreviewTick((x) => x + 1);
+    }
+  }
+
 
  useEffect(() => {
   if (!configDraft) return;
@@ -669,6 +872,30 @@ async function startStripeConnect() {
 
   saveDraftDebounced(configDraft);
 }, [configDraft, saveDraftDebounced]);
+
+useEffect(() => {
+  if (!configDraft) return;
+  // Prevent saving during initial restore
+  if (!hasHydratedRef.current) return;
+  // only attempt server save when we have a valid handle
+  try {
+    saveDraftServerDebounced(configDraft);
+  } catch {}
+}, [configDraft, saveDraftServerDebounced]);
+
+  // Broadcast live preview updates to any open preview window/tab
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!configDraft) return;
+
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("piqo-preview");
+        bc.postMessage({ type: "config", handle: configDraft.handle, config: configDraft });
+        bc.close();
+      }
+    } catch {}
+  }, [configDraft]);
 
 
   // actions
@@ -816,14 +1043,47 @@ async function startStripeConnect() {
       const out = await postJson("/api/site", config);
 
       if (!out.res.ok) {
+        const detail = String(out?.data?.detail || out?.data?.error || "").trim();
+        const missingSupabaseEnv =
+          detail.includes("Missing SUPABASE_URL") || detail.includes("Missing SUPABASE_SERVICE_ROLE_KEY");
+
         const msg =
-          out?.data?.error ||
-          out?.data?.detail ||
-          (out.res.status === 404
+          out.res.status === 404
             ? "Missing API route /api/site. Check: src/app/api/site/route.ts"
-            : "Failed to save site.");
+            : missingSupabaseEnv
+              ? "Server is missing Supabase env vars (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY). Your draft is saved locally, but server publish is unavailable until env is set."
+              : detail || `Failed to save site (server error ${out.res.status}).`;
         throw new Error(msg);
       }
+
+      try {
+        // open the live preview in a new tab
+        if (typeof window !== "undefined") {
+          const url = `${window.location.origin}/u/${h}?preview=1`;
+          window.open(url, "_blank");
+        }
+      } catch {}
+      // navigate locally to the create page's published state
+      // attempt to mark published on the server so the handle is live
+      try {
+        await fetch("/api/site/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle: h }),
+        }).catch(() => null);
+      } catch {}
+
+      try {
+        // ensure latest draft is saved
+        if (typeof window !== "undefined") {
+          if (config) localStorage.setItem(storageKey(h), JSON.stringify(config));
+        }
+      } catch {}
+
+      try {
+        const url = `${typeof window !== "undefined" ? window.location.origin : ""}/u/${h}?published=1`;
+        if (typeof window !== "undefined") window.open(url, "_blank");
+      } catch {}
 
       router.push(`/u/${h}?published=1`);
       router.refresh();
@@ -847,7 +1107,8 @@ async function startStripeConnect() {
 
   const previewUrl = useMemo(() => {
     const h = cleanHandle || "yourname";
-    return `/u/${h}?handle=${h}&preview=1&t=${previewTick}`;
+    // Add random to force iframe reload on every tick change
+    return `/u/${h}?handle=${h}&preview=1&t=${previewTick}&r=${Date.now()}`;
   }, [cleanHandle, previewTick]);
 
   const stripeBadge = useMemo(() => {
@@ -863,44 +1124,57 @@ async function startStripeConnect() {
   const bgMode = appearance.bgMode || "solid";
   const gradient = appearance.gradient || { c1: "#22D3EE", c2: "#A78BFA", angle: 135 };
   const overlay = clamp(Number(appearance.bgOverlay ?? 0.45), 0, 0.9);
-  const accent = appearance.accent || "#22D3EE";
+  
+  // Accent - supports solid color or gradient
+  const accentMode = appearance.accentMode || "solid";
+  const accentGradient = appearance.accentGradient || { c1: "#22D3EE", c2: "#A78BFA", angle: 135 };
+  const accent = accentMode === "gradient" 
+    ? `linear-gradient(${accentGradient.angle}deg, ${accentGradient.c1}, ${accentGradient.c2})`
+    : (appearance.accent || "#22D3EE");
+  
+  // Solid accent color for borders, prices, and other elements that need hex colors
+  const accentSolid = accentMode === "gradient" ? accentGradient.c1 : (appearance.accent || "#22D3EE");
+    
+  const bgImageFit: "cover" | "contain" = appearance.bgImageFit || "cover";
 
   const previewBg = useMemo(() => {
-    if (bgMode === "image" && appearance.bgImage) {
-      return `linear-gradient(rgba(0,0,0,${overlay}), rgba(0,0,0,${overlay})), url(${appearance.bgImage})`;
-    }
-    if (bgMode === "gradient") {
-      return `linear-gradient(${gradient.angle}deg, ${gradient.c1}, ${gradient.c2})`;
-    }
-    return appearance.bgColor || "#000";
-  }, [bgMode, appearance.bgImage, appearance.bgColor, overlay, gradient.angle, gradient.c1, gradient.c2]);
+    return appearance.bgColor || "#FFFFFF";
+  }, [appearance.bgColor]);
 
-  // ✅ FIX: longhand-only background styling (no shorthand `background`)
+  // ✅ Simple background styling - solid colors only
   const previewStyle = useMemo<React.CSSProperties>(() => {
-    const s: React.CSSProperties = {
-      backgroundColor: "transparent",
-      backgroundImage: "none",
-      backgroundPosition: "center",
-      backgroundSize: "cover",
-      backgroundRepeat: "no-repeat",
+    return {
+      backgroundColor: previewBg,
     };
-
-    const v = String(previewBg ?? "").trim();
-    if (!v) return s;
-
-    if (
-      v.startsWith("linear-gradient") ||
-      v.startsWith("radial-gradient") ||
-      v.startsWith("conic-gradient") ||
-      v.startsWith("url(")
-    ) {
-      s.backgroundImage = v;
-      return s;
-    }
-
-    s.backgroundColor = v;
-    return s;
   }, [previewBg]);
+
+  const cardRadius = appearance.radius || 16;
+
+  // Header background - works with solid or gradient accent
+  const headerBg = useMemo(() => {
+    if (accentMode === "gradient") {
+      return `linear-gradient(135deg, ${accentGradient.c1} 0%, ${accentGradient.c2} 100%)`;
+    }
+    return `linear-gradient(135deg, ${accentSolid}bb 0%, ${hexToRgba(accentSolid, 0.6)} 100%)`;
+  }, [accentMode, accentGradient.c1, accentGradient.c2, accentSolid]);
+
+  const previewFontFamily = useMemo(() => {
+    switch (appearance.fontFamily || "inter") {
+      case "poppins":
+        return "var(--font-poppins), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      case "sora":
+        return "var(--font-sora), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      case "space":
+        return "var(--font-space), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      case "jakarta":
+        return "var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      case "dmsans":
+        return "var(--font-dmsans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      case "inter":
+      default:
+        return "var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    }
+  }, [appearance.fontFamily]);
 
   const headerStyle = appearance.headerStyle || "hero";
 
@@ -909,6 +1183,7 @@ async function startStripeConnect() {
   const shine = appearance.ctaShine !== false;
 
   const logoRound = (appearance.logoShape || "square") === "circle" ? "rounded-full" : "rounded-2xl";
+  const logoFit: "contain" | "cover" = appearance.logoFit || "contain";
 
   const showAvailability =
     mode === "services" || mode === "booking";
@@ -924,31 +1199,96 @@ async function startStripeConnect() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div
-        className="pointer-events-none fixed inset-0 opacity-55"
+    <main className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Animated background gradients */}
+      <motion.div
+        className="pointer-events-none fixed inset-0 opacity-60"
         style={{
           background:
-            "radial-gradient(circle at 20% 10%, rgba(34,211,238,0.18), transparent 55%), radial-gradient(circle at 80% 90%, rgba(255,255,255,0.06), transparent 60%)",
+            "radial-gradient(circle at 20% 10%, rgba(34,211,238,0.25), transparent 55%), radial-gradient(circle at 80% 90%, rgba(167,139,250,0.2), transparent 60%)",
+        }}
+        animate={{
+          opacity: [0.5, 0.7, 0.5],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-3xl opacity-30"
+        style={{
+          background: "linear-gradient(135deg, #22D3EE, #A78BFA, #F472B6)",
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          rotate: [0, 90, 0],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
 
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto max-w-7xl px-4 py-10">
+        {/* Header - Full Width */}
+        <div className="max-w-6xl mx-auto">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 backdrop-blur-xl px-3 py-1 text-xs text-white/85">
-              <Wand2 className="h-3.5 w-3.5" />
-              Scanly Builder
-            </div>
+            <motion.div
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 backdrop-blur-xl px-3 py-1 text-xs text-white/90 relative overflow-hidden shadow-lg shadow-cyan-500/20"
+              style={{
+                background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(167,139,250,0.15))",
+              }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{
+                  x: [-200, 400],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+              <motion.div
+                animate={{
+                  rotate: [0, 15, -15, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                }}
+              >
+                <Wand2 className="h-3.5 w-3.5 relative z-10" />
+              </motion.div>
+              <span className="relative z-10">Piqo Builder</span>
+            </motion.div>
 
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+            <motion.h1
+              className="mt-3 text-3xl font-semibold tracking-tight bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+            >
               {headerStyle === "hero" ? "Build your QR mini-app" : "Create your mini-app"}
-            </h1>
-            <p className="mt-1 text-white/85">
+            </motion.h1>
+            <motion.p
+              className="mt-1 text-white/85"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
               {headerStyle === "hero"
                 ? "People scan → it feels like an app → they tap → you convert."
                 : "Fast setup. Clean link. Instant checkout."}
-            </p>
+            </motion.p>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <StepPill n={1} label="Basics" active={!progress.brandOk} done={progress.brandOk} />
@@ -959,115 +1299,198 @@ async function startStripeConnect() {
             <div className="mt-2 text-[11px] text-white/70">
               Your link: <span className="text-white/90">/u/{cleanHandle || "handle"}</span> • Preview updates live.
             </div>
+            <div className="mt-1 text-[11px] text-white/60 flex items-center gap-3">
+              {savingServer ? (
+                <span className="text-xs text-cyan-200 font-medium">Saving…</span>
+              ) : configDraft?.publishedAt ? (
+                <span className="text-xs text-emerald-200 font-medium">Published: {new Date(configDraft.publishedAt).toLocaleString()}</span>
+              ) : (
+                <span className="text-xs text-white/50">Draft saved locally</span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={randomizeTheme}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-4 py-2 text-sm font-semibold hover:bg-white/12 transition"
-              title="Randomize a dope style"
-            >
-              <Sparkles className="h-4 w-4" />
-              Randomize
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPreviewOn((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-4 py-2 text-sm font-semibold hover:bg-white/12 transition"
-              title="Toggle live preview"
-            >
-              <Smartphone className="h-4 w-4" />
-              {previewOn ? "Preview on" : "Preview off"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowQr((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-4 py-2 text-sm font-semibold hover:bg-white/12 transition"
-            >
-              <QrCode className="h-4 w-4" />
-              QR preview
-            </button>
+            {/* Buttons moved to preview section */}
           </div>
         </header>
+        </div>
 
         {err ? (
-          <div className="mt-6 rounded-2xl border border-red-500/35 bg-red-500/12 px-4 py-3 text-sm text-red-50">
+          <div className="max-w-6xl mx-auto mt-6 rounded-2xl border border-red-500/35 bg-red-500/12 px-4 py-3 text-sm text-red-50">
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4" />
               <div className="min-w-0">
                 <div className="font-semibold">Failed to save site</div>
                 <div className="mt-1 text-red-50/90">{err}</div>
-                <div className="mt-2 text-[11px] text-red-50/80">
-                  Your API file should be: <span className="text-red-50">src/app/api/site/route.ts</span>
-                </div>
+                {String(err).includes("Missing API route /api/site") ? (
+                  <div className="mt-2 text-[11px] text-red-50/80">
+                    Your API file should be: <span className="text-red-50">src/app/api/site/route.ts</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
         ) : null}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_440px]">
-          {/* LEFT */}
-          <div className="space-y-6">
-            {/* Mode */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
+        {/* Tab Navigation */}
+        <motion.div
+          className="mt-8 flex gap-2 p-1 rounded-2xl border border-white/12 bg-white/5 backdrop-blur-xl overflow-x-auto lg:max-w-[calc(100%-540px)]"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          {[
+            { id: "setup" as const, label: "Setup", icon: Sparkles },
+            { id: "design" as const, label: "Style", icon: Palette },
+            { id: "details" as const, label: "Details", icon: Layers },
+            { id: "payment" as const, label: "Payment", icon: CreditCard },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all relative overflow-hidden",
+                  isActive
+                    ? "text-white shadow-lg shadow-cyan-500/20"
+                    : "text-white/60 hover:text-white/80"
+                )}
+                whileHover={{ scale: isActive ? 1 : 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  background: isActive
+                    ? "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(167,139,250,0.2))"
+                    : "transparent",
+                }}
+              >
+                {isActive && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    animate={{
+                      x: [-200, 400],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+                )}
+                <Icon className="h-4 w-4 relative z-10" />
+                <span className="relative z-10">{tab.label}</span>
+              </motion.button>
+            );
+          })}
+        </motion.div>
+
+        {/* Main Content Area */}
+        <div className="mt-6 relative">
+          {/* LEFT - Form content - with right margin for preview */}
+          <div className="space-y-5 lg:max-w-[calc(100%-540px)]">
+            
+            {/* SETUP TAB */}
+            {activeTab === "setup" && (
+              <>
+                {/* Mode Selection - Cleaner cards */}
+                <motion.section
+              className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 relative overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5 opacity-50"
+                animate={{
+                  opacity: [0.3, 0.5, 0.3],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                }}
+              />
+              <div className="flex items-center justify-between gap-3 relative z-10">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <Sparkles className="h-4 w-4" />
+                  <motion.div
+                    animate={{
+                      rotate: [0, 10, -10, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 text-cyan-400" />
+                  </motion.div>
                   What are you selling?
                 </div>
                 {modeCard ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1 text-[11px] text-white/85">
+                  <motion.div
+                    className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] text-cyan-200"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", bounce: 0.5 }}
+                  >
                     <Zap className="h-3.5 w-3.5" />
                     {modeCard.vibe}
-                  </div>
+                  </motion.div>
                 ) : null}
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 grid gap-2 sm:grid-cols-3 relative z-10">
                 {MODE_CARDS.map((m) => {
                   const selected = mode === m.id;
                   return (
-                    <button
+                    <motion.button
                       type="button"
                       key={m.id}
                       onClick={() => onPickMode(m.id)}
                       className={cn(
-                        "rounded-2xl border p-4 text-left transition",
-                        selected ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                        "rounded-2xl border p-4 text-left transition relative overflow-hidden",
+                        selected
+                          ? "border-white/30 bg-white/12 shadow-lg"
+                          : "border-white/12 bg-black/30 hover:bg-white/10"
                       )}
+                      style={selected ? { borderColor: `${m.color}50`, boxShadow: `0 0 20px ${m.color}30` } : {}}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <div className="text-sm font-semibold text-white/90">{m.title}</div>
-                      <div className="mt-1 text-xs text-white/80">{m.sub}</div>
-                    </button>
+                      {selected && (
+                        <motion.div
+                          className="absolute inset-0"
+                          style={{ background: `linear-gradient(90deg, transparent, ${m.color}20, transparent)` }}
+                          animate={{ x: [-100, 200] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        />
+                      )}
+                      <div className="flex items-center gap-2 relative z-10">
+                        <span className="text-xl">{m.icon}</span>
+                        <div>
+                          <div className="text-sm font-semibold text-white/90">{m.title}</div>
+                          <div className="text-[11px] text-white/60">{m.sub}</div>
+                        </div>
+                      </div>
+                    </motion.button>
                   );
                 })}
               </div>
-            </section>
+            </motion.section>
 
-            {/* Brand */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <Palette className="h-4 w-4" />
-                  Brand + link
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className={cn("h-10 w-10 overflow-hidden border border-white/12 bg-black/30 grid place-items-center", logoRound)}>
-                    {brandLogo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={brandLogo} alt="Logo" className="h-full w-full object-contain p-2" />
-                    ) : (
-                      <BadgeCheck className="h-4 w-4 text-white/65" />
-                    )}
-                  </div>
-                </div>
+            {/* Brand Basics */}
+            <motion.section
+              className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center gap-2 text-sm font-semibold text-white/90 mb-4">
+                <Type className="h-4 w-4 text-cyan-400" />
+                Brand basics
               </div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <label className="grid gap-1">
                   <span className="text-xs text-white/80">Brand name</span>
                   <input
@@ -1076,10 +1499,11 @@ async function startStripeConnect() {
                     className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
                     placeholder="Ex: Fresh Cutz"
                   />
+                  <span className="text-[10px] text-white/60">Your brand's name</span>
                 </label>
 
                 <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Handle (your QR link)</span>
+                  <span className="text-xs text-white/80">Your unique handle</span>
                   <input
                     value={handleRaw}
                     onChange={(e) => setHandleRaw(e.target.value)}
@@ -1087,11 +1511,11 @@ async function startStripeConnect() {
                     placeholder="Ex: freshcutz"
                   />
                   <div className="text-[11px] text-white/70">
-                    Becomes: <span className="text-white/90">/u/{cleanHandle || "handle"}</span>
+                    Your link: <span className="text-cyan-300/70 font-semibold">/u/{cleanHandle || "handle"}</span>
                   </div>
                 </label>
 
-                <label className="grid gap-1 sm:col-span-2">
+                <label className="grid gap-1">
                   <span className="text-xs text-white/80">Tagline</span>
                   <input
                     value={tagline}
@@ -1099,6 +1523,7 @@ async function startStripeConnect() {
                     className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
                     placeholder="Ex: Tap, pay, confirmed."
                   />
+                  <span className="text-[10px] text-white/60">Tagline shown on your storefront</span>
                 </label>
 
                 <div className="grid gap-1 sm:col-span-2">
@@ -1106,7 +1531,7 @@ async function startStripeConnect() {
                   <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition cursor-pointer">
                     <span className="inline-flex items-center gap-2">
                       <ImageIcon className="h-4 w-4" />
-                      {brandLogo ? "Replace logo" : "Upload logo"}
+                      {brandLogo ? "Change logo" : "Upload logo"}
                     </span>
                     <span className="text-[11px] text-white/65">PNG/JPG/SVG</span>
                     <input
@@ -1117,19 +1542,48 @@ async function startStripeConnect() {
                     />
                   </label>
 
-                  {brandLogo ? (
-                    <button
-                      type="button"
-                      onClick={() => setBrandLogo("")}
-                      className="mt-1 inline-flex items-center justify-center rounded-2xl border border-white/12 bg-white/5 px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
+                  <label className="grid gap-1 mt-2">
+                    <span className="text-[11px] text-white/70">Logo framing (live preview)</span>
+                    <select
+                      value={appearance.logoFit || "contain"}
+                      onChange={(e) => applyAppearancePatchInstant({ logoFit: e.target.value as "contain" | "cover" })}
+                      className="w-full appearance-none rounded-2xl border border-white/12 bg-black/40 px-4 py-2.5 text-xs text-white/85 outline-none focus:border-white/25 cursor-pointer"
                     >
-                      Remove logo
-                    </button>
-                  ) : null}
+                      <option value="contain">Fit (no crop)</option>
+                      <option value="cover">Crop (fill box)</option>
+                    </select>
+                  </label>
+
+                  {brandLogo && (
+                    <div className="flex items-center gap-3 mt-2">
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="h-14 w-14 rounded-xl border border-white/20 bg-black/40 overflow-hidden flex-shrink-0"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={brandLogo}
+                          alt="Logo preview"
+                          className={cn(
+                            "h-full w-full",
+                            logoFit === "cover" ? "object-cover" : "object-contain p-1"
+                          )}
+                        />
+                      </motion.div>
+                      <button
+                        type="button"
+                        onClick={() => setBrandLogo("")}
+                        className="inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <label className="grid gap-1 sm:col-span-2">
-                  <span className="text-xs text-white/80">Notification email (get booked/purchase alerts)</span>
+                  <span className="text-xs text-white/80">Email for alerts</span>
                   <input
                     value={ownerEmail}
                     onChange={(e) => setOwnerEmail(e.target.value)}
@@ -1140,8 +1594,728 @@ async function startStripeConnect() {
                   <div className="text-[11px] text-white/70">We’ll email you when someone pays or books (once wired).</div>
                 </label>
               </div>
+            </motion.section>
+
+            {/* Your Offerings */}
+            <motion.section
+              className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 relative overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <Layers className="h-4 w-4 text-orange-400" />
+                  {mode === "services" ? "Services" : mode === "products" ? "Products" : "Digital Items"} ({items.length})
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={addItem}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/20 transition shadow-lg shadow-green-500/10"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}
+                </motion.button>
+              </div>
+
+              {items.length === 0 ? (
+                <motion.div 
+                  className="rounded-2xl border border-dashed border-white/20 bg-black/20 p-8 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 mb-3">
+                    <Layers className="h-6 w-6 text-white/40" />
+                  </div>
+                  <div className="text-sm text-white/70 font-medium">No {mode === "services" ? "services" : mode === "products" ? "products" : "items"} yet</div>
+                  <div className="text-xs text-white/40 mt-1">
+                    Click &quot;Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}&quot; to get started
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="grid gap-3">
+                  {items.map((it, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      className="rounded-2xl border border-white/12 bg-black/30 p-4 hover:border-white/20 hover:bg-black/35 transition group"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      layout
+                    >
+                      {/* Header row */}
+                      <div className="flex items-center gap-3 mb-3">
+                        {/* Item number badge */}
+                        <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-bold text-white/50">
+                          {idx + 1}
+                        </div>
+
+                        {/* Title & Price inputs */}
+                        <div className="flex-1 flex items-center gap-2">
+                          <input
+                            value={it.title}
+                            onChange={(e) =>
+                              setItems((prev) =>
+                                prev.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x))
+                              )
+                            }
+                            className="flex-1 rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm font-semibold text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            placeholder={mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook"}
+                          />
+                          <input
+                            value={it.price}
+                            onChange={(e) =>
+                              setItems((prev) =>
+                                prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
+                              )
+                            }
+                            className="w-24 rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm font-semibold text-white/90 outline-none placeholder:text-white/40 focus:border-white/25 text-center"
+                            placeholder="$25"
+                          />
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                          {/* Move up */}
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => {
+                              if (idx === 0) return;
+                              setItems((prev) => {
+                                const arr = [...prev];
+                                [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                                return arr;
+                              });
+                            }}
+                            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-black/20 w-7 h-7 text-white/60 hover:bg-white/10 hover:text-white/90 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                            title="Move up"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                          </button>
+                          {/* Move down */}
+                          <button
+                            type="button"
+                            disabled={idx === items.length - 1}
+                            onClick={() => {
+                              if (idx === items.length - 1) return;
+                              setItems((prev) => {
+                                const arr = [...prev];
+                                [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+                                return arr;
+                              });
+                            }}
+                            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-black/20 w-7 h-7 text-white/60 hover:bg-white/10 hover:text-white/90 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                            title="Move down"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </button>
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
+                            className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-black/20 w-7 h-7 text-white/60 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400 transition"
+                            title="Remove item"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Details row */}
+                      <div className="grid gap-2 sm:grid-cols-2 pl-10">
+                        <label className="grid gap-1">
+                          <span className="text-xs text-white/60">Description</span>
+                          <input
+                            value={it.note || ""}
+                            onChange={(e) =>
+                              setItems((prev) =>
+                                prev.map((x, i) => (i === idx ? { ...x, note: e.target.value } : x))
+                              )
+                            }
+                            className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            placeholder={mode === "services" ? "e.g. 30 min • Includes styling" : "Short description"}
+                          />
+                        </label>
+
+                        <label className="grid gap-1">
+                          <span className="text-xs text-white/60">Badge</span>
+                          <select
+                            value={it.badge || "none"}
+                            onChange={(e) =>
+                              setItems((prev) =>
+                                prev.map((x, i) => (i === idx ? { ...x, badge: e.target.value as ItemBadge } : x))
+                              )
+                            }
+                            className="w-full appearance-none rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm text-white/90 outline-none focus:border-white/25 cursor-pointer"
+                          >
+                            <option value="none">No badge</option>
+                            <option value="popular">🔥 Popular</option>
+                            <option value="limited">⚡ Limited</option>
+                          </select>
+                        </label>
+                      </div>
+
+                      {/* Image upload row */}
+                      <div className="pl-10 mt-2">
+                        <div className="flex items-center gap-3">
+                          {/* Image preview */}
+                          <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-white/12 bg-black/40 flex-shrink-0">
+                            {it.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={it.image} alt="Item" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white/30">
+                                <ImageIcon className="h-5 w-5" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Upload / Remove buttons */}
+                          <div className="flex-1 flex items-center gap-2">
+                            <label className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-xs text-white/70 hover:bg-white/10 hover:text-white/90 transition cursor-pointer">
+                              <ImageIcon className="h-3.5 w-3.5" />
+                              {it.image ? "Change image" : "Add image"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file || !file.type.startsWith("image/")) return;
+                                  const url = await fileToDataUrl(file);
+                                  setItems((prev) =>
+                                    prev.map((x, i) => (i === idx ? { ...x, image: url } : x))
+                                  );
+                                }}
+                              />
+                            </label>
+                            {it.image && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setItems((prev) =>
+                                    prev.map((x, i) => (i === idx ? { ...x, image: undefined } : x))
+                                  )
+                                }
+                                className="rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-xs text-white/60 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400 transition"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-white/40 mt-1.5">Optional: Add a photo for this item</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                <div className="text-xs text-blue-200/90">
+                  💡 <span className="font-medium">Tip:</span> Add 2-5 items for best results. Customers see the first 3 on your storefront preview.
+                </div>
+              </div>
+
+              {/* Next Button */}
+              <div className="mt-6 flex justify-end">
+                <motion.button
+                  type="button"
+                  onClick={() => setActiveTab("design")}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/20 px-6 py-3 text-sm font-semibold text-white transition-all shadow-lg shadow-cyan-500/25 hover:bg-cyan-500/30"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Next: Style your store
+                  <motion.div
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.div>
+                </motion.button>
+              </div>
+            </motion.section>
+              </>
+            )}
+
+            {/* DESIGN TAB */}
+            {activeTab === "design" && (
+              <>
+            {/* App Style - Complete Design Controls (same controls, clearer flow) */}
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <Layers className="h-4 w-4 text-purple-400" />
+                  Structure
+                </div>
+                <div className="text-[11px] text-white/70">Font + layout + header</div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">Font</span>
+                  <div className="relative">
+                    <Type className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
+                    <select
+                      value={appearance.fontFamily || "inter"}
+                      onChange={(e) =>
+                        applyAppearancePatchInstant({ fontFamily: e.target.value as FontFamily })
+                      }
+                      className="w-full appearance-none rounded-2xl border border-white/12 bg-black/40 pl-11 pr-10 py-3 text-sm text-white/90 outline-none focus:border-white/25"
+                    >
+                      <option value="inter">Inter (clean)</option>
+                      <option value="poppins">Poppins (friendly)</option>
+                      <option value="sora">Sora (modern)</option>
+                      <option value="space">Space Grotesk (tech)</option>
+                      <option value="jakarta">Plus Jakarta Sans (premium)</option>
+                      <option value="dmsans">DM Sans (sleek)</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">Layout</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["cards", "menu", "tiles"] as LayoutMode[]).map((l) => {
+                      const on = (appearance.layout || "cards") === l;
+                      return (
+                        <button
+                          key={l}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ layout: l })}
+                          className={cn(
+                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
+                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                          )}
+                        >
+                          {l === "cards" ? "Cards" : l === "menu" ? "Menu" : "Tiles"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">Logo shape</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["square", "circle"] as const).map((v) => {
+                      const on = (appearance.logoShape || "square") === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ logoShape: v })}
+                          className={cn(
+                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
+                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                          )}
+                        >
+                          {v === "square" ? "Rounded square" : "Circle"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[11px] text-white/65">Crop/fit is under Setup → Logo framing.</div>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">Header style</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["hero", "minimal"] as const).map((v) => {
+                      const on = (appearance.headerStyle || "hero") === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ headerStyle: v })}
+                          className={cn(
+                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
+                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                          )}
+                        >
+                          {v === "hero" ? "Hero" : "Minimal"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">Card roundness</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { value: 8, label: "Sharp" },
+                      { value: 12, label: "Soft" },
+                      { value: 16, label: "Round" },
+                      { value: 20, label: "Pill" },
+                    ].map((r) => {
+                      const on = (appearance.radius || 16) === r.value;
+                      return (
+                        <button
+                          key={r.value}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ radius: r.value })}
+                          className={cn(
+                            "rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all flex items-center justify-center min-h-[44px]",
+                            on 
+                              ? "border-cyan-500/50 bg-cyan-500/20 text-white shadow-lg shadow-cyan-500/25" 
+                              : "border-white/12 bg-black/30 hover:bg-white/10 text-white/80 hover:text-white"
+                          )}
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <div 
+                              className="w-4 h-3 border border-current bg-current/20" 
+                              style={{ borderRadius: `${r.value * 0.3}px` }}
+                            />
+                            <span className="text-[10px]">{r.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </label>
+              </div>
             </section>
 
+            {/* Accent Color */}
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <Palette className="h-4 w-4 text-pink-400" />
+                  Accent color
+                </div>
+                <div className="text-[11px] text-white/70">Brand color for buttons & highlights</div>
+              </div>
+
+              <div className="grid gap-3">
+                {/* Solid vs Gradient toggle */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => applyAppearancePatchInstant({ accentMode: "solid" })}
+                    className={cn(
+                      "rounded-2xl border px-3 py-2.5 text-xs font-semibold transition",
+                      (appearance.accentMode || "solid") === "solid" 
+                        ? "border-white/35 bg-white/12" 
+                        : "border-white/12 bg-black/30 hover:bg-white/10"
+                    )}
+                  >
+                    Solid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyAppearancePatchInstant({ accentMode: "gradient" })}
+                    className={cn(
+                      "rounded-2xl border px-3 py-2.5 text-xs font-semibold transition",
+                      (appearance.accentMode || "solid") === "gradient" 
+                        ? "border-white/35 bg-white/12" 
+                        : "border-white/12 bg-black/30 hover:bg-white/10"
+                    )}
+                  >
+                    Gradient
+                  </button>
+                </div>
+
+                {/* Solid color */}
+                {(appearance.accentMode || "solid") === "solid" ? (
+                  <>
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Brand accent</span>
+                      <div className="flex items-center gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3">
+                        <input
+                          type="color"
+                          value={accent}
+                          onChange={(e) => applyAppearancePatchInstant({ accent: e.target.value })}
+                          className="h-8 w-10 rounded-lg border border-white/12 bg-transparent"
+                        />
+                        <input
+                          value={accent}
+                          onChange={(e) => applyAppearancePatchInstant({ accent: e.target.value })}
+                          className="flex-1 bg-transparent text-sm text-white/90 outline-none"
+                        />
+                      </div>
+                    </label>
+
+                    {/* Quick accent presets */}
+                    <div className="grid grid-cols-7 gap-2">
+                      {["#22D3EE", "#A78BFA", "#F472B6", "#34D399", "#F59E0B", "#60A5FA", "#FB7185"].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ accent: color })}
+                          className={cn(
+                            "h-10 rounded-xl border-2 transition-all",
+                            accent === color ? "border-white/60 scale-110" : "border-white/20 hover:border-white/40"
+                          )}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  /* Gradient colors */
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Color 1</span>
+                      <input
+                        type="color"
+                        value={appearance.accentGradient?.c1 || "#22D3EE"}
+                        onChange={(e) => applyAppearancePatchInstant({ 
+                          accentGradient: { 
+                            c1: e.target.value, 
+                            c2: appearance.accentGradient?.c2 || "#A78BFA",
+                            angle: appearance.accentGradient?.angle || 135
+                          } 
+                        })}
+                        className="h-11 w-full rounded-2xl border border-white/12 bg-black/30"
+                      />
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Color 2</span>
+                      <input
+                        type="color"
+                        value={appearance.accentGradient?.c2 || "#A78BFA"}
+                        onChange={(e) => applyAppearancePatchInstant({ 
+                          accentGradient: { 
+                            c1: appearance.accentGradient?.c1 || "#22D3EE",
+                            c2: e.target.value,
+                            angle: appearance.accentGradient?.angle || 135
+                          } 
+                        })}
+                        className="h-11 w-full rounded-2xl border border-white/12 bg-black/30"
+                      />
+                    </label>
+                    <label className="grid gap-1 sm:col-span-2">
+                      <span className="text-xs text-white/80">Angle</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        value={appearance.accentGradient?.angle || 135}
+                        onChange={(e) => applyAppearancePatchInstant({ 
+                          accentGradient: { 
+                            c1: appearance.accentGradient?.c1 || "#22D3EE",
+                            c2: appearance.accentGradient?.c2 || "#A78BFA",
+                            angle: Number(e.target.value)
+                          } 
+                        })}
+                        className="w-full"
+                      />
+                      <div className="text-[11px] text-white/65">{appearance.accentGradient?.angle || 135}°</div>
+                    </label>
+
+                    {/* Preview swatch */}
+                    <div
+                      className="sm:col-span-2 h-14 rounded-2xl border border-white/12"
+                      style={{ 
+                        background: `linear-gradient(${appearance.accentGradient?.angle || 135}deg, ${appearance.accentGradient?.c1 || "#22D3EE"}, ${appearance.accentGradient?.c2 || "#A78BFA"})` 
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <Sparkles className="h-4 w-4 text-white/80" />
+                  CTA button
+                </div>
+                <div className="text-[11px] text-white/70">Style + label</div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">CTA style</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["accent", "white"] as CtaStyle[]).map((c) => {
+                      const on = (appearance.ctaStyle || "accent") === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => applyAppearancePatchInstant({ ctaStyle: c })}
+                          className={cn(
+                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
+                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                          )}
+                        >
+                          {c === "accent" ? "Accent" : "White"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </label>
+
+                <label className="grid gap-1">
+                  <span className="text-xs text-white/80">CTA "shine"</span>
+                  <button
+                    type="button"
+                    onClick={() => applyAppearancePatchInstant({ ctaShine: !appearance.ctaShine })}
+                    className="inline-flex items-center justify-between rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      {appearance.ctaShine ? "On" : "Off"}
+                    </span>
+                    <span className="text-[11px] text-white/65">More "app" feel</span>
+                  </button>
+                </label>
+
+                <label className="grid gap-1 sm:col-span-2">
+                  <span className="text-xs text-white/80">CTA button text (optional)</span>
+                  <input
+                    value={appearance.ctaText || ""}
+                    onChange={(e) => applyAppearancePatchInstant({ ctaText: e.target.value })}
+                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                    placeholder="Ex: Reserve spot • Book now • Get instant access"
+                  />
+                  <div className="text-[11px] text-white/65">Leave empty to use the default label for your mode.</div>
+                </label>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <LayoutTemplate className="h-4 w-4 text-white/80" />
+                  Sections
+                </div>
+                <div className="text-[11px] text-white/70">Show / hide</div>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                {[
+                  { key: "showPoweredBy", label: "Powered by Piqo" },
+                  { key: "showStaff", label: "Staff / team section" },
+                  { key: "showSocials", label: "Social + contact buttons" },
+                  { key: "showHours", label: "Business hours" },
+                ].map((x) => {
+                  const k = x.key as "showPoweredBy" | "showStaff" | "showSocials" | "showHours";
+                  const on = (appearance[k] ?? true) === true;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => applyAppearancePatchInstant({ [k]: !(appearance[k] ?? true) })}
+                      className="inline-flex items-center justify-between rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        {x.label}
+                      </span>
+                      <span className="text-[11px] text-white/65">{on ? "On" : "Off"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Mini preview swatch */}
+              <div className="mt-4 rounded-2xl border border-white/12 bg-black/30 p-3">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="text-[11px] text-white/65">Live style preview</div>
+                  <div className="text-[11px] text-white/55">Logo/name from Setup</div>
+                </div>
+
+                <div className="rounded-2xl border border-white/12 p-4" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-10 w-10 border border-white/15 bg-black/40 grid place-items-center overflow-hidden", logoRound)}>
+                      {brandLogo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={brandLogo}
+                          alt="logo"
+                          className={cn(
+                            "h-full w-full",
+                            logoFit === "cover" ? "object-cover" : "object-contain p-2"
+                          )}
+                        />
+                      ) : (
+                        <Sparkles className="h-4 w-4 text-white/70" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold text-white/90 truncate">{brandName || "Brand basics"}</div>
+                      <div className="text-sm text-white/70 truncate">{tagline || "Your tagline"}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mt-3 w-full rounded-2xl px-4 py-3 text-base font-semibold relative overflow-hidden"
+                    style={{
+                      background: ctaBg,
+                      color: ctaFg,
+                      boxShadow: `0 18px 50px ${hexToRgba(accent, 0.25)}`,
+                    }}
+                  >
+                    {shine ? (
+                      <span
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          background:
+                            "linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.45) 40%, rgba(255,255,255,0.0) 70%)",
+                          transform: "translateX(-70%)",
+                          animation: "piqoShine 2.6s ease-in-out infinite",
+                        }}
+                      />
+                    ) : null}
+                    <span className="relative">
+                      {appearance.ctaText?.trim() ? appearance.ctaText.trim() : "Tap to checkout"}
+                    </span>
+                  </button>
+
+                  <style jsx>{`
+                    @keyframes piqoShine {
+                      0% {
+                        transform: translateX(-80%);
+                        opacity: 0;
+                      }
+                      20% {
+                        opacity: 1;
+                      }
+                      50% {
+                        transform: translateX(120%);
+                        opacity: 1;
+                      }
+                      100% {
+                        transform: translateX(120%);
+                        opacity: 0;
+                      }
+                    }
+                  `}</style>
+                </div>
+              </div>
+            </section>
+
+            {/* Next Button */}
+            <div className="mt-6 flex justify-end">
+              <motion.button
+                type="button"
+                onClick={() => setActiveTab("details")}
+                className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/20 px-6 py-3 text-sm font-semibold text-white transition-all shadow-lg shadow-purple-500/25 hover:bg-purple-500/30"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Next: Add details
+                <motion.div
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  →
+                </motion.div>
+              </motion.button>
+            </div>
+              </>
+            )}
+
+            {/* DETAILS TAB */}
+            {activeTab === "details" && (
+              <>
             {/* Notifications (new) */}
             <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
               <div className="flex items-center justify-between gap-3">
@@ -1337,395 +2511,6 @@ async function startStripeConnect() {
               </div>
             </section>
 
-            {/* App Style */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
-                <Layers className="h-4 w-4" />
-                App style
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Font</span>
-                  <div className="relative">
-                    <Type className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-                    <select
-                      value={appearance.fontFamily || "inter"}
-                      onChange={(e) => setAppearance((p) => ({ ...p, fontFamily: e.target.value as FontFamily }))}
-                      className="w-full appearance-none rounded-2xl border border-white/12 bg-black/40 pl-11 pr-10 py-3 text-sm text-white/90 outline-none focus:border-white/25"
-                    >
-                      <option value="inter">Inter (clean)</option>
-                      <option value="poppins">Poppins (friendly)</option>
-                      <option value="sora">Sora (modern)</option>
-                      <option value="space">Space Grotesk (tech)</option>
-                      <option value="jakarta">Plus Jakarta Sans (premium)</option>
-                      <option value="dmsans">DM Sans (sleek)</option>
-                    </select>
-                  </div>
-                  <div className="text-[11px] text-white/65">We’ll apply this to the whole mini-app.</div>
-                </label>
-
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Layout</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["cards", "menu", "tiles"] as LayoutMode[]).map((l) => {
-                      const on = (appearance.layout || "cards") === l;
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, layout: l }))}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                          )}
-                        >
-                          {l === "cards" ? "Cards" : l === "menu" ? "Menu" : "Tiles"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="text-[11px] text-white/65">Different “app templates” for the same content.</div>
-                </label>
-              </div>
-
-              {/* Background mode */}
-              <div className="mt-5 grid gap-3">
-                <div className="text-xs font-semibold text-white/85">Background</div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {(["solid", "gradient", "image"] as BgMode[]).map((m) => {
-                    const on = (appearance.bgMode || "solid") === m;
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setAppearance((p) => ({ ...p, bgMode: m }))}
-                        className={cn(
-                          "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                          on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                        )}
-                      >
-                        {m === "solid" ? "Solid" : m === "gradient" ? "Gradient" : "Image"}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Solid */}
-                {bgMode === "solid" ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="grid gap-1">
-                      <span className="text-xs text-white/80">Background color</span>
-                      <div className="flex items-center gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3">
-                        <input
-                          type="color"
-                          value={appearance.bgColor || "#000000"}
-                          onChange={(e) => setAppearance((p) => ({ ...p, bgColor: e.target.value }))}
-                          className="h-8 w-10 rounded-lg border border-white/12 bg-transparent"
-                        />
-                        <input
-                          value={appearance.bgColor || "#000000"}
-                          onChange={(e) => setAppearance((p) => ({ ...p, bgColor: e.target.value }))}
-                          className="flex-1 bg-transparent text-sm text-white/90 outline-none"
-                        />
-                      </div>
-                    </label>
-                  </div>
-                ) : null}
-
-                {/* Gradient */}
-                {bgMode === "gradient" ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="grid gap-1">
-                      <span className="text-xs text-white/80">Color 1</span>
-                      <input
-                        type="color"
-                        value={gradient.c1}
-                        onChange={(e) => setAppearance((p) => ({ ...p, gradient: { ...gradient, c1: e.target.value } }))}
-                        className="h-11 w-full rounded-2xl border border-white/12 bg-black/30"
-                      />
-                    </label>
-                    <label className="grid gap-1">
-                      <span className="text-xs text-white/80">Color 2</span>
-                      <input
-                        type="color"
-                        value={gradient.c2}
-                        onChange={(e) => setAppearance((p) => ({ ...p, gradient: { ...gradient, c2: e.target.value } }))}
-                        className="h-11 w-full rounded-2xl border border-white/12 bg-black/30"
-                      />
-                    </label>
-                    <label className="grid gap-1 sm:col-span-2">
-                      <span className="text-xs text-white/80">Angle</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        value={gradient.angle}
-                        onChange={(e) =>
-                          setAppearance((p) => ({ ...p, gradient: { ...gradient, angle: Number(e.target.value) } }))
-                        }
-                        className="w-full"
-                      />
-                      <div className="text-[11px] text-white/65">{gradient.angle}°</div>
-                    </label>
-
-                    <div
-                      className="sm:col-span-2 h-14 rounded-2xl border border-white/12"
-                      style={{ background: `linear-gradient(${gradient.angle}deg, ${gradient.c1}, ${gradient.c2})` }}
-                    />
-                  </div>
-                ) : null}
-
-                {/* Image */}
-                {bgMode === "image" ? (
-                  <div className="grid gap-3">
-                    <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition cursor-pointer">
-                      <span className="inline-flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        {appearance.bgImage ? "Replace background image" : "Upload background image"}
-                      </span>
-                      <span className="text-[11px] text-white/65">Looks crazy with overlay</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => onPickBgImage(e.target.files?.[0])}
-                      />
-                    </label>
-
-                    {appearance.bgImage ? (
-                      <>
-                        <div className="rounded-2xl border border-white/12 bg-black/30 p-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={appearance.bgImage} alt="BG" className="w-full rounded-xl object-cover max-h-48" />
-                        </div>
-
-                        <label className="grid gap-1">
-                          <span className="text-xs text-white/80">Overlay darkness</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={0.9}
-                            step={0.05}
-                            value={overlay}
-                            onChange={(e) => setAppearance((p) => ({ ...p, bgOverlay: Number(e.target.value) }))}
-                            className="w-full"
-                          />
-                          <div className="text-[11px] text-white/65">{overlay.toFixed(2)}</div>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, bgImage: "", bgMode: "solid" }))}
-                          className="inline-flex items-center justify-center rounded-2xl border border-white/12 bg-white/5 px-4 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
-                        >
-                          Remove background image
-                        </button>
-                      </>
-                    ) : (
-                      <div className="text-[11px] text-white/65">
-                        Tip: upload a photo, then slide overlay to make text readable.
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-
-              {/* CTA style */}
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">CTA style</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["accent", "white"] as CtaStyle[]).map((c) => {
-                      const on = (appearance.ctaStyle || "accent") === c;
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, ctaStyle: c }))}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                          )}
-                        >
-                          {c === "accent" ? "Accent" : "White"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
-
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">CTA “shine”</span>
-                  <button
-                    type="button"
-                    onClick={() => setAppearance((p) => ({ ...p, ctaShine: !p.ctaShine }))}
-                    className="inline-flex items-center justify-between rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      {appearance.ctaShine ? "On" : "Off"}
-                    </span>
-                    <span className="text-[11px] text-white/65">More “app” feel</span>
-                  </button>
-                </label>
-
-                {/* Mini preview swatch */}
-                <div className="sm:col-span-2 rounded-2xl border border-white/12 bg-black/30 p-3">
-                  <div className="text-[11px] text-white/65 mb-2">Style preview</div>
-
-                  <div className="rounded-2xl border border-white/12 p-4" style={previewStyle}>
-                    <div className="flex items-center gap-2">
-                      <div className={cn("h-10 w-10 border border-white/15 bg-black/40 grid place-items-center overflow-hidden", logoRound)}>
-                        {brandLogo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={brandLogo} alt="logo" className="h-full w-full object-contain p-2" />
-                        ) : (
-                          <Sparkles className="h-4 w-4 text-white/70" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-white/90 truncate">{brandName || "Your brand"}</div>
-                        <div className="text-xs text-white/70 truncate">{tagline || "Your tagline"}</div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="mt-3 w-full rounded-2xl px-4 py-3 text-sm font-semibold relative overflow-hidden"
-                      style={{
-                        background: ctaBg,
-                        color: ctaFg,
-                        boxShadow: `0 18px 50px ${hexToRgba(accent, 0.25)}`,
-                      }}
-                    >
-                      {shine ? (
-                        <span
-                          className="pointer-events-none absolute inset-0"
-                          style={{
-                            background:
-                              "linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.45) 40%, rgba(255,255,255,0.0) 70%)",
-                            transform: "translateX(-70%)",
-                            animation: "scanlyShine 2.6s ease-in-out infinite",
-                          }}
-                        />
-                      ) : null}
-                      <span className="relative">
-                        {appearance.ctaText?.trim() ? appearance.ctaText.trim() : "Tap to checkout"}
-                      </span>
-                    </button>
-
-                    <style jsx>{`
-                      @keyframes scanlyShine {
-                        0% {
-                          transform: translateX(-80%);
-                          opacity: 0;
-                        }
-                        20% {
-                          opacity: 1;
-                        }
-                        50% {
-                          transform: translateX(120%);
-                          opacity: 1;
-                        }
-                        100% {
-                          transform: translateX(120%);
-                          opacity: 0;
-                        }
-                      }
-                    `}</style>
-                  </div>
-                </div>
-              </div>
-
-              {/* ✅ ADVANCED: Extras */}
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Logo shape</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["square", "circle"] as const).map((v) => {
-                      const on = (appearance.logoShape || "square") === v;
-                      return (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, logoShape: v }))}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                          )}
-                        >
-                          {v === "square" ? "Rounded square" : "Circle"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
-
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Header style</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["hero", "minimal"] as const).map((v) => {
-                      const on = (appearance.headerStyle || "hero") === v;
-                      return (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, headerStyle: v }))}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                          )}
-                        >
-                          {v === "hero" ? "Hero" : "Minimal"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
-
-                <label className="grid gap-1 sm:col-span-2">
-                  <span className="text-xs text-white/80">CTA button text (optional)</span>
-                  <input
-                    value={appearance.ctaText || ""}
-                    onChange={(e) => setAppearance((p) => ({ ...p, ctaText: e.target.value }))}
-                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                    placeholder="Ex: Reserve spot • Book now • Get instant access"
-                  />
-                  <div className="text-[11px] text-white/65">If empty, mini-app uses the default label for the mode.</div>
-                </label>
-
-                <div className="sm:col-span-2 grid gap-2">
-                  <div className="text-xs font-semibold text-white/85">Show / hide sections</div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {[
-                      { key: "showPoweredBy", label: "Powered by Scanly" },
-                      { key: "showStaff", label: "Staff / team section" },
-                      { key: "showSocials", label: "Social + contact buttons" },
-                    ].map((x) => {
-                      const k = x.key as "showPoweredBy" | "showStaff" | "showSocials";
-                      const on = (appearance[k] ?? true) === true;
-                      return (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => setAppearance((p) => ({ ...p, [k]: !(p[k] ?? true) }))}
-                          className="inline-flex items-center justify-between rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition"
-                        >
-                          <span className="inline-flex items-center gap-2">
-                            <Sparkles className="h-4 w-4" />
-                            {x.label}
-                          </span>
-                          <span className="text-[11px] text-white/65">{on ? "On" : "Off"}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </section>
-
             {/* Social links */}
             <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
@@ -1806,6 +2591,168 @@ async function startStripeConnect() {
               </div>
             </section>
 
+            {/* Team Management - only for services */}
+            {mode === "services" && (
+              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                    <Users className="h-4 w-4 text-blue-400" />
+                    Team Members
+                  </div>
+                  <div className="text-[11px] text-white/70">{staffProfiles.length} added</div>
+                </div>
+
+                <div className="text-[11px] text-white/70 mb-3">
+                  You can upload a photo for each team member by clicking their avatar. Photos are saved to your draft and will be included when you publish.
+                </div>
+
+                <div className="space-y-3">
+                  {staffProfiles.map((staff, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-2xl border border-white/12 bg-black/30 p-3"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="relative">
+                          {staff.photo ? (
+                            <img
+                              src={staff.photo}
+                              alt={staff.name}
+                              className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div
+                              className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                              style={{ background: accentMode === "gradient" ? accentSolid : accent }}
+                            >
+                              {staff.name.charAt(0) || "?"}
+                            </div>
+                          )}
+
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const f = e.target.files ? e.target.files[0] : null;
+                              if (f) await onPickStaffPhoto(f, idx);
+                            }}
+                            className="absolute inset-0 h-10 w-10 opacity-0 cursor-pointer rounded-full"
+                            aria-label={`Upload photo for ${staff.name}`}
+                          />
+                        </div>
+                        <div className="grid gap-2 flex-1 min-w-0">
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <input
+                              placeholder="Name"
+                              value={staff.name}
+                              onChange={(e) => updateStaff(idx, { name: e.target.value })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                            <input
+                              placeholder="Role (e.g., Senior Barber)"
+                              value={staff.role}
+                              onChange={(e) => updateStaff(idx, { role: e.target.value })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                          </div>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            <input
+                              placeholder="Rating (e.g., 4.9)"
+                              value={staff.rating}
+                              onChange={(e) => updateStaff(idx, { rating: e.target.value })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                            <input
+                              placeholder="Specialties (comma separated)"
+                              value={staff.specialties.join(", ")}
+                              onChange={(e) => updateStaff(idx, { specialties: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                          </div>
+                          <textarea
+                            placeholder="Short bio (e.g., Clean fades + sharp lineups. Fast hands, no wasted time.)"
+                            value={staff.bio}
+                            onChange={(e) => updateStaff(idx, { bio: e.target.value })}
+                            className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25 resize-none"
+                            rows={2}
+                          />
+                          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                            <input
+                              type="time"
+                              value={staff.availability?.start || "09:00"}
+                              onChange={(e) => updateStaff(idx, { availability: { ...(staff.availability || {}), start: e.target.value } })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                            <input
+                              type="time"
+                              value={staff.availability?.end || "17:00"}
+                              onChange={(e) => updateStaff(idx, { availability: { ...(staff.availability || {}), end: e.target.value } })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            />
+                            <input
+                              type="number"
+                              min={5}
+                              max={240}
+                              value={staff.availability?.slotMinutes || 60}
+                              onChange={(e) => updateStaff(idx, { availability: { ...(staff.availability || {}), slotMinutes: Number(e.target.value) } })}
+                              className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                              placeholder="Slot minutes"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeStaff(idx)}
+                          className="p-1.5 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition flex-shrink-0"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={addStaff}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Team Member
+                  </button>
+                </div>
+
+                <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                  <div className="text-xs text-blue-200/90">
+                    💡 <span className="font-medium">Tip:</span> Team members show on your services storefront when "Staff / team section" is enabled in Style → Sections.
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Next Button */}
+            <div className="mt-6 flex justify-end">
+              <motion.button
+                type="button"
+                onClick={() => setActiveTab("payment")}
+                className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/20 px-6 py-3 text-sm font-semibold text-white transition-all shadow-lg shadow-green-500/25 hover:bg-green-500/30"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Next: Setup payment
+                <motion.div
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  →
+                </motion.div>
+              </motion.button>
+            </div>
+              </>
+            )}
+
+            {/* PAYMENT TAB */}
+            {activeTab === "payment" && (
+              <>
             {/* Stripe Connect */}
             <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
               <div className="flex items-center justify-between gap-3">
@@ -1891,19 +2838,897 @@ async function startStripeConnect() {
               </div>
             </section>
 
-            {/* Presets */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <LayoutTemplate className="h-4 w-4" />
-                  Pick a vibe
+            {/* Completion Button */}
+            <div className="mt-6 flex justify-center">
+              <motion.button
+                type="button"
+                onClick={async () => {
+                  if (!cleanHandle) return;
+                  setSaving(true);
+                  setErr(null);
+                  try {
+                    // First, save the latest draft to the server so Supabase has the current state
+                    if (configDraft) {
+                      const save = await postJson('/api/site', configDraft);
+                      if (!save.res.ok) {
+                        const detail = String(save?.data?.detail || save?.data?.error || '').trim();
+                        throw new Error(detail || 'Failed to save draft before publish.');
+                      }
+                    }
+
+                    // Then call publish endpoint
+                    const res = await fetch('/api/site/publish', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ handle: cleanHandle })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.ok) {
+                      setErr(data.error || 'Failed to publish site.');
+                    } else {
+                      setPreviewOn(true);
+                      try {
+                        if (typeof window !== "undefined") {
+                          try {
+                            // ensure latest draft is saved locally so preview shows current state
+                            if (configDraft) localStorage.setItem(storageKey(cleanHandle), JSON.stringify(configDraft));
+                          } catch {}
+                          const url = `${window.location.origin}/u/${cleanHandle}?preview=1`;
+                          window.open(url, "_blank");
+                        }
+                      } catch {}
+                      router.push(`/u/${cleanHandle}?published=1`);
+                    }
+                  } catch (e) {
+                    setErr(typeof e === 'object' && e !== null && 'message' in e ? (e as any).message : 'Failed to publish site.');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/20 px-8 py-4 text-base font-semibold text-white transition-all shadow-lg shadow-emerald-500/25 hover:bg-emerald-500/30"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  ✨
+                </motion.div>
+                All done! Ready to go live
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  🚀
+                </motion.div>
+              </motion.button>
+            </div>
+              </>
+            )}
+
+          </div>
+
+          {/* RIGHT - Fixed Preview */}
+          <div 
+            className="hidden lg:block w-[500px] fixed right-[max(1rem,calc((100%-80rem)/2))] z-30"
+            style={{
+              top: '1rem',
+              height: 'calc(100vh - 2rem)',
+              overflowY: 'auto'
+            }}
+          >
+            <div className="space-y-4 pr-4">
+            
+            {/* Live Preview - Always visible and sticky */}
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4 relative overflow-hidden lg:h-fit">
+              {/* Animated background glow */}
+              <motion.div
+                className="absolute inset-0 opacity-30 pointer-events-none"
+                style={{
+                  background: "radial-gradient(circle at 50% 50%, rgba(34,211,238,0.15), transparent 70%)",
+                }}
+                animate={{
+                  opacity: [0.2, 0.4, 0.2],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+
+              <div className="flex items-center justify-between gap-3 relative z-10 mb-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <Sparkles className="h-4 w-4 text-cyan-400" />
+                  </motion.div>
+                  Live preview
                 </div>
-                <div className="text-[11px] text-white/70">
-                  Current: <span className="text-white/90">{appearance.preset || "custom"}</span>
+                
+                {/* Preview Controls */}
+                <div className="flex items-center gap-1.5">
+                  <motion.button
+                    type="button"
+                    onClick={randomizeTheme}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/30 backdrop-blur-xl px-2.5 py-1.5 text-xs font-semibold transition relative overflow-hidden"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(167,139,250,0.2), rgba(244,114,182,0.2))",
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Randomize style"
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, 180, 360] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Sparkles className="h-3 w-3" />
+                    </motion.div>
+                    🎲
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    onClick={() => setPreviewOn((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 backdrop-blur-xl px-2.5 py-1.5 text-xs font-semibold transition relative overflow-hidden"
+                    style={{
+                      background: previewOn
+                        ? "linear-gradient(135deg, rgba(34,211,238,0.25), rgba(52,211,153,0.25))"
+                        : "rgba(255,255,255,0.08)",
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Toggle preview"
+                  >
+                    <Smartphone className="h-3 w-3" />
+                    {previewOn ? "On" : "Off"}
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    onClick={() => setShowQr((v) => !v)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/8 backdrop-blur-xl px-2.5 py-1.5 text-xs font-semibold hover:bg-white/12 transition"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="QR code"
+                  >
+                    <QrCode className="h-3 w-3" />
+                    QR
+                  </motion.button>
                 </div>
+                <motion.div 
+                  className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[10px] text-cyan-200"
+                  animate={previewOn ? {
+                    boxShadow: ["0 0 8px rgba(34,211,238,0.2)", "0 0 16px rgba(34,211,238,0.4)", "0 0 8px rgba(34,211,238,0.2)"],
+                  } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <motion.div
+                    className="w-1.5 h-1.5 rounded-full bg-cyan-400"
+                    animate={previewOn ? { scale: [1, 1.3, 1], opacity: [1, 0.7, 1] } : {}}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                  {previewOn ? "Live" : "Paused"}
+                </motion.div>
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {/* Phone frame */}
+              <div className="relative z-10">
+                <motion.div 
+                  className="rounded-[24px] p-0.5 relative"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3), rgba(244,114,182,0.3))",
+                  }}
+                >
+                  <div className="rounded-[22px] border border-white/12 bg-black/80 p-1.5">
+                    <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black shadow-2xl">
+                      {/* Phone header bar */}
+                      <div className="flex items-center justify-between px-3 py-2 text-[10px] text-white/80 border-b border-white/10 bg-gradient-to-r from-black/90 via-black/70 to-black/90">
+                        <span className="inline-flex items-center gap-1.5 truncate">
+                          <Sparkles className="h-3 w-3 text-cyan-400" />
+                          <span className="font-medium truncate max-w-[120px]">{brandName || "Your Store"}</span>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <motion.div
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: previewOn ? "#34d399" : "#6b7280" }}
+                            animate={previewOn ? { scale: [1, 1.2, 1] } : {}}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          />
+                          <span className="text-white/50 text-[9px]">{previewOn ? "live" : "off"}</span>
+                        </div>
+                      </div>
+
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
+
+                      {previewOn ? (
+                        <motion.div
+                          key={`preview-${mode}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="relative mx-auto w-full h-[600px] overflow-hidden"
+                        >
+                          {/* Phone frame with glass effect */}
+                          <div className="rounded-[28px] border border-white/12 bg-black/45 p-3 h-full">
+                            <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col">
+                              {/* Header bar */}
+                              <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
+                                <span className="inline-flex items-center gap-2">
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  Live • {mode}
+                                </span>
+                                <span className="text-white/60">{brandName || "Brand basics"}</span>
+                              </div>
+
+                              {/* Screen content - scrollable */}
+                              <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
+                                {/* Header - conditional hero vs minimal */}
+                                {headerStyle === "hero" ? (
+                                  <motion.div
+                                    key={`hero-${mode}`}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="relative h-40 overflow-hidden"
+                                    style={{
+                                      background: headerBg,
+                                    }}
+                                  >
+                                  {/* Shimmer overlay */}
+                                  <motion.div
+                                    className="absolute inset-0"
+                                    style={{
+                                      background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)`,
+                                    }}
+                                    animate={{
+                                      x: ["-100%", "200%"],
+                                    }}
+                                    transition={{
+                                      duration: 3,
+                                      repeat: Infinity,
+                                      ease: "linear",
+                                      repeatDelay: 1,
+                                    }}
+                                  />
+
+                                  {/* Logo - centered top */}
+                                  <div className="absolute top-0 left-0 right-0 flex justify-center pt-1">
+                                    <motion.div
+                                      initial={{ scale: 0.8, opacity: 0, y: -10 }}
+                                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                                      transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+                                      className={cn(
+                                        "h-20 w-20 border-2 border-white/30 bg-black/40 backdrop-blur-sm grid place-items-center overflow-hidden shadow-xl",
+                                        logoRound
+                                      )}
+                                      style={{
+                                        boxShadow: "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1) inset"
+                                      }}
+                                    >
+                                      {brandLogo ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={brandLogo}
+                                          alt="Logo"
+                                          className={cn(
+                                            "h-full w-full",
+                                            logoFit === "cover" ? "object-cover" : "object-contain p-2"
+                                          )}
+                                        />
+                                      ) : (
+                                        <Sparkles className="h-8 w-8 text-white/70" />
+                                      )}
+                                    </motion.div>
+                                  </div>
+
+                                  {/* Brand name & tagline */}
+                                  <div className="absolute bottom-1.5 left-3 right-3 text-center">
+                                    <motion.h2
+                                      initial={{ y: 10, opacity: 0 }}
+                                      animate={{ y: 0, opacity: 1 }}
+                                      transition={{ delay: 0.2 }}
+                                      className="text-xl font-bold text-white mb-0.5 truncate drop-shadow-lg"
+                                    >
+                                      {brandName || "Your Brand"}
+                                    </motion.h2>
+                                    <motion.p
+                                      initial={{ y: 10, opacity: 0 }}
+                                      animate={{ y: 0, opacity: 1 }}
+                                      transition={{ delay: 0.3 }}
+                                      className="text-white/90 text-sm font-medium truncate drop-shadow"
+                                    >
+                                      {tagline || "Your tagline here"}
+                                    </motion.p>
+                                  </div>
+                                </motion.div>
+                                ) : (
+                                  <motion.div
+                                    key={`minimal-${mode}`}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white"
+                                  >
+                                    <div
+                                      className={cn(
+                                        "h-12 w-12 border border-gray-200 bg-gray-50 grid place-items-center overflow-hidden shadow-sm",
+                                        logoRound
+                                      )}
+                                    >
+                                      {brandLogo ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                          src={brandLogo}
+                                          alt="Logo"
+                                          className={cn(
+                                            "h-full w-full",
+                                            logoFit === "cover" ? "object-cover" : "object-contain p-1.5"
+                                          )}
+                                        />
+                                      ) : (
+                                        <Sparkles className="h-5 w-5 text-gray-400" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h2 className="text-base font-bold text-gray-900 truncate">
+                                        {brandName || "Your Brand"}
+                                      </h2>
+                                      <p className="text-xs text-gray-500 truncate">
+                                        {tagline || "Your tagline here"}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                )}
+
+                                {/* Items list */}
+                                <div className="px-3 pb-4 space-y-2.5 bg-gradient-to-b from-gray-50 to-white">
+                                  <motion.div
+                                    key={`list-${mode}-${appearance.layout || "cards"}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                  >
+                                    <div className="flex items-center justify-between pt-3 pb-2">
+                                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                                        {mode === "services"
+                                          ? "⚡ Services"
+                                          : mode === "products"
+                                            ? "🔥 Items"
+                                            : "💎 Digital"}
+                                      </h3>
+                                      <span className="text-[9px] text-gray-500 font-medium">{items.length} items</span>
+                                    </div>
+
+                                    {/* Tiles layout - 2 column grid */}
+                                    {(appearance.layout || "cards") === "tiles" ? (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {items.slice(0, 4).map((item, idx) => (
+                                          <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: 0.5 + idx * 0.1 }}
+                                            className="overflow-hidden border shadow-sm hover:shadow-md transition-all group relative"
+                                            style={{
+                                              borderRadius: `${cardRadius}px`,
+                                              borderColor: `${accentSolid}40`,
+                                              background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                                            }}
+                                          >
+                                            {/* Item Image or Icon */}
+                                            <div className="relative h-16 overflow-hidden bg-gray-100">
+                                              {item.image ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                              ) : (
+                                                <motion.div
+                                                  className="relative w-full h-full flex items-center justify-center text-lg relative overflow-hidden"
+                                                  style={{
+                                                    background: `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})`,
+                                                  }}
+                                                  whileHover={{ scale: 1.05 }}
+                                                  transition={{ duration: 0.2 }}
+                                                >
+                                                  {/* Shimmer */}
+                                                  <motion.div
+                                                    className="absolute inset-0"
+                                                    style={{
+                                                      background: `linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)`,
+                                                    }}
+                                                    animate={{
+                                                      x: ["-100%", "200%"],
+                                                    }}
+                                                    transition={{
+                                                      duration: 2,
+                                                      repeat: Infinity,
+                                                      ease: "linear",
+                                                    }}
+                                                  />
+                                                  <div className="text-white relative z-10">
+                                                    {mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}
+                                                  </div>
+                                                </motion.div>
+                                              )}
+                                              
+                                              {/* Badge */}
+                                              {item.badge && item.badge !== "none" && (
+                                                <motion.div
+                                                  initial={{ scale: 0.8, opacity: 0 }}
+                                                  animate={{ scale: 1, opacity: 1 }}
+                                                  className="absolute top-1 right-1 rounded px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wide shadow-lg"
+                                                  style={{
+                                                    background: item.badge === "popular" 
+                                                      ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #fa8231 100%)"
+                                                      : "linear-gradient(135deg, #ffd32a 0%, #ff9f1a 50%, #f39c12 100%)",
+                                                    color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                                  }}
+                                                >
+                                                  {item.badge === "popular" ? "🔥" : "⚡"}
+                                                </motion.div>
+                                              )}
+                                            </div>
+
+                                            <div className="p-2">
+                                              <div className="text-[10px] font-bold text-gray-900 truncate mb-1">{item.title || "Item"}</div>
+                                              <div className="text-[9px] font-bold mb-1.5" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                              <button
+                                                className="w-full py-1 text-[8px] font-bold relative overflow-hidden"
+                                                style={{
+                                                  backgroundColor: ctaBg,
+                                                  color: ctaFg,
+                                                  borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                                                }}
+                                              >
+                                                {shine && (
+                                                  <span
+                                                    className="pointer-events-none absolute inset-0"
+                                                    style={{
+                                                      background: "linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.45) 40%, rgba(255,255,255,0.0) 70%)",
+                                                      transform: "translateX(-70%)",
+                                                      animation: "piqoShine 2.6s ease-in-out infinite",
+                                                    }}
+                                                  />
+                                                )}
+                                                <span className="relative">
+                                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                                </span>
+                                              </button>
+                                            </div>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                    ) : (appearance.layout || "cards") === "menu" ? (
+                                      /* Menu layout - compact rows */
+                                      <div className="space-y-1.5">
+                                        {items.slice(0, 3).map((item, idx) => (
+                                          <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.5 + idx * 0.1 }}
+                                            className="flex items-center justify-between p-2 border hover:shadow-sm transition-all group"
+                                            style={{
+                                              borderRadius: `${cardRadius}px`,
+                                              borderColor: `${accentSolid}40`,
+                                              background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                                            }}
+                                          >
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-[10px] font-bold text-gray-900 truncate">{item.title || "Item"}</div>
+                                              {item.note && <div className="text-[8px] text-gray-600 truncate mt-0.5">{item.note}</div>}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <div className="text-[10px] font-bold" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                              <button
+                                                className="px-2 py-1 text-[8px] font-bold relative overflow-hidden"
+                                                style={{
+                                                  backgroundColor: ctaBg,
+                                                  color: ctaFg,
+                                                  borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                                                }}
+                                              >
+                                                {shine && (
+                                                  <span
+                                                    className="pointer-events-none absolute inset-0"
+                                                    style={{
+                                                      background: "linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.45) 40%, rgba(255,255,255,0.0) 70%)",
+                                                      transform: "translateX(-70%)",
+                                                      animation: "piqoShine 2.6s ease-in-out infinite",
+                                                    }}
+                                                  />
+                                                )}
+                                                <span className="relative">
+                                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                                </span>
+                                              </button>
+                                            </div>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      /* Cards layout - default */
+                                      <>
+                                        {items.slice(0, 3).map((item, idx) => (
+                                      <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.5 + idx * 0.1 }}
+                                        className="mb-2 overflow-hidden border shadow-sm hover:shadow-md transition-all group relative"
+                                        style={{
+                                          borderRadius: `${cardRadius}px`,
+                                          borderColor: `${accentSolid}40`,
+                                          background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                                        }}
+                                      >
+                                        <div className="flex gap-2 p-2 relative z-10">
+                                          {/* Item image or icon */}
+                                          <motion.div
+                                            className="w-14 h-14 rounded-lg flex-shrink-0 relative overflow-hidden shadow-sm"
+                                            style={{
+                                              background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})`,
+                                            }}
+                                            whileHover={{ scale: 1.05 }}
+                                            transition={{ duration: 0.2 }}
+                                          >
+                                            {item.image ? (
+                                              // eslint-disable-next-line @next/next/no-img-element
+                                              <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                            ) : (
+                                              <>
+                                                {/* Shimmer */}
+                                                <motion.div
+                                                  className="absolute inset-0"
+                                                  style={{
+                                                    background: `linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)`,
+                                                  }}
+                                                  animate={{
+                                                    x: ["-100%", "200%"],
+                                                  }}
+                                                  transition={{
+                                                    duration: 2,
+                                                    repeat: Infinity,
+                                                    ease: "linear",
+                                                  }}
+                                                />
+                                                <div className="w-full h-full flex items-center justify-center text-xl relative z-10">
+                                                  {mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}
+                                                </div>
+                                              </>
+                                            )}
+                                          </motion.div>
+                                          
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between mb-0.5 gap-1">
+                                              <div className="flex items-center gap-1.5 min-w-0">
+                                                <h4 className="font-bold text-gray-900 text-xs leading-tight truncate">
+                                                  {item.title || "Item"}
+                                                </h4>
+                                                {item.badge && item.badge !== "none" && (
+                                                  <motion.span
+                                                    initial={{ scale: 0.8, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide flex-shrink-0 shadow-lg relative overflow-hidden"
+                                                    style={{
+                                                      background: item.badge === "popular" 
+                                                        ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #fa8231 100%)"
+                                                        : "linear-gradient(135deg, #ffd32a 0%, #ff9f1a 50%, #f39c12 100%)",
+                                                      color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                                      boxShadow: item.badge === "popular"
+                                                        ? "0 2px 8px rgba(238, 90, 36, 0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
+                                                        : "0 2px 8px rgba(255, 159, 26, 0.5), inset 0 1px 0 rgba(255,255,255,0.4)",
+                                                    }}
+                                                  >
+                                                    <span className="relative z-10 flex items-center gap-0.5">
+                                                      {item.badge === "popular" ? "🔥" : "⚡"} {item.badge === "popular" ? "Hot" : "New"}
+                                                    </span>
+                                                  </motion.span>
+                                                )}
+                                              </div>
+                                              <span
+                                                className="font-bold text-xs flex-shrink-0"
+                                                style={{ color: accentSolid }}
+                                              >
+                                                {item.price || "$0"}
+                                              </span>
+                                            </div>
+                                            <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
+                                              {mode === "services" ? "60 min • Book online" : item.note || "Details here"}
+                                            </p>
+                                            <motion.button
+                                              className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden"
+                                              style={{
+                                                background: ctaBg,
+                                                color: ctaFg,
+                                                borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
+                                              }}
+                                              whileHover={{ scale: 1.05 }}
+                                              whileTap={{ scale: 0.95 }}
+                                            >
+                                              {shine && (
+                                              <motion.div
+                                                className="absolute inset-0"
+                                                style={{
+                                                  background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)`,
+                                                }}
+                                                animate={{
+                                                  x: ["-100%", "200%"],
+                                                }}
+                                                transition={{
+                                                  duration: 1.5,
+                                                  repeat: Infinity,
+                                                  ease: "linear",
+                                                }}
+                                              />
+                                              )}
+                                              <span className="relative z-10">
+                                                {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                              </span>
+                                            </motion.button>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    ))}</>
+                                    )}
+                                  </motion.div>
+
+                                  {/* Social + Contact Buttons Section - for all modes */}
+                                  {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address) && (
+                                    <div className="px-3 pb-3 bg-gray-50">
+                                      <div className="pt-3 pb-2">
+                                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                                          📞 Get in Touch
+                                        </h3>
+                                      </div>
+                                      
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {social.instagram && (
+                                          <button 
+                                            className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[8px] font-bold"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                                          >
+                                            📷 Instagram
+                                          </button>
+                                        )}
+                                        {social.tiktok && (
+                                          <button 
+                                            className="flex items-center gap-1 px-2 py-1 bg-black text-white text-[8px] font-bold"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                                          >
+                                            🎵 TikTok
+                                          </button>
+                                        )}
+                                        {social.website && (
+                                          <button 
+                                            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                                          >
+                                            🌐 Website
+                                          </button>
+                                        )}
+                                        {social.phone && (
+                                          <button 
+                                            className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                                          >
+                                            📞 Call
+                                          </button>
+                                        )}
+                                        {social.address && (
+                                          <button 
+                                            className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                                          >
+                                            📍 Directions
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Staff/Team Section - only for services */}
+                                  {mode === "services" && (appearance.showStaff ?? true) && staffProfiles.length > 0 && (
+                                    <div className="px-3 pb-4 bg-gradient-to-b from-white to-gray-50">
+                                      <div className="flex items-center justify-between pt-3 pb-2">
+                                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                                          👥 Our Team
+                                        </h3>
+                                        <span className="text-[9px] text-gray-500 font-medium">{staffProfiles.length} staff</span>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                        {staffProfiles.slice(0, 2).map((staff, idx) => (
+                                          <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.6 + idx * 0.1 }}
+                                            className="rounded-lg border p-2 bg-white shadow-sm"
+                                            style={{
+                                              borderRadius: `${cardRadius}px`,
+                                              borderColor: `${appearance.accent || "#22D3EE"}30`,
+                                            }}
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div 
+                                                className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-xs"
+                                                style={{ background: accentSolid }}
+                                              >
+                                                {staff.name.charAt(0)}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-[10px] font-bold text-gray-900 truncate">{staff.name}</span>
+                                                  <span className="text-[8px] text-yellow-600">⭐ {staff.rating}</span>
+                                                </div>
+                                                <div className="text-[8px] text-gray-600 truncate">{staff.role} • {staff.specialties.slice(0, 2).join(", ")}</div>
+                                              </div>
+                                              <button
+                                                className="px-2 py-1 text-[8px] font-bold text-white"
+                                                style={{ 
+                                                  backgroundColor: accentSolid,
+                                                  borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                                                }}
+                                              >
+                                                Book
+                                              </button>
+                                            </div>
+                                          </motion.div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Business Hours Section - optional for all modes */}
+                                  {(appearance.showHours ?? false) && (
+                                    <div className="px-3 pb-3 bg-gray-50">
+                                      <div className="pt-3 pb-2">
+                                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                                          🕐 Hours
+                                        </h3>
+                                      </div>
+                                      
+                                      <div className="space-y-1">
+                                        {/* Show enabled weekdays */}
+                                        {Object.entries(availability.days)
+                                          .filter(([_, day]) => day.enabled)
+                                          .slice(0, 3)
+                                          .length > 0 ? (
+                                            Object.entries(availability.days)
+                                              .filter(([_, day]) => day.enabled)
+                                              .slice(0, 3)
+                                              .map(([dayId, day], idx) => (
+                                                <div key={dayId} className="flex justify-between items-center text-[9px]">
+                                                  <span className="text-gray-700 font-semibold capitalize">
+                                                    {dayId === 'tue' ? 'Tue' : dayId === 'thu' ? 'Thu' : dayId.charAt(0).toUpperCase() + dayId.slice(1)}
+                                                  </span>
+                                                  <span className="text-gray-600">
+                                                    {day.start} - {day.end}
+                                                  </span>
+                                                </div>
+                                              ))
+                                        ) : (
+                                          <div className="flex justify-between items-center text-[9px]">
+                                            <span className="text-gray-700 font-semibold">Hours</span>
+                                            <span className="text-gray-500">Set in Details tab</span>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Show relevant info based on mode */}
+                                        <div className="flex justify-between items-center text-[8px] pt-1 border-t border-gray-200">
+                                          <span className="text-gray-500">
+                                            {mode === "services" 
+                                              ? `${availability.slotMinutes}min slots • ${availability.advanceDays} days ahead`
+                                              : `Open ${availability.advanceDays} days a week`
+                                            }
+                                          </span>
+                                          <span 
+                                            className="px-1.5 py-0.5 bg-green-100 text-green-700 font-bold rounded"
+                                            style={{ borderRadius: `${Math.min(cardRadius * 0.3, 4)}px` }}
+                                          >
+                                            {mode === "services" ? "BOOKABLE" : "OPEN"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Powered by Piqo Footer */}
+                                  {(appearance.showPoweredBy ?? true) && (
+                                    <div className="px-3 py-2 bg-gray-100 text-center">
+                                      <div className="text-[8px] text-gray-500 font-medium">
+                                        Powered by{" "}
+                                        <span className="font-bold text-gray-700">Piqo</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="grid h-[600px] place-items-center p-4 text-center bg-gradient-to-b from-black via-gray-900/50 to-black">
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            <motion.div 
+                              className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200"
+                              animate={{
+                                boxShadow: ["0 0 10px rgba(34,211,238,0.2)", "0 0 20px rgba(34,211,238,0.3)", "0 0 10px rgba(34,211,238,0.2)"],
+                              }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              Live demo ready
+                            </motion.div>
+                            <div className="mt-3 text-base font-semibold text-white/90">
+                              Preview paused
+                            </div>
+                            <div className="mt-2 text-xs text-white/50 max-w-[200px] mx-auto">
+                              Turn preview on to see your store come to life as you build
+                            </div>
+                            
+                            {/* Skeleton items */}
+                            <div className="mt-6 space-y-2 max-w-[200px] mx-auto">
+                              {[1, 2, 3].map((i) => (
+                                <motion.div
+                                  key={i}
+                                  className="rounded-xl border border-white/8 bg-white/5 p-2"
+                                  animate={{ opacity: [0.3, 0.5, 0.3] }}
+                                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.15 }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20" />
+                                    <div className="flex-1 space-y-1.5">
+                                      <div className="h-2 bg-white/10 rounded-full w-3/4" />
+                                      <div className="h-1.5 bg-white/5 rounded-full w-1/2" />
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              <div className="mt-3 text-center text-[10px] text-white/50 relative z-10">
+                {previewOn ? (
+                  <span>Live preview • <span className="text-cyan-300/70">{mode}</span> store</span>
+                ) : (
+                  "Turn on preview to see live updates"
+                )}
+              </div>
+            </section>
+
+            {/* Quick Style Presets - Compact */}
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <Palette className="h-4 w-4 text-purple-400" />
+                  Quick styles
+                </div>
+                <button
+                  type="button"
+                  onClick={randomizeTheme}
+                  className="text-[10px] text-cyan-300 hover:text-cyan-200 transition"
+                >
+                  🎲 Random
+                </button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-1.5">
                 {PRESETS.map((p) => {
                   const selected = appearance.preset === p.id;
                   return (
@@ -1912,267 +3737,51 @@ async function startStripeConnect() {
                       key={p.id}
                       onClick={() => applyPreset(p.id)}
                       className={cn(
-                        "rounded-2xl border p-4 text-left transition",
-                        selected ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
+                        "rounded-xl border p-2 text-center transition",
+                        selected ? "border-white/35 bg-white/12" : "border-white/10 bg-black/30 hover:bg-white/8"
                       )}
+                      title={p.name}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-semibold text-white/90">{p.name}</div>
-                        <div className="h-3.5 w-3.5 rounded-full border border-white/25" style={{ background: p.accent }} />
-                      </div>
-                      <div className="mt-1 text-xs text-white/80">{p.desc}</div>
+                      <div className="h-4 w-4 mx-auto rounded-full border border-white/20" style={{ background: p.accent }} />
+                      <div className="mt-1 text-[9px] text-white/70 truncate">{p.name.split(" ")[0]}</div>
                     </button>
                   );
                 })}
               </div>
             </section>
 
-            {/* Items */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white/90">Items</div>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-xs font-semibold hover:bg-white/12 transition"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add item
-                </button>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                {items.map((it, idx) => (
-                  <div key={idx} className="rounded-2xl border border-white/12 bg-black/30 p-4">
-                    <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-                      <input
-                        value={it.title}
-                        onChange={(e) => updateItem(idx, { title: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Item title"
-                      />
-                      <input
-                        value={it.price}
-                        onChange={(e) => updateItem(idx, { price: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="$35"
-                      />
-                      <input
-                        value={it.note || ""}
-                        onChange={(e) => updateItem(idx, { note: e.target.value })}
-                        className="sm:col-span-2 rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Optional note (duration, details, etc.)"
-                      />
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                      <div className="inline-flex items-center gap-2 text-[11px] text-white/70">
-                        <BadgeCheck className="h-4 w-4" />
-                        Badge
-                      </div>
-                      <div className="flex gap-2">
-                        {(["none", "popular", "limited"] as ItemBadge[]).map((b) => {
-                          const on = (it.badge || "none") === b;
-                          return (
-                            <button
-                              key={b}
-                              type="button"
-                              onClick={() => updateItem(idx, { badge: b })}
-                              className={cn(
-                                "rounded-full border px-3 py-1 text-[11px] font-semibold transition",
-                                on
-                                  ? "border-white/30 bg-white/12 text-white/90"
-                                  : "border-white/12 bg-black/30 text-white/75 hover:bg-white/10"
-                              )}
-                            >
-                              {b === "none" ? "None" : b === "popular" ? "Popular" : "Limited"}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-xs font-semibold hover:bg-white/12 transition"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Staff */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <Users className="h-4 w-4" />
-                  Team / Staff (optional)
-                </div>
-
-                <button
-                  type="button"
-                  onClick={addStaff}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-xs font-semibold hover:bg-white/12 transition"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add person
-                </button>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                {staffProfiles.map((s, idx) => (
-                  <div key={idx} className="rounded-2xl border border-white/12 bg-black/30 p-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <input
-                        value={s.name}
-                        onChange={(e) => updateStaff(idx, { name: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Name"
-                      />
-                      <input
-                        value={s.role}
-                        onChange={(e) => updateStaff(idx, { role: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Role"
-                      />
-                      <input
-                        value={s.rating}
-                        onChange={(e) => updateStaff(idx, { rating: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Rating (ex 4.9)"
-                      />
-                      <input
-                        value={s.bio}
-                        onChange={(e) => updateStaff(idx, { bio: e.target.value })}
-                        className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
-                        placeholder="Short bio"
-                      />
-                    </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeStaff(idx)}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-xs font-semibold hover:bg-white/12 transition"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-3 text-[11px] text-white/70">If you don’t want staff, you can leave this empty.</div>
-            </section>
-
-            {/* Generate */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
+            {/* Generate Button - Always visible */}
+            <section className="rounded-3xl border border-white/12 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl p-4">
               <button
                 type="button"
                 onClick={onGenerate}
-                disabled={saving}
+                disabled={saving || !cleanHandle}
                 className={cn(
-                  "inline-flex w-full items-center justify-center rounded-2xl px-4 py-4 text-sm font-semibold text-black transition active:scale-[0.99]",
-                  saving ? "bg-white/80" : "bg-white hover:bg-white/90"
+                  "inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99]",
+                  saving || !cleanHandle
+                    ? "bg-white/50 text-black/50 cursor-not-allowed"
+                    : "bg-white text-black hover:bg-white/90 shadow-lg shadow-white/20"
                 )}
               >
-                {saving ? "Generating..." : "Generate my app"}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {saving ? (
+                  <>Generating...</>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4" />
+                    Go live
+                  </>
+                )}
               </button>
-
-              <div className="mt-3 text-center text-[11px] text-white/70">
-                Saves your config + opens your live link at{" "}
-                <span className="text-white/90">/u/{cleanHandle || "handle"}</span>.
+              <div className="mt-2 text-center text-[10px] text-white/50">
+                {cleanHandle ? (
+                  <>Publish to <span className="text-white/70">/u/{cleanHandle}</span></>
+                ) : (
+                  "Add a handle to publish"
+                )}
               </div>
             </section>
+            </div>
           </div>
-
-          {/* RIGHT */}
-          <aside className="space-y-6">
-            {/* Live Preview */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-white/90">Live preview</div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1 text-[11px] text-white/85">
-                  <Smartphone className="h-3.5 w-3.5" />
-                  {previewOn ? "Updating" : "Paused"}
-                </div>
-              </div>
-
-              <div className="mt-2 text-xs text-white/80 break-all">
-                {cleanHandle ? `Previewing /u/${cleanHandle}` : "Pick a handle to preview"}
-              </div>
-
-              <div className="mt-4 rounded-[28px] border border-white/12 bg-black/45 p-3">
-                <div className="mx-auto w-full max-w-[380px]">
-                  <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black">
-                    <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70">
-                      <span className="inline-flex items-center gap-2">
-                        <Smartphone className="h-3.5 w-3.5" />
-                        Scanly preview
-                      </span>
-                      <span className="text-white/60">{previewOn ? "live" : "paused"}</span>
-                    </div>
-
-                    {previewOn && cleanHandle ? (
-                      <iframe
-                        key={previewUrl}
-                        src={previewUrl}
-                        className="h-[560px] w-full"
-                        style={{ border: "none" }}
-                        title="Scanly Preview"
-                      />
-                    ) : (
-                      <div className="grid h-[560px] place-items-center p-6 text-center">
-                        <div>
-                          <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 backdrop-blur-xl px-3 py-1 text-xs text-white/85">
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Preview ready
-                          </div>
-                          <div className="mt-3 text-lg font-semibold text-white/90">
-                            {cleanHandle ? "Preview paused" : "Add a handle to preview"}
-                          </div>
-                          <div className="mt-2 text-sm text-white/80">
-                            {cleanHandle
-                              ? "Turn Preview on to see changes update instantly."
-                              : "Type a handle on the left and your mini-app will appear here."}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-3 text-[11px] text-white/70">
-                    This preview uses the draft saved in localStorage — instant feel.
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* QR */}
-            {showQr ? (
-              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-                <div className="text-sm font-semibold text-white/90">QR preview</div>
-                <div className="mt-2 text-xs text-white/80 break-all">{publicUrl}</div>
-
-                <div className="mt-4 rounded-2xl border border-white/12 bg-black/30 p-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={qrUrl} alt="QR preview" className="h-auto w-full rounded-xl" />
-                </div>
-
-                <div className="mt-3 text-[11px] text-white/70">
-                  This QR points to <span className="text-white/90">/u/{cleanHandle || "handle"}</span>.
-                </div>
-              </section>
-            ) : null}
-          </aside>
         </div>
       </div>
     </main>

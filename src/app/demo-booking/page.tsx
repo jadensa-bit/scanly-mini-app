@@ -50,17 +50,33 @@ export default function DemoBooking() {
     []
   );
 
+
   const [selected, setSelected] = useState<Item | null>(null);
   const [step, setStep] = useState<"browse" | "confirm" | "success">("browse");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+
+  // Demo: generate available slots for today (9am–6pm, 30 min slots)
+  const availableSlots = useMemo(() => {
+    const slots: string[] = [];
+    const startHour = 9;
+    const endHour = 18;
+    for (let h = startHour; h < endHour; h++) {
+      slots.push(`${h}:00`);
+      slots.push(`${h}:30`);
+    }
+    return slots;
+  }, []);
 
   const openConfirm = (it: Item) => {
     setSelected(it);
     setStep("confirm");
+    setSelectedTime("");
   };
 
   const reset = () => {
     setSelected(null);
     setStep("browse");
+    setSelectedTime("");
   };
 
   return (
@@ -278,6 +294,26 @@ export default function DemoBooking() {
                         {selected.title} • <span className="font-semibold text-white">{selected.price}</span>
                       </div>
 
+                      {/* Time slot picker */}
+                      <div className="mt-4">
+                        <div className="text-xs text-white/80 mb-2">Pick a time slot</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {availableSlots.map((slot) => (
+                            <button
+                              key={slot}
+                              type="button"
+                              className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${selectedTime === slot ? "bg-cyan-500/30 border-cyan-500 text-white" : "bg-white/5 border-white/15 text-white/80 hover:bg-cyan-500/10"}`}
+                              onClick={() => setSelectedTime(slot)}
+                            >
+                              {slot}
+                            </button>
+                          ))}
+                        </div>
+                        {!selectedTime && (
+                          <div className="mt-2 text-xs text-red-400">Please select a time slot.</div>
+                        )}
+                      </div>
+
                       <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
                         <div className="flex items-center gap-2 text-xs text-white/60">
                           <CalendarClock className="h-4 w-4" />
@@ -289,8 +325,9 @@ export default function DemoBooking() {
                       </div>
 
                       <button
-                        onClick={() => setStep("success")}
-                        className="mt-3 w-full rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90 transition"
+                        onClick={() => selectedTime && setStep("success")}
+                        className={`mt-3 w-full rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black transition ${selectedTime ? "hover:bg-white/90" : "opacity-50 cursor-not-allowed"}`}
+                        disabled={!selectedTime}
                       >
                         Pay deposit (demo)
                       </button>

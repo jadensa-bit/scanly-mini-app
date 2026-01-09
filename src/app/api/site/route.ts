@@ -103,6 +103,15 @@ async function upsertSite(supabase: any, handle: string, config: any) {
   };
 
   for (const table of TABLE_CANDIDATES) {
+    // preserve existing stripe_account_id if present on the existing row
+    try {
+      const { data: existing, error: selErr } = await supabase.from(table).select("stripe_account_id").eq("handle", handle).maybeSingle();
+      if (!selErr && existing && existing.stripe_account_id) {
+        // attach existing stripe_account_id so upsert won't wipe it
+        // @ts-ignore
+        payload.stripe_account_id = existing.stripe_account_id;
+      }
+    } catch {}
     const { data, error } = await supabase
       .from(table)
       .upsert(payload, { onConflict: "handle" })

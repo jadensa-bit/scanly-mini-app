@@ -35,6 +35,7 @@ type CtaStyle = "accent" | "white";
 type BuildItem = {
   title: string;
   price: string;
+  image?: string;
   note?: string;
   badge?: ItemBadge;
 };
@@ -119,7 +120,7 @@ function safeHandle(input: unknown) {
 }
 
 function storageKey(handle: string) {
-  return `scanly:site:${handle}`;
+  return `piqo:site:${handle}`;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -303,9 +304,11 @@ export default function HandlePage() {
       setLoading(true);
       setErr(null);
 
-      // Preview mode: draft-only
-      if (preview) {
-        const local = readLocal(handle);
+      // Preview or immediate-publish mode: use local draft so edits show live
+      const local = readLocal(handle);
+
+      // If preview or published query is present prefer the local draft immediately
+      if (preview || published === "1") {
         if (!cancelled) {
           setCfg(local);
           setLoading(false);
@@ -321,6 +324,14 @@ export default function HandlePage() {
         if (out.res.ok) {
           const normalized = normalizeConfigFromApi(out.data);
           if (normalized) {
+            // If we have a local draft that's newer than the server copy, prefer local
+            if (local && local.createdAt && normalized.createdAt && local.createdAt > normalized.createdAt) {
+              setCfg(local);
+              setLoading(false);
+              writeLocal(handle, local);
+              return;
+            }
+
             setCfg(normalized);
             setLoading(false);
             writeLocal(handle, normalized);
@@ -328,8 +339,7 @@ export default function HandlePage() {
           }
         }
 
-        // Fallback: local draft
-        const local = readLocal(handle);
+        // Fallback: local draft (when server didn't return a usable config)
         if (local) {
           setCfg(local);
           setLoading(false);
@@ -397,13 +407,15 @@ export default function HandlePage() {
 
   const a = cfg?.appearance;
   const accent = a?.accent || "#22D3EE";
+  const accentMode = (a as any)?.accentMode || "solid";
+  const accentGradient = (a as any)?.accentGradient || a?.gradient || { c1: "#22D3EE", c2: "#A78BFA", angle: 135 };
 
   const bgMode: BgMode = a?.bgMode || "solid";
   const bgColor = a?.bgColor || "#000000";
   const bgType = a?.background || "glow";
   const bgImage = a?.bgImage || "";
   const bgOverlay = clamp(Number(a?.bgOverlay ?? 0.45), 0, 0.9);
-  const gradient = a?.gradient || { c1: "#22D3EE", c2: "#A78BFA", angle: 135 };
+  const gradient = a?.gradient || accentGradient;
 
   const layout: LayoutMode = a?.layout || "cards";
   const ctaStyle: CtaStyle = a?.ctaStyle || "accent";
@@ -482,8 +494,8 @@ export default function HandlePage() {
   const buttonTextColor =
     ctaStyle === "white" ? "#000000" : isLightHex(accent) ? "#000000" : "#0b0b0b";
 
-  const ctaBg = ctaStyle === "white" ? "#FFFFFF" : accent;
-  const ctaShadow = ctaStyle === "white" ? "rgba(255,255,255,0.12)" : hexToRgba(accent, 0.22);
+  const ctaBg = ctaStyle === "white" ? "#FFFFFF" : accentMode === "gradient" ? `linear-gradient(${Number(accentGradient.angle || 135)}deg, ${accentGradient.c1}, ${accentGradient.c2})` : accent;
+  const ctaShadow = ctaStyle === "white" ? "rgba(255,255,255,0.12)" : hexToRgba(accentMode === "gradient" ? (accentGradient?.c1 || accent) : accent, 0.22);
 
   // socials
   const social = cfg?.social;
@@ -541,6 +553,21 @@ export default function HandlePage() {
   }
 
   const logoRound = (a?.logoShape || "square") === "circle" ? "rounded-full" : "rounded-2xl";
+  const logoFit: "contain" | "cover" = (a as any)?.logoFit || "contain";
+
+  // Preview helper values (mirror create preview behavior)
+  const cardRadius = a?.radius || 16;
+  const accentSolid = accentMode === "gradient" ? (accentGradient?.c1 || "#22D3EE") : accent;
+  const headerBg =
+    accentMode === "gradient"
+      ? `linear-gradient(${Number(accentGradient.angle || 135)}deg, ${hexToRgba(
+          accentGradient.c1 || "#22D3EE",
+          0.18
+        )}, ${hexToRgba(accentGradient.c2 || "#A78BFA", 0.12)})`
+      : `linear-gradient(135deg, ${hexToRgba(accentSolid, 0.18)}, ${hexToRgba(gradient.c2 || "#A78BFA", 0.12)})`;
+  const previewFontFamily = fontFamily;
+  const ctaFg = buttonTextColor;
+  const shine = ctaShine;
 
   function ItemCard({ it, i }: { it: BuildItem; i: number }) {
     const badge = badgeLabel(it.badge);
@@ -577,7 +604,9 @@ export default function HandlePage() {
           <div className="font-semibold whitespace-nowrap">{it.price}</div>
         </div>
 
-        <button
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.985 }}
           onClick={() => startCheckout(it)}
           className={cn(
             "group relative mt-3 w-full px-4 py-3 text-sm font-semibold transition active:scale-[0.99] overflow-hidden",
@@ -589,24 +618,13 @@ export default function HandlePage() {
             boxShadow: `0 12px 38px ${ctaShadow}`,
           }}
         >
-          {ctaShine ? (
-            <span
-              className="pointer-events-none absolute inset-0 opacity-70 group-hover:opacity-95"
-              style={{
-                backgroundImage:
-                  "linear-gradient(120deg, rgba(255,255,255,0.00) 0%, rgba(255,255,255,0.25) 35%, rgba(255,255,255,0.00) 70%)",
-                animation: "scanlyShine 2.2s ease-in-out infinite",
-                transform: "translateX(-55%)",
-                mixBlendMode: "overlay",
-              }}
-            />
-          ) : null}
+          {ctaShine ? <span className="scanly-shine pointer-events-none absolute inset-0 opacity-70 group-hover:opacity-95" /> : null}
 
           <span className="relative">
             <CtaIcon />
             <CtaLabel />
           </span>
-        </button>
+        </motion.button>
       </motion.div>
     );
   }
@@ -671,9 +689,14 @@ export default function HandlePage() {
               className="rounded-2xl border border-white/10 bg-black/25 backdrop-blur-xl p-4"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold truncate">{p.name}</div>
-                  <div className="text-xs text-white/60 truncate">{p.role}</div>
+                <div className="min-w-0 flex items-center gap-3">
+                  {p.photo ? (
+                    <img src={p.photo} alt={p.name} className="h-10 w-10 rounded-full object-cover" />
+                  ) : null}
+                  <div>
+                    <div className="font-semibold truncate">{p.name}</div>
+                    <div className="text-xs text-white/60 truncate">{p.role}</div>
+                  </div>
                 </div>
                 <div className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[11px] text-white/80">
                   <Star className="h-3.5 w-3.5" />
@@ -705,13 +728,7 @@ export default function HandlePage() {
 
   return (
     <main className="min-h-screen text-white" style={{ fontFamily }}>
-      <style>{`
-        @keyframes scanlyShine {
-          0% { transform: translateX(-60%); }
-          55% { transform: translateX(110%); }
-          100% { transform: translateX(110%); }
-        }
-      `}</style>
+      
 
       <div className="fixed inset-0 pointer-events-none" style={bgStyle} />
 
@@ -755,7 +772,7 @@ export default function HandlePage() {
               <a
                 href={shareUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="rounded-2xl border border-white/12 bg-white/5 px-3 py-2 text-xs hover:bg-white/10 transition"
               >
                 <ExternalLink className="inline h-4 w-4 mr-1" />
@@ -775,6 +792,14 @@ export default function HandlePage() {
             )}
           >
             {banner.msg}
+          </div>
+        ) : null}
+
+        {cfg?.publishedAt ? (
+          <div className="mt-2 mb-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/8 px-3 py-1 text-xs text-emerald-100">
+              ✨ Published: {new Date(cfg.publishedAt).toLocaleString()}
+            </div>
           </div>
         ) : null}
 
@@ -802,105 +827,175 @@ export default function HandlePage() {
               </div>
             </div>
           ) : (
-            <>
-              {headerStyle === "minimal" ? (
-                <div className="mb-4 flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "grid h-11 w-11 place-items-center overflow-hidden border border-white/12 bg-black/30",
-                      logoRound
-                    )}
-                  >
-                    {cfg.brandLogo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cfg.brandLogo} alt="Logo" className="h-full w-full object-contain p-2" />
-                    ) : (
-                      <Sparkles className="h-5 w-5 text-white/70" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0">
-                    <h1 className="text-xl font-semibold truncate">{cfg.brandName}</h1>
-                    <p className="text-sm text-white/70 truncate">{cfg.tagline}</p>
-                  </div>
-
-                  <div className="ml-auto h-3 w-3 rounded-full border border-white/20" style={{ background: accent }} />
-                </div>
-              ) : (
-                <div className="mb-4">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={cn(
-                        "grid h-12 w-12 place-items-center overflow-hidden border border-white/12 bg-black/30",
-                        logoRound
-                      )}
-                    >
-                      {cfg.brandLogo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cfg.brandLogo} alt="Logo" className="h-full w-full object-contain p-2" />
-                      ) : (
-                        <Sparkles className="h-5 w-5 text-white/70" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="text-xs text-white/60 flex items-center gap-2">
-                        <Sparkles className="h-3 w-3" />
-                        {modeLabel(cfg.mode)}
+            <div>
+                {/* Full builder-style phone preview (from create preview) */}
+                <div className="relative overflow-hidden rounded-2xl border p-4 transform-gpu scale-100 md:scale-110" style={{ fontFamily: previewFontFamily }}>
+                  <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black/45 p-3">
+                    <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
+                        <span className="inline-flex items-center gap-2">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Live • {cfg.mode}
+                        </span>
+                        <span className="text-white/60">{cfg.brandName || "Brand basics"}</span>
                       </div>
-                      <h1 className="text-2xl font-semibold mt-2">{cfg.brandName}</h1>
-                      <p className="text-sm text-white/70">{cfg.tagline}</p>
-                    </div>
 
-                    <div className="ml-auto flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full border border-white/20" style={{ background: accent }} />
+                      {/* Screen content */}
+                      <div className="relative overflow-y-scroll flex-1" style={{ background: a?.bgColor || "#ffffff" }}>
+                        {/* Hero header */}
+                          <div className="relative h-52 overflow-hidden" style={{ background: headerBg }}>
+                          <div className="absolute top-1 left-0 right-0 flex justify-center">
+                            <div className={cn("relative h-24 w-24 md:h-28 md:w-28 grid place-items-center overflow-hidden border-2 bg-black/40", logoRound)} style={{ boxShadow: "0 12px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset" }}>
+                              {cfg.brandLogo ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <>
+                                  {logoFit === "cover" ? (
+                                    <img src={cfg.brandLogo} alt="Logo" className="h-full w-full object-cover" />
+                                  ) : (
+                                    <div className="h-full w-full p-2 flex items-center justify-center">
+                                      <img src={cfg.brandLogo} alt="Logo" className="max-h-full max-w-full object-contain" />
+                                    </div>
+                                  )}
+                                  <span className="scanly-shine pointer-events-none absolute inset-0 opacity-60" />
+                                </>
+                              ) : (
+                                <div className="relative">
+                                  <Sparkles className="h-9 w-9 text-white/80" />
+                                  <span className="scanly-shine pointer-events-none absolute inset-0 opacity-60" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* translucent overlay + animated accent bloom */}
+                          <div className="absolute inset-0 pointer-events-none">
+                            <div style={{ mixBlendMode: "screen" }} className="absolute inset-0 bg-gradient-to-b from-white/0 to-white/0" />
+                            <div className="absolute -left-24 -top-20 h-56 w-56 rounded-full" style={{ background: hexToRgba(accentSolid, 0.08), filter: "blur(28px)", transform: "translateZ(0)" }} />
+                            <div className="absolute -right-20 -bottom-16 h-48 w-48 rounded-full" style={{ background: hexToRgba(gradient.c2 || "#A78BFA", 0.06), filter: "blur(36px)", transform: "translateZ(0)" }} />
+                          </div>
+                            <div className="absolute bottom-3 left-3 right-3 text-center">
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-0.5 truncate">{cfg.brandName || "Your Brand"}</h2>
+                            <p className="text-white/90 text-base md:text-lg font-semibold truncate">{cfg.tagline || "Your tagline here"}</p>
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <div className="px-3 pb-4 space-y-2.5 bg-gradient-to-b from-gray-50 to-white">
+                          <div className="flex items-center justify-between pt-3 pb-2">
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{modeLabel(cfg.mode)}</h3>
+                            <span className="text-sm text-gray-500 font-medium">{cfg.items?.length || 0} items</span>
+                          </div>
+
+                          {(a?.layout || "cards") === "tiles" ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {cfg.items?.slice(0, 4).map((item, idx) => (
+                                <div key={idx} className="overflow-hidden border shadow-sm transition-all hover:shadow-lg hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
+                                  <div className="relative h-20 overflow-hidden bg-gray-100 flex items-center justify-center">
+                                    <div className="text-white relative z-10 text-xl">{cfg.mode === "services" ? "✂️" : cfg.mode === "products" ? "🛍️" : "⚡"}</div>
+                                  </div>
+                                  <div className="p-3">
+                                    <div className="text-sm font-bold text-gray-900 truncate mb-1">{item.title || "Item"}</div>
+                                    <div className="text-sm font-bold mb-1.5" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                    <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="w-full py-2 text-sm font-semibold transition-transform duration-150" style={{ backgroundColor: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (a?.layout || "cards") === "menu" ? (
+                            <div className="space-y-1.5">
+                              {cfg.items?.slice(0, 3).map((item, idx) => (
+                                  <div key={idx} className="flex items-center justify-between p-3 border transition-all hover:shadow-sm hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-bold text-gray-900 truncate">{item.title || "Item"}</div>
+                                    {item.note && <div className="text-sm text-gray-600 truncate mt-0.5">{item.note}</div>}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm font-bold" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                    <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="px-3 py-1.5 text-sm font-semibold transition-transform duration-150" style={{ backgroundColor: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              {cfg.items?.slice(0, 3).map((item, idx) => (
+                                  <div key={idx} className="mb-3 overflow-hidden border shadow-sm transition-all hover:shadow-lg hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
+                                  <div className="flex gap-3 p-3">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex-shrink-0 relative overflow-hidden" style={{ background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
+                                      <div className="w-full h-full flex items-center justify-center text-2xl relative z-10">{cfg.mode === "services" ? "✂️" : cfg.mode === "products" ? "🛍️" : "⚡"}</div>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between mb-0.5 gap-1">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <h4 className="font-bold text-gray-900 text-sm leading-tight truncate">{item.title || "Item"}</h4>
+                                        </div>
+                                        <span className="font-bold text-sm flex-shrink-0" style={{ color: accentSolid }}>{item.price || "$0"}</span>
+                                      </div>
+                                      <p className="text-sm text-gray-600 mb-1.5 leading-relaxed font-semibold">{item.note || (cfg.mode === "services" ? "60 min • Book online" : "Details here")}</p>
+                                      <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="w-full py-3 text-sm font-black transition-transform duration-150" style={{ background: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.6, 12)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {/* Socials */}
+                          {(a?.showSocials ?? true) && (social?.instagram || social?.tiktok || social?.website || social?.phone || social?.address) && (
+                            <div className="px-3 pb-3 bg-gray-50">
+                              <div className="pt-3 pb-2">
+                                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">📞 Get in Touch</h3>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {ig ? <a href={igUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 bg-pink-500 text-white text-[8px] font-bold rounded">📷 Instagram</a> : null}
+                                {tt ? <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 bg-black text-white text-[8px] font-bold rounded">🎵 TikTok</a> : null}
+                                {web ? <a href={web} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold rounded">🌐 Website</a> : null}
+                                {tel ? <a href={telUrl} className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold rounded">📞 Call</a> : null}
+                                {addr ? <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold rounded">📍 Directions</a> : null}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Staff */}
+                          {cfg.mode === "services" && (a?.showStaff ?? true) && cfg.staffProfiles && cfg.staffProfiles.length > 0 && (
+                            <div className="px-3 pb-4 bg-gradient-to-b from-white to-gray-50">
+                              <div className="flex items-center justify-between pt-3 pb-2">
+                                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">👥 Our Team</h3>
+                                <span className="text-[9px] text-gray-500 font-medium">{cfg.staffProfiles.length} staff</span>
+                              </div>
+                              <div className="space-y-2">
+                                {cfg.staffProfiles.slice(0, 2).map((staff, idx) => (
+                                  <div key={idx} className="rounded-lg border p-2 bg-white shadow-sm" style={{ borderRadius: `${cardRadius}px`, borderColor: `${a?.accent || "#22D3EE"}30` }}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ background: accentSolid }}>{staff.name.charAt(0)}</div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-[10px] font-bold text-gray-900 truncate">{staff.name}</span>
+                                          <span className="text-[8px] text-yellow-600">⭐ {staff.rating}</span>
+                                        </div>
+                                        <div className="text-[8px] text-gray-600 truncate">{staff.role} • {staff.specialties?.slice(0,2).join(", ")}</div>
+                                      </div>
+                                      <motion.button type="button" whileTap={{ scale: 0.985 }} className="px-2 py-1 text-[8px] font-bold text-white" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>Book</motion.button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Powered by */}
+                          {(a?.showPoweredBy ?? true) && (
+                            <div className="px-3 py-2 bg-gray-100 text-center">
+                              <div className="text-[8px] text-gray-500 font-medium">Powered by <span className="font-bold text-gray-700">Piqo</span></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-4 h-px w-full bg-white/10" />
                 </div>
-              )}
-
-              {cfg.items?.length ? (
-                <>
-                  {layout === "tiles" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {cfg.items.map((it, i) => (
-                        <ItemCard it={it} i={i} key={`${it.title}-${i}`} />
-                      ))}
-                    </div>
-                  ) : layout === "menu" ? (
-                    <div className="grid gap-2">
-                      {cfg.items.map((it, i) => (
-                        <ItemMenuRow it={it} i={i} key={`${it.title}-${i}`} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid gap-3">
-                      {cfg.items.map((it, i) => (
-                        <ItemCard it={it} i={i} key={`${it.title}-${i}`} />
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/70">
-                  No items yet.
-                </div>
-              )}
-
-              {cfg && showStaff ? <StaffSection /> : null}
-
-              {showPoweredBy ? (
-                <div className="mt-6 text-xs text-white/50 flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4" />
-                  Powered by Scanly
-                  {err ? <span className="ml-2 text-white/40">• {err}</span> : null}
-                </div>
-              ) : err ? (
-                <div className="mt-6 text-xs text-white/40">{err}</div>
-              ) : null}
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -913,7 +1008,7 @@ export default function HandlePage() {
                 <a
                   href={igUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
                 >
                   <Instagram className="h-4 w-4" />
@@ -925,7 +1020,7 @@ export default function HandlePage() {
                 <a
                   href={ttUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
                 >
                   <Sparkles className="h-4 w-4" />
@@ -937,7 +1032,7 @@ export default function HandlePage() {
                 <a
                   href={web}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
                 >
                   <Globe className="h-4 w-4" />
@@ -959,7 +1054,7 @@ export default function HandlePage() {
                 <a
                   href={mapUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/10 transition"
                 >
                   <MapPin className="h-4 w-4" />

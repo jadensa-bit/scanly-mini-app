@@ -157,17 +157,29 @@ export async function POST(req: Request) {
 
       accountId = acct.id;
 
-      const { error: updErr } = await supabase
-        .from("sites")
-        .update({
-          stripe_account_id: accountId,
-          // if caller provided email, store it
-          ...(emailFromBody ? { owner_email: emailFromBody } : {}),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("handle", handle);
+      // write stripe_account_id into candidate site tables (be resilient to different schema names)
+      const TABLE_CANDIDATES = ["sites", "scanly_sites", "site"];
+      for (const tbl of TABLE_CANDIDATES) {
+        try {
+          const { error: updErr } = await supabase
+            .from(tbl)
+            .update({
+              stripe_account_id: accountId,
+              ...(emailFromBody ? { owner_email: emailFromBody } : {}),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("handle", handle);
 
-      if (updErr) return jsonError("Failed saving stripe_account_id", 500, { detail: updErr.message });
+          if (updErr) {
+            // if table/column missing, skip to next
+            const msg = String(updErr.message || "").toLowerCase();
+            if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("column")) continue;
+            return jsonError("Failed saving stripe_account_id", 500, { detail: updErr.message });
+          }
+        } catch (e) {
+          // ignore and continue to next candidate
+        }
+      }
     }
 
     // 3) Create onboarding link

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
 import Image from "next/image";
 import {
@@ -45,9 +45,9 @@ const MODES: {
     exampleLine2: "Beard Trim + Hot Towel",
     examplePrice1: "$45",
     examplePrice2: "$35",
-    brandColor: "#06b6d4",
-    brandColorLight: "#22d3ee",
-    tagline: "Premium cuts, no wait ✨",
+    brandColor: "#10b981",
+    brandColorLight: "#34d399",
+    tagline: "Premium cuts, no wait",
     location: "Brooklyn, NY",
   },
   {
@@ -61,9 +61,9 @@ const MODES: {
     exampleLine2: "Holographic Sticker Pack",
     examplePrice1: "$28",
     examplePrice2: "$8",
-    brandColor: "#f97316",
-    brandColorLight: "#fb923c",
-    tagline: "Limited drops, no restock 🔥",
+    brandColor: "#f59e0b",
+    brandColorLight: "#fbbf24",
+    tagline: "Limited drops, no restock",
     location: "Pop-up • Downtown LA",
   },
   {
@@ -77,9 +77,9 @@ const MODES: {
     exampleLine2: "Macro Calculator + Guide",
     examplePrice1: "$29",
     examplePrice2: "$15",
-    brandColor: "#d946ef",
-    brandColorLight: "#e879f9",
-    tagline: "Get fit, stay consistent 💪",
+    brandColor: "#8b5cf6",
+    brandColorLight: "#a78bfa",
+    tagline: "Get fit, stay consistent",
     location: "Instant download",
   },
 ];
@@ -116,20 +116,6 @@ function AnimatedPhonePreview({
     location: string;
   };
 }) {
-  // State to control notification visibility
-  const [showNotification, setShowNotification] = useState(false);
-
-  // Show notification after 2 seconds, then hide after 5 seconds
-  useEffect(() => {
-    const showTimer = setTimeout(() => setShowNotification(true), 2000);
-    const hideTimer = setTimeout(() => setShowNotification(false), 7000);
-    
-    return () => {
-      clearTimeout(showTimer);
-      clearTimeout(hideTimer);
-    };
-  }, []);
-
   // Generate brand logo SVG with gradient effects
   const BrandLogo = () => {
     if (mode.id === "services") {
@@ -253,61 +239,25 @@ function AnimatedPhonePreview({
           <div className="relative overflow-hidden bg-white">
           
           {/* Floating notification - "Someone just purchased" */}
-          <AnimatePresence>
-            {showNotification && (
-              <motion.div
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
-                className="absolute top-2 left-2 right-2 z-20 backdrop-blur-xl rounded-2xl p-2.5 shadow-2xl border border-white/30"
-                style={{
-                  background: `linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))`,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <motion.div 
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold relative overflow-hidden shadow-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
-                    }}
-                    animate={{
-                      rotate: [0, 5, -5, 0],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                    <span className="relative z-10">{mode.id === "services" ? "✂️" : mode.id === "products" ? "🛍️" : "⚡"}</span>
-                  </motion.div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black text-gray-900">🎉 Someone just {mode.id === "services" ? "booked" : "purchased"}!</div>
-                    <div className="text-[9px] font-semibold text-gray-600">
-                      {mode.id === "services" ? mode.exampleLine1 : mode.id === "products" ? mode.exampleLine1 : mode.exampleLine1} • Just now
-                    </div>
-                  </div>
-                  <motion.div 
-                    className="px-2 py-1 rounded-full text-[8px] font-black text-white shadow-md"
-                    style={{
-                      background: `linear-gradient(135deg, #10b981, #34d399)`,
-                    }}
-                    animate={{
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                    }}
-                  >
-                    LIVE
-                  </motion.div>
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 2, duration: 0.5 }}
+            className="absolute top-2 left-2 right-2 z-20 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl p-2 shadow-lg"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white text-xs font-bold">
+                {mode.id === "services" ? "✂️" : mode.id === "products" ? "🛍️" : "📥"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-bold text-gray-900">Someone just {mode.id === "services" ? "booked" : "purchased"}!</div>
+                <div className="text-[9px] text-gray-600">
+                  {mode.id === "services" ? mode.exampleLine1 : mode.id === "products" ? mode.exampleLine1 : mode.exampleLine1} • Just now
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+              <div className="text-[9px] text-green-600 font-bold">Live</div>
+            </div>
+          </motion.div>
           
           {/* Scrollable content */}
           <div className="h-[560px] overflow-y-scroll scrollbar-hide">{/* Hero section with brand color and glassmorphism */}
@@ -318,90 +268,45 @@ function AnimatedPhonePreview({
               transition={{ delay: 0.1 }}
               className="relative h-48 overflow-hidden"
               style={{
-                background: mode.id === "services" 
-                  ? `linear-gradient(135deg, #06b6d4 0%, #8b5cf6 50%, #ec4899 100%)`
-                  : mode.id === "products"
-                  ? `linear-gradient(135deg, #f97316 0%, #ec4899 50%, #f59e0b 100%)`
-                  : `linear-gradient(135deg, #d946ef 0%, #8b5cf6 50%, #06b6d4 100%)`,
+                background: `linear-gradient(135deg, ${mode.brandColor} 0%, ${mode.brandColorLight} 100%)`,
               }}
             >
-              {/* Animated shimmer overlay */}
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)`,
-                }}
-                animate={{
-                  x: ["-100%", "200%"],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                  repeatDelay: 1,
-                }}
-              />
-
-              {/* Limited time banner with gradient */}
+              {/* Limited time banner */}
               <motion.div
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="absolute top-3 left-3 right-3 backdrop-blur-md border border-white/40 rounded-xl px-2 py-1.5 shadow-lg"
-                style={{
-                  background: `linear-gradient(90deg, rgba(255,255,255,0.25), rgba(255,255,255,0.15))`,
-                }}
+                className="absolute top-3 left-3 right-3 bg-black/20 backdrop-blur-md border border-white/30 rounded-lg px-2 py-1"
               >
                 <div className="flex items-center justify-between text-white text-[9px]">
-                  <span className="font-black">✨ {mode.id === "services" ? "Same-day slots • Book now" : mode.id === "products" ? "Free shipping • Orders $50+" : "Launch sale • 40% OFF"}</span>
-                  <span className="bg-white/30 px-2 py-0.5 rounded-full font-black backdrop-blur-sm">{mode.id === "digital" ? "TODAY" : "LIMITED"}</span>
+                  <span className="font-bold">⚡ {mode.id === "services" ? "Same-day booking available" : mode.id === "products" ? "Free shipping over $50" : "Launch sale • 40% off"}</span>
+                  <span className="bg-white/25 px-1.5 py-0.5 rounded-full font-bold">{mode.id === "digital" ? "Ends today" : "Today only"}</span>
                 </div>
               </motion.div>
               
-              {/* Floating colorful orbs */}
+              {/* Animated gradient orbs */}
               <motion.div
-                className="absolute top-10 right-10 w-20 h-20 rounded-full blur-2xl"
-                style={{ background: "rgba(255,255,255,0.3)" }}
+                className="absolute inset-0"
                 animate={{
-                  y: [0, -20, 0],
-                  x: [0, 10, 0],
-                  scale: [1, 1.1, 1],
+                  background: [
+                    `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)`,
+                    `radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 50%)`,
+                    `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)`,
+                  ],
                 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute bottom-10 left-10 w-24 h-24 rounded-full blur-2xl"
-                style={{ background: "rgba(255,255,255,0.25)" }}
-                animate={{
-                  y: [0, 15, 0],
-                  x: [0, -10, 0],
-                  scale: [1, 0.9, 1],
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               />
 
-              {/* Sparkle particles */}
-              <div className="absolute inset-0">
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-white rounded-full"
-                    style={{
-                      left: `${20 + i * 15}%`,
-                      top: `${30 + (i % 2) * 30}%`,
-                    }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1, 0],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                      ease: "easeInOut",
-                    }}
-                  />
-                ))}
+              {/* Decorative grid pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+                    backgroundSize: "20px 20px",
+                  }}
+                />
               </div>
 
               {/* Brand logo with subtle animation */}
@@ -516,49 +421,20 @@ function AnimatedPhonePreview({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
-                  className="mb-3 rounded-2xl overflow-hidden border-2 shadow-lg hover:shadow-2xl transition-all group relative"
-                  style={{
-                    borderColor: `${mode.brandColor}40`,
-                    background: `linear-gradient(135deg, white 0%, ${mode.brandColor}05 100%)`,
-                  }}
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  className="mb-3 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
-                  {/* Animated border gradient */}
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{
-                      background: `linear-gradient(135deg, ${mode.brandColor}20, ${mode.brandColorLight}20)`,
-                    }}
-                  />
-                  
-                  <div className="flex gap-3 p-3 relative z-10">
-                    {/* Image placeholder with holographic gradient */}
-                    <motion.div
-                      className="w-20 h-20 rounded-xl flex-shrink-0 relative overflow-hidden shadow-md"
+                  <div className="flex gap-3 p-3">
+                    {/* Image placeholder with gradient */}
+                    <div
+                      className="w-20 h-20 rounded-xl flex-shrink-0"
                       style={{
-                        background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
+                        background: `linear-gradient(135deg, ${mode.brandColor}20, ${mode.brandColorLight}40)`,
                       }}
-                      whileHover={{ rotate: [0, -5, 5, 0] }}
-                      transition={{ duration: 0.5 }}
                     >
-                      {/* Holographic shimmer */}
-                      <motion.div
-                        className="absolute inset-0"
-                        style={{
-                          background: `linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)`,
-                        }}
-                        animate={{
-                          x: ["-100%", "200%"],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      />
-                      <div className="w-full h-full flex items-center justify-center text-3xl relative z-10 drop-shadow-lg">
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
                         {mode.id === "services" ? "✂️" : mode.id === "products" ? "👕" : "📱"}
                       </div>
-                    </motion.div>
+                    </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-1">
@@ -572,43 +448,25 @@ function AnimatedPhonePreview({
                           {mode.examplePrice1}
                         </span>
                       </div>
-                      <p className="text-[10px] text-gray-600 mb-2 leading-relaxed font-semibold">
+                      <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
                         {mode.id === "services"
                           ? "⏱️ 45 min • ⭐ Most popular"
                           : mode.id === "products"
                             ? "👕 100% cotton • 🔥 Limited edition"
                             : "📥 Download • ♾️ Lifetime access"}
                       </p>
-                      <motion.button
-                        className="w-full py-2 rounded-xl text-xs font-black text-white shadow-lg relative overflow-hidden"
+                      <button
+                        className="w-full py-1.5 rounded-lg text-xs font-bold text-white shadow-sm hover:shadow transition-all"
                         style={{
                           background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
                         }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
                       >
-                        <motion.div
-                          className="absolute inset-0"
-                          style={{
-                            background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)`,
-                          }}
-                          animate={{
-                            x: ["-100%", "200%"],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                        />
-                        <span className="relative z-10">
-                          {mode.id === "services"
-                            ? "📅 Book Now →"
-                            : mode.id === "products"
-                              ? "🛍️ Add to Cart"
-                              : "⚡ Buy Now →"}
-                        </span>
-                      </motion.button>
+                        {mode.id === "services"
+                          ? "Book Now →"
+                          : mode.id === "products"
+                            ? "Add to Cart"
+                            : "Buy Now →"}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -618,40 +476,19 @@ function AnimatedPhonePreview({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.75 }}
-                  className="mb-3 rounded-2xl overflow-hidden border-2 shadow-lg hover:shadow-2xl transition-all group relative"
-                  style={{
-                    borderColor: `${mode.brandColorLight}40`,
-                    background: `linear-gradient(135deg, white 0%, ${mode.brandColorLight}08 100%)`,
-                  }}
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  className="mb-3 rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex gap-3 p-3">
-                    <motion.div
-                      className="w-20 h-20 rounded-xl flex-shrink-0 relative overflow-hidden shadow-md"
+                    <div
+                      className="w-20 h-20 rounded-xl flex-shrink-0"
                       style={{
-                        background: `linear-gradient(45deg, ${mode.brandColorLight}, ${mode.brandColor})`,
+                        background: `linear-gradient(135deg, ${mode.brandColorLight}30, ${mode.brandColor}20)`,
                       }}
-                      whileHover={{ rotate: [0, 5, -5, 0] }}
-                      transition={{ duration: 0.5 }}
                     >
-                      {/* Rainbow shimmer effect */}
-                      <motion.div
-                        className="absolute inset-0 opacity-50"
-                        style={{
-                          background: `linear-gradient(135deg, rgba(255,0,255,0.3), rgba(0,255,255,0.3))`,
-                        }}
-                        animate={{
-                          opacity: [0.3, 0.6, 0.3],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                        }}
-                      />
-                      <div className="w-full h-full flex items-center justify-center text-3xl relative z-10 drop-shadow-lg">
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
                         {mode.id === "services" ? "🪒" : mode.id === "products" ? "📦" : "📊"}
                       </div>
-                    </motion.div>
+                    </div>
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-1">
@@ -665,44 +502,25 @@ function AnimatedPhonePreview({
                           {mode.examplePrice2}
                         </span>
                       </div>
-                      <p className="text-[10px] text-gray-600 mb-2 leading-relaxed font-semibold">
+                      <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
                         {mode.id === "services"
                           ? "⏱️ 30 min • 💫 Premium add-on"
                           : mode.id === "products"
                             ? "📦 Pack of 5 • 💧 Waterproof"
                             : "📄 PDF + 🎥 Video guide"}
                       </p>
-                      <motion.button
-                        className="w-full py-2 rounded-xl text-xs font-black text-white shadow-lg relative overflow-hidden"
+                      <button
+                        className="w-full py-1.5 rounded-lg text-xs font-bold text-white shadow-sm hover:shadow transition-all"
                         style={{
                           background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
                         }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
                       >
-                        <motion.div
-                          className="absolute inset-0"
-                          style={{
-                            background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)`,
-                          }}
-                          animate={{
-                            x: ["-100%", "200%"],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "linear",
-                            delay: 0.5,
-                          }}
-                        />
-                        <span className="relative z-10">
-                          {mode.id === "services"
-                            ? "📅 Book Now →"
-                            : mode.id === "products"
-                              ? "🛍️ Add to Cart"
-                              : "⚡ Buy Now →"}
-                        </span>
-                      </motion.button>
+                        {mode.id === "services"
+                          ? "Book Now →"
+                          : mode.id === "products"
+                            ? "Add to Cart"
+                            : "Buy Now →"}
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -714,82 +532,43 @@ function AnimatedPhonePreview({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + idx * 0.05 }}
-                    className="p-3 rounded-xl border-2 shadow-md hover:shadow-xl transition-all relative overflow-hidden group"
-                    style={{
-                      borderColor: `${mode.brandColor}30`,
-                      background: `linear-gradient(135deg, white, ${mode.brandColor}05)`,
-                    }}
-                    whileHover={{ scale: 1.02 }}
+                    className="p-3 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-all"
                   >
-                    {/* Animated background gradient on hover */}
-                    <motion.div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{
-                        background: `linear-gradient(45deg, ${mode.brandColor}08, ${mode.brandColorLight}08)`,
-                      }}
-                    />
-                    
-                    <div className="flex items-center justify-between mb-2 relative z-10">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-black text-gray-900 text-sm">
+                          <h4 className="font-bold text-gray-900 text-sm">
                             {item.name}
                           </h4>
                           {item.badge && (
-                            <motion.span
-                              className="text-[9px] px-2 py-0.5 rounded-full font-black text-white shadow-sm"
+                            <span
+                              className="text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                               style={{
-                                background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
-                              }}
-                              animate={{
-                                scale: [1, 1.05, 1],
-                              }}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                delay: idx * 0.2,
+                                background: `${mode.brandColor}15`,
+                                color: mode.brandColor,
                               }}
                             >
                               {item.badge}
-                            </motion.span>
+                            </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-gray-600 font-semibold">{item.desc}</p>
+                        <p className="text-[10px] text-gray-600">{item.desc}</p>
                       </div>
                       <span
-                        className="font-black text-base ml-3 flex-shrink-0"
+                        className="font-bold text-base ml-3 flex-shrink-0"
                         style={{ color: mode.brandColor }}
                       >
                         {item.price}
                       </span>
                     </div>
-                    <motion.button
-                      className="w-full py-1.5 rounded-lg text-xs font-black text-white relative overflow-hidden"
+                    <button
+                      className="w-full py-1.5 rounded-lg text-xs font-bold text-white"
                       style={{
                         background: `linear-gradient(135deg, ${mode.brandColor}, ${mode.brandColorLight})`,
                       }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
-                      <motion.div
-                        className="absolute inset-0"
-                        style={{
-                          background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)`,
-                        }}
-                        animate={{
-                          x: ["-100%", "200%"],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                          delay: idx * 0.3,
-                        }}
-                      />
-                      <span className="relative z-10">
-                        {mode.id === "services" ? "📅 Book" : mode.id === "products" ? "🛍️ Add" : "⚡ Buy"}
-                      </span>
-                    </motion.button>
+                      {mode.id === "services" ? "Book" : mode.id === "products" ? "Add" : "Buy"}
+                    </button>
                   </motion.div>
                 ))}
               </motion.div>
@@ -803,53 +582,26 @@ function AnimatedPhonePreview({
                 className="pt-4 pb-3"
               >
                 <div className="grid grid-cols-3 gap-2">
-                  <motion.div
-                    className="p-3 rounded-xl text-center relative overflow-hidden shadow-md border-2"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${mode.brandColor}15, ${mode.brandColor}05)`,
-                      borderColor: `${mode.brandColor}30`,
-                    }}
-                    whileHover={{ scale: 1.05, y: -2 }}
+                  <div
+                    className="p-2 rounded-lg text-center"
+                    style={{ background: `${mode.brandColor}08` }}
                   >
-                    <motion.div
-                      className="flex justify-center mb-1"
-                      animate={{
-                        rotate: [0, 5, -5, 0],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                      }}
-                    >
-                      <BadgeCheck className="w-5 h-5" style={{ color: mode.brandColor }} />
-                    </motion.div>
-                    <div className="text-[9px] font-black text-gray-900">Secure</div>
-                    <div className="text-[8px] text-gray-600 font-semibold">SSL encrypted</div>
-                  </motion.div>
-                  <motion.div
-                    className="p-3 rounded-xl text-center relative overflow-hidden shadow-md border-2"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${mode.brandColorLight}15, ${mode.brandColorLight}05)`,
-                      borderColor: `${mode.brandColorLight}30`,
-                    }}
-                    whileHover={{ scale: 1.05, y: -2 }}
+                    <div className="flex justify-center mb-1">
+                      <BadgeCheck className="w-4 h-4" style={{ color: mode.brandColor }} />
+                    </div>
+                    <div className="text-[9px] font-bold text-gray-900">Secure</div>
+                    <div className="text-[8px] text-gray-600">SSL encrypted</div>
+                  </div>
+                  <div
+                    className="p-2 rounded-lg text-center"
+                    style={{ background: `${mode.brandColor}08` }}
                   >
-                    <motion.div
-                      className="flex justify-center mb-1"
-                      animate={{
-                        y: [0, -3, 0],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: 0.3,
-                      }}
-                    >
+                    <div className="flex justify-center mb-1">
                       <svg
-                        className="w-5 h-5"
+                        className="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
-                        style={{ color: mode.brandColorLight }}
+                        style={{ color: mode.brandColor }}
                         viewBox="0 0 24 24"
                       >
                         <path
@@ -859,41 +611,27 @@ function AnimatedPhonePreview({
                           d="M13 10V3L4 14h7v7l9-11h-7z"
                         />
                       </svg>
-                    </motion.div>
-                    <div className="text-[9px] font-black text-gray-900">Instant</div>
-                    <div className="text-[8px] text-gray-600 font-semibold">No wait time</div>
-                  </motion.div>
-                  <motion.div
-                    className="p-3 rounded-xl text-center relative overflow-hidden shadow-md border-2"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${mode.brandColor}10, ${mode.brandColorLight}10)`,
-                      borderColor: `${mode.brandColor}25`,
-                    }}
-                    whileHover={{ scale: 1.05, y: -2 }}
+                    </div>
+                    <div className="text-[9px] font-bold text-gray-900">Instant</div>
+                    <div className="text-[8px] text-gray-600">No wait time</div>
+                  </div>
+                  <div
+                    className="p-2 rounded-lg text-center"
+                    style={{ background: `${mode.brandColor}08` }}
                   >
-                    <motion.div
-                      className="flex justify-center mb-1"
-                      animate={{
-                        scale: [1, 1.1, 1],
-                      }}
-                      transition={{
-                        duration: 2.5,
-                        repeat: Infinity,
-                        delay: 0.6,
-                      }}
-                    >
+                    <div className="flex justify-center mb-1">
                       <svg
-                        className="w-5 h-5"
+                        className="w-4 h-4"
                         fill="currentColor"
                         style={{ color: mode.brandColor }}
                         viewBox="0 0 20 20"
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                    </motion.div>
-                    <div className="text-[9px] font-black text-gray-900">Rated 4.9</div>
-                    <div className="text-[8px] text-gray-600 font-semibold">284 reviews</div>
-                  </motion.div>
+                    </div>
+                    <div className="text-[9px] font-bold text-gray-900">Rated 4.9</div>
+                    <div className="text-[8px] text-gray-600">284 reviews</div>
+                  </div>
                 </div>
               </motion.div>
               
@@ -1097,31 +835,18 @@ export default function Home() {
       </section>
 
       {/* What you get */}
-      <section className="relative py-24 px-6 overflow-hidden">
-        {/* Subtle background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/5 to-transparent pointer-events-none" />
-        
-        <div className="container mx-auto max-w-6xl relative z-10">
+      <section className="relative py-24 px-6">
+        <div className="container mx-auto max-w-6xl">
           <motion.h2
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-4xl md:text-5xl font-bold text-center mb-16 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
           >
             What you get with Piqo
           </motion.h2>
-          
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-center text-white/70 mb-12 max-w-xl mx-auto"
-          >
-            Everything you need to start selling—no tech skills required
-          </motion.p>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 icon: ScanLine,
@@ -1148,23 +873,16 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="relative p-6 rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl hover:border-cyan-500/30 transition-all group overflow-hidden"
+                className="relative p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-cyan-500/30 transition-all group"
               >
-                {/* Subtle animated gradient on hover */}
-                <motion.div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.08))",
-                  }}
-                />
-                <div className="absolute top-4 right-4 text-5xl font-bold text-white/5 group-hover:text-cyan-500/10 transition-colors">
+                <div className="absolute top-4 right-4 text-6xl font-bold text-white/5 group-hover:text-cyan-500/10 transition-colors">
                   {item.step}
                 </div>
-                <item.icon className="w-10 h-10 mb-4 text-cyan-400 relative z-10" />
-                <h3 className="text-lg font-semibold text-white/90 mb-2 relative z-10">
+                <item.icon className="w-12 h-12 mb-4 text-cyan-400" />
+                <h3 className="text-xl font-bold text-white mb-2">
                   {item.title}
                 </h3>
-                <p className="text-white/70 text-sm relative z-10">{item.desc}</p>
+                <p className="text-gray-400">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -1172,45 +890,13 @@ export default function Home() {
       </section>
 
       {/* Interactive phone demo */}
-      <section className="relative py-24 px-6 overflow-hidden">
-        {/* Animated background gradients - matching create page */}
-        <motion.div
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{
-            background:
-              "radial-gradient(circle at 20% 30%, rgba(34,211,238,0.15), transparent 55%), radial-gradient(circle at 80% 70%, rgba(167,139,250,0.12), transparent 60%)",
-          }}
-          animate={{
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="pointer-events-none absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl opacity-20"
-          style={{
-            background: "linear-gradient(135deg, #22D3EE, #A78BFA, #F472B6)",
-          }}
-          animate={{
-            scale: [1, 1.15, 1],
-            rotate: [0, 60, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-
-        <div className="container mx-auto max-w-7xl relative z-10">
+      <section className="relative py-24 px-6">
+        <div className="container mx-auto max-w-7xl">
           <motion.h2
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
           >
             See what Piqo creates
           </motion.h2>
@@ -1220,37 +906,19 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-center text-white/70 mb-16 max-w-2xl mx-auto"
+            className="text-center text-gray-400 mb-16 max-w-2xl mx-auto"
           >
             Switch between demo brands to see real examples of what your customers will experience
           </motion.p>
 
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Phone preview - wrapped in card like create page */}
+            {/* Phone preview */}
             <div className="order-2 lg:order-1">
-              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="text-sm font-semibold text-white/90">Live preview</div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1 text-[11px] text-white/85">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Interactive demo
-                  </div>
-                </div>
-                <AnimatedPhonePreview mode={active} />
-              </section>
+              <AnimatedPhonePreview mode={active} />
             </div>
 
-            {/* Mode selector - wrapped in card like create page */}
-            <div className="order-1 lg:order-2">
-              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="text-sm font-semibold text-white/90">Pick a demo</div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1 text-[11px] text-white/85">
-                    <ScanLine className="h-3.5 w-3.5" />
-                    {activeId === "services" ? "Services" : activeId === "products" ? "Products" : "Digital"}
-                  </div>
-                </div>
-                <div className="space-y-3">
+            {/* Mode selector */}
+            <div className="order-1 lg:order-2 space-y-4">
               {MODES.map((m) => {
                 const Icon = m.icon;
                 const isActive = m.id === activeId;
@@ -1259,56 +927,32 @@ export default function Home() {
                     key={m.id}
                     onClick={() => setActiveId(m.id)}
                     className={cn(
-                      "w-full p-4 rounded-2xl border text-left transition-all relative overflow-hidden",
+                      "w-full p-6 rounded-2xl border text-left transition-all",
                       isActive
-                        ? "border-cyan-500/40 bg-cyan-500/15 shadow-lg shadow-cyan-500/20"
-                        : "border-white/12 bg-black/30 hover:bg-white/10"
+                        ? "border-white/30 bg-white/10 shadow-lg"
+                        : "border-white/10 bg-white/5 hover:border-white/20"
                     )}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {isActive && (
-                      <motion.div
-                        className="absolute inset-0"
-                        style={{
-                          background: "linear-gradient(90deg, transparent, rgba(34,211,238,0.2), transparent)",
-                        }}
-                        animate={{
-                          x: [-200, 400],
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      />
-                    )}
-                    <div className="flex items-start gap-4 relative z-10">
-                      <motion.div
+                    <div className="flex items-start gap-4">
+                      <div
                         className="p-3 rounded-xl"
                         style={{
-                          backgroundColor: isActive ? `${m.brandColor}25` : "rgba(255,255,255,0.08)",
-                        }}
-                        animate={isActive ? {
-                          rotate: [0, 5, -5, 0],
-                          scale: [1, 1.05, 1],
-                        } : {}}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
+                          backgroundColor: isActive ? `${m.brandColor}20` : "rgba(255,255,255,0.05)",
                         }}
                       >
                         <Icon
                           className="w-6 h-6"
-                          style={{ color: isActive ? m.brandColor : "rgba(255,255,255,0.7)" }}
+                          style={{ color: isActive ? m.brandColor : "#94a3b8" }}
                         />
-                      </motion.div>
+                      </div>
                       <div className="flex-1">
-                        <h3 className="text-base font-semibold text-white/90 mb-1">
+                        <h3 className="text-lg font-bold text-white mb-1">
                           {m.title}
                         </h3>
-                        <p className="text-sm text-white/70 mb-1">{m.desc}</p>
-                        <div className="text-xs text-white/50">
+                        <p className="text-sm text-gray-400 mb-2">{m.desc}</p>
+                        <div className="text-xs text-gray-500">
                           Example: <span style={{ color: m.brandColor }}>{m.exampleName}</span>
                         </div>
                       </div>
@@ -1316,8 +960,6 @@ export default function Home() {
                   </motion.button>
                 );
               })}
-                </div>
-              </section>
             </div>
           </div>
         </div>
@@ -1349,26 +991,13 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <motion.a
+            <a
               href="/create"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-semibold text-lg shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
-                animate={{
-                  x: [-200, 400],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-              />
-              <span className="relative z-10">Get started for free</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
-            </motion.a>
+              Get started for free
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </a>
           </motion.div>
         </div>
       </section>

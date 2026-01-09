@@ -30,3 +30,84 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.10) inset,
     0 24px 80px rgba(0, 0, 0, 0.55);
 }
+
+/* Animated gradient for text */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Shimmer animation for active presets */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+/* Subtle CTA shine used in storefront preview */
+@keyframes scanlyShine {
+  0% {
+    transform: translateX(-55%);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(25%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(155%);
+    opacity: 0.35;
+  }
+}
+
+.scanly-shine {
+  pointer-events: none;
+  inset: 0;
+  position: absolute;
+  background-image: linear-gradient(120deg, rgba(255,255,255,0.00) 0%, rgba(255,255,255,0.25) 35%, rgba(255,255,255,0.00) 70%);
+  mix-blend-mode: overlay;
+  animation: scanlyShine 2.2s ease-in-out infinite;
+  transform: translateX(-55%);
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}

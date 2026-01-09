@@ -31,6 +31,8 @@ type Site = {
   tagline: string | null;
   items: BuildItem[];
   stripe_account_id?: string | null;
+  staffProfiles?: Array<any>;
+  availability?: any;
 };
 
 function cn(...c: (string | false | undefined)[]) {
@@ -82,6 +84,10 @@ export default function CheckoutPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [selectedTitle, setSelectedTitle] = useState(presetTitle);
+  const [staffIndex, setStaffIndex] = useState<number | null>(() => {
+    const s = sp.get("staff");
+    return s ? Number(s) : null;
+  });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -105,6 +111,12 @@ export default function CheckoutPage() {
       .then((s) => {
         if (!alive) return;
         setSite(s);
+        // if staff param provided and valid, keep it; otherwise reset
+        const sParam = sp.get("staff");
+        if (sParam) {
+          const idx = Number(sParam);
+          if (!Number.isNaN(idx) && s.staffProfiles && s.staffProfiles[idx]) setStaffIndex(idx);
+        }
         // default select first item
         const first = s.items?.[0]?.title || "";
         setSelectedTitle((prev) => prev || first);
@@ -124,6 +136,31 @@ export default function CheckoutPage() {
 
   const mode = site?.mode;
 
+  function generateSlotsForStaff(s: Site, idx: number | null, days = 7) {
+    if (!s) return [] as string[];
+    const staff = idx != null && s.staffProfiles ? s.staffProfiles[idx] : null;
+    const avail = staff?.availability || s.availability || { start: "09:00", end: "17:00", slotMinutes: 60 };
+    const slotMinutes = Number(avail?.slotMinutes) || 60;
+    const startParts = (avail.start || "09:00").split(":").map(Number);
+    const endParts = (avail.end || "17:00").split(":").map(Number);
+
+    const out: string[] = [];
+    const now = new Date();
+    for (let d = 0; d < days; d++) {
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+      const dayStr = day.toISOString().slice(0, 10);
+      let slotStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), startParts[0] || 9, startParts[1] || 0);
+      const slotEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), endParts[0] || 17, endParts[1] || 0);
+      while (slotStart < slotEnd) {
+        const hh = String(slotStart.getHours()).padStart(2, "0");
+        const mm = String(slotStart.getMinutes()).padStart(2, "0");
+        out.push(`${dayStr} ${hh}:${mm}`);
+        slotStart = new Date(slotStart.getTime() + slotMinutes * 60000);
+      }
+    }
+    return out;
+  }
+
   const priceLabel = selectedItem?.price ? money(selectedItem.price) : "$0";
 
   const modeBlurb = useMemo(() => {
@@ -134,6 +171,11 @@ export default function CheckoutPage() {
     if (mode === "products") return "Enter shipping details and any preferences.";
     return "";
   }, [mode]);
+
+  const staffSlots = useMemo(() => {
+    if (!site) return [] as string[];
+    return generateSlotsForStaff(site, staffIndex, 7);
+  }, [site, staffIndex]);
 
   async function onPay() {
     if (!site || !selectedItem) return;
@@ -182,6 +224,7 @@ export default function CheckoutPage() {
         item_title: selectedItem.title,
         item_price: selectedItem.price,
         customFields,
+        staff: staffIndex != null && site.staffProfiles ? site.staffProfiles[staffIndex] : undefined,
       };
 
       const out = await startCheckout(payload);
@@ -374,6 +417,63 @@ export default function CheckoutPage() {
                     value={notes}
                     onChange={setNotes}
                   />
+                </div>
+              ) : null}
+
+              {site.staffProfiles && site.staffProfiles.length > 0 ? (
+                <div className="mt-4">
+                  <div className="text-sm font-medium">Choose a team member (optional)</div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {site.staffProfiles.map((p: any, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => setStaffIndex(i)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm text-left",
+                          staffIndex === i ? "border-white/25 bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/10"
+                        )}
+                      >
+                        <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200">
+                          {p.photo ? <img src={p.photo} alt={p.name} className="h-8 w-8 object-cover" /> : <div className="h-8 w-8 flex items-center justify-center text-xs">{p.name?.charAt(0)}</div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{p.name}</div>
+                          <div className="text-xs text-white/60 truncate">{p.role}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {staffIndex != null ? (
+                    <div className="mt-3">
+                      <div className="text-sm font-medium">Available times (next 7 days)</div>
+                      <div className="mt-2 grid gap-2">
+                        {staffSlots.length ? (
+                          staffSlots.slice(0, 28).map((s) => {
+                            const [d, t] = s.split(" ");
+                            const active = date === d && time === t;
+                            return (
+                              <button
+                                key={s}
+                                onClick={() => { setDate(d); setTime(t); }}
+                                className={cn(
+                                  "text-left rounded-2xl border px-3 py-2 text-sm",
+                                  active ? "border-white/25 bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/10"
+                                )}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm">{d}</div>
+                                  <div className="font-semibold">{t}</div>
+                                </div>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="text-xs text-white/60">No times available for this staff right now.</div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

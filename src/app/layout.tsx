@@ -1,14 +1,32 @@
 import type { Metadata } from "next";
+import {
+  Inter,
+  Poppins,
+  Sora,
+  Space_Grotesk,
+  Plus_Jakarta_Sans,
+  DM_Sans,
+} from "next/font/google";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-poppins", display: "swap" });
+const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sora", display: "swap" });
+const space = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-space", display: "swap" });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-jakarta", display: "swap" });
+const dmsans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-dmsans", display: "swap" });
+
 export const metadata: Metadata = {
-  title: "Scanly’s",
-  description: "Scanly’s — QR-first mini-app storefronts",
+  title: "Piqo",
+  description: "Piqo — Scan. Shop. Done.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable} ${sora.variable} ${space.variable} ${jakarta.variable} ${dmsans.variable}`}
+    >
       <body className="min-h-screen antialiased">
         {/* Ambient premium background */}
         <div className="fixed inset-0 -z-10">
