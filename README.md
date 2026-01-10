@@ -34,3 +34,34 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# Scanly Mini App
+
+## Features Added
+- Real-time dashboard for bookings (Supabase Realtime)
+- QR check-in page and API
+- Supabase Edge Function for check-in events
+- Basic tests for dashboard and check-in pages
+
+## How to Run Locally
+
+```bash
+npm install
+npm run dev
+```
+Visit `/dashboard` for the real-time dashboard and `/checkin` for QR check-in.
+
+## Testing
+
+```bash
+npm test
+```
+
+## Deployment
+- Ensure Supabase Realtime is enabled for the `bookings` table.
+- Deploy Edge Functions in `supabase/functions` as per Supabase docs.
+
+## Next Steps
+- Customize UI and add more analytics
+- Add push notifications for check-in events
+- Improve QR code scanning UX

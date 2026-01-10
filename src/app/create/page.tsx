@@ -134,7 +134,8 @@ type Notifications = {
 };
 
 type BuildConfig = {
-  mode: ModeId;
+  publishedAt?: string | null;
+mode: ModeId;
   brandName: string;
   handle: string;
   tagline: string;

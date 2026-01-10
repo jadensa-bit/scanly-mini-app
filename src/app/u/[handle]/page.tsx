@@ -21,11 +21,9 @@ import {
   Clock,
 } from "lucide-react";
 
-/* =======================
-   Types
-======================= */
-type ModeId = "services" | "booking" | "digital" | "products";
 
+// Types
+type ModeId = "services" | "booking" | "digital" | "products";
 type ItemBadge = "popular" | "limited" | "none";
 type BgMode = "solid" | "gradient" | "image";
 type LayoutMode = "cards" | "menu" | "tiles";
@@ -76,6 +74,7 @@ type StaffProfile = {
   bio: string;
   specialties?: string[];
   next?: string[];
+  photo?: string;
 };
 
 type SocialLinks = {
@@ -98,6 +97,7 @@ type BuildConfig = {
   staffProfiles?: StaffProfile[];
   brandLogo?: string;
   social?: SocialLinks;
+  publishedAt?: number;
 };
 
 /* =======================
@@ -258,6 +258,7 @@ function mapsUrl(addr?: string) {
 /* =======================
    Page
 ======================= */
+// Main page component
 export default function HandlePage() {
   const params = useParams();
   const router = useRouter();
@@ -1068,3 +1069,6 @@ export default function HandlePage() {
     </main>
   );
 }
+
+
+

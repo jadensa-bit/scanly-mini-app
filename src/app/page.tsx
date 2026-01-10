@@ -15,6 +15,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type ModeId = "services" | "products" | "digital";
 
@@ -1006,6 +1007,12 @@ export default function Home() {
 
   return (
     <>
+      {/* Navigation links for new features */}
+      <nav className="w-full flex justify-center gap-6 py-4 bg-black/30 backdrop-blur-md">
+        <Link href="/dashboard" className="text-cyan-400 hover:underline font-semibold">Dashboard</Link>
+        <Link href="/checkin" className="text-purple-400 hover:underline font-semibold">QR Check-in</Link>
+      </nav>
+
       {/* Header */}
       <motion.header
         className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-xl bg-black/40"
