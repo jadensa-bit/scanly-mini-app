@@ -65,6 +65,7 @@ type Appearance = {
   showStaff?: boolean;
   showSocials?: boolean;
   ctaText?: string;
+  headerBg?: string; // color or gradient for header/logo background
 };
 
 type StaffProfile = {
