@@ -118,7 +118,6 @@ function safeHandle(input: unknown) {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 32);
-}
 
 function storageKey(handle: string) {
   return `piqo:site:${handle}`;
