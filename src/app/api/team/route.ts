@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(req: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { searchParams } = new URL(req.url);
   const handle = searchParams.get("handle");
