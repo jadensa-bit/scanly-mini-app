@@ -44,7 +44,7 @@ export default function HandlePage() {
 
 	const [cfg, setCfg] = useState(null);
 	const [loading, setLoading] = useState(true);
-	const [err, setErr] = useState(null);
+	const [err, setErr] = useState<string | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
