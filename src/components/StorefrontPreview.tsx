@@ -52,7 +52,7 @@ type Appearance = {
   showHours?: boolean;
   showPoweredBy?: boolean;
 };
-type StorefrontPreviewProps = {
+export type StorefrontPreviewProps = {
   brandName?: string;
   tagline?: string;
   items?: Item[];
