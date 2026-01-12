@@ -11,8 +11,10 @@ export async function createClient() {
     {
       cookies: {
         async getAll() {
-          // Convert cookies to array of { name, value }
-          return Array.from(cookieStore.entries()).map(([name, value]) => ({ name, value }));
+          return cookieStore.getAll().map(cookie => ({
+            name: cookie.name,
+            value: cookie.value,
+          }));
         },
         async setAll(cookiesToSet) {
           try {
