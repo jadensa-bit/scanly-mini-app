@@ -188,16 +188,16 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     if (!body) return jsonError("Invalid JSON body", 400);
 
-    const handle = normalizeHandle(body.handle);
-    const brandName = String(body.brandName || "").trim();
 
-    console.log("POST /api/site handle:", handle, "brandName:", brandName);
+    const handle = normalizeHandle(body?.handle);
+    const brandName = String(body?.brandName || "").trim();
 
     if (!handle) return jsonError("handle is required", 400);
     if (!brandName) return jsonError("brandName is required", 400);
 
     // ✅ Ensure stored config uses normalized handle + trimmed brandName
-    const config = { ...body, handle, brandName };
+    const config = { ...(body || {}), handle, brandName };
+    console.log("POST /api/site handle:", handle, "brandName:", brandName, "config:", JSON.stringify(config));
 
     const out = await upsertSite(supabase, handle, config);
 

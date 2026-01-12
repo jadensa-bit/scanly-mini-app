@@ -1110,13 +1110,7 @@ useEffect(() => {
         throw new Error(msg);
       }
 
-      try {
-        // open the live preview in a new tab
-        if (typeof window !== "undefined") {
-          const url = `${window.location.origin}/u/${h}?preview=1`;
-          window.open(url, "_blank");
-        }
-      } catch {}
+      // No longer open preview in a new tab
       // navigate locally to the create page's published state
       // attempt to mark published on the server so the handle is live
       try {
@@ -1134,10 +1128,7 @@ useEffect(() => {
         }
       } catch {}
 
-      try {
-        const url = `${typeof window !== "undefined" ? window.location.origin : ""}/u/${h}?published=1`;
-        if (typeof window !== "undefined") window.open(url, "_blank");
-      } catch {}
+      // No longer open published page in a new tab
 
       router.push(`/u/${h}?published=1`);
       router.refresh();
