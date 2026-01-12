@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     // 1) load current config
     const { data: row, error: selErr } = await supabase
-      .from("sites")
+      .from("scanly_sites")
       .select("handle, config")
       .eq("handle", handle)
       .maybeSingle();
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     // 2) write back
     const { error: updErr } = await supabase
-      .from("sites")
+      .from("scanly_sites")
       .update({ config: nextCfg })
       .eq("handle", handle);
 
