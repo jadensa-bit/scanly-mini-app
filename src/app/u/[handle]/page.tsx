@@ -305,19 +305,7 @@ export default function HandlePage() {
       setLoading(true);
       setErr(null);
 
-      // Preview or immediate-publish mode: use local draft so edits show live
-      const local = readLocal(handle);
-
-      // If preview or published query is present prefer the local draft immediately
-      if (preview || published === "1") {
-        if (!cancelled) {
-          setCfg(local);
-          setLoading(false);
-          if (!local) setErr("No draft found for this handle yet.");
-        }
-        return;
-      }
-
+      // Always fetch from Supabase for published/live preview
       try {
         const out = await getSite(handle);
         if (cancelled) return;
@@ -325,14 +313,6 @@ export default function HandlePage() {
         if (out.res.ok) {
           const normalized = normalizeConfigFromApi(out.data);
           if (normalized) {
-            // If we have a local draft that's newer than the server copy, prefer local
-            if (local && local.createdAt && normalized.createdAt && local.createdAt > normalized.createdAt) {
-              setCfg(local);
-              setLoading(false);
-              writeLocal(handle, local);
-              return;
-            }
-
             setCfg(normalized);
             setLoading(false);
             writeLocal(handle, normalized);
@@ -340,26 +320,10 @@ export default function HandlePage() {
           }
         }
 
-        // Fallback: local draft (when server didn't return a usable config)
-        if (local) {
-          setCfg(local);
-          setLoading(false);
-          setErr(out?.data?.error ? `Using local draft (${out.data.error})` : "Using local draft");
-          return;
-        }
-
         setCfg(null);
         setLoading(false);
         setErr(out?.data?.error || "Not found");
       } catch (e: any) {
-        const local = readLocal(handle);
-        if (local) {
-          setCfg(local);
-          setLoading(false);
-          setErr("Using local draft (network error loading publish).");
-          return;
-        }
-
         setCfg(null);
         setLoading(false);
         setErr(e?.message || "Failed to load");
@@ -414,6 +378,20 @@ export default function HandlePage() {
   const bgMode: BgMode = a?.bgMode || "solid";
   const bgColor = a?.bgColor || "#000000";
   const bgType = a?.background || "glow";
+
+  // Compute header background (matches builder preview logic)
+  const headerBg = useMemo(() => {
+    if (a?.headerBg) {
+      return a.headerBg;
+    }
+    if (bgMode === "gradient" && a?.gradient) {
+      return `linear-gradient(${Number(a.gradient.angle) || 135}deg, ${a.gradient.c1 || "#22D3EE"}, ${a.gradient.c2 || "#A78BFA"})`;
+    }
+    if (bgMode === "image" && a?.bgImage) {
+      return `linear-gradient(rgba(0,0,0,${a.bgOverlay ?? 0.45}), rgba(0,0,0,${a.bgOverlay ?? 0.45})), url(${a.bgImage})`;
+    }
+    return a?.bgColor || "#000000";
+  }, [bgMode, a?.gradient, a?.bgImage, a?.bgOverlay, a?.bgColor]);
   const bgImage = a?.bgImage || "";
   const bgOverlay = clamp(Number(a?.bgOverlay ?? 0.45), 0, 0.9);
   const gradient = a?.gradient || accentGradient;
@@ -482,8 +460,9 @@ export default function HandlePage() {
   const bgStyle = useMemo<React.CSSProperties>(() => {
     const hasLayers = bgLayers.layers.length > 0;
 
+    // Use appearance.bgColor for background, matching builder preview
     return {
-      backgroundColor: bgMode === "solid" ? bgColor : "#000000",
+      backgroundColor: bgColor || "#FFFFFF",
       backgroundImage: hasLayers ? bgLayers.layers.join(", ") : "none",
       backgroundRepeat: hasLayers ? bgLayers.repeats.join(", ") : "no-repeat",
       backgroundSize: hasLayers ? bgLayers.sizes.join(", ") : "cover",
@@ -559,13 +538,7 @@ export default function HandlePage() {
   // Preview helper values (mirror create preview behavior)
   const cardRadius = a?.radius || 16;
   const accentSolid = accentMode === "gradient" ? (accentGradient?.c1 || "#22D3EE") : accent;
-  const headerBg =
-    accentMode === "gradient"
-      ? `linear-gradient(${Number(accentGradient.angle || 135)}deg, ${hexToRgba(
-          accentGradient.c1 || "#22D3EE",
-          0.18
-        )}, ${hexToRgba(accentGradient.c2 || "#A78BFA", 0.12)})`
-      : `linear-gradient(135deg, ${hexToRgba(accentSolid, 0.18)}, ${hexToRgba(gradient.c2 || "#A78BFA", 0.12)})`;
+  // (headerBg is now defined below with useMemo for consistency)
   const previewFontFamily = fontFamily;
   const ctaFg = buttonTextColor;
   const shine = ctaShine;
@@ -831,8 +804,10 @@ export default function HandlePage() {
             <div>
                 {/* Full builder-style phone preview (from create preview) */}
                 <div className="relative overflow-hidden rounded-2xl border p-4 transform-gpu scale-100 md:scale-110" style={{ fontFamily: previewFontFamily }}>
-                  <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black/45 p-3">
-                    <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col">
+                  <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black/45 p-3" style={{ boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)', backdropFilter: 'blur(12px)' }}>
+                    {/* Animated gradient background for extra pop */}
+                    <div className="absolute inset-0 z-0 pointer-events-none animate-gradient-x" style={{ background: 'linear-gradient(120deg, rgba(34,211,238,0.08), rgba(167,139,250,0.10), rgba(236,72,153,0.08))', filter: 'blur(8px)' }} />
+                    <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col z-10" style={{ boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.10)', backdropFilter: 'blur(8px)' }}>
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
                         <span className="inline-flex items-center gap-2">
@@ -847,7 +822,7 @@ export default function HandlePage() {
                         {/* Hero header */}
                           <div className="relative h-52 overflow-hidden" style={{ background: headerBg }}>
                           <div className="absolute top-1 left-0 right-0 flex justify-center">
-                            <div className={cn("relative h-24 w-24 md:h-28 md:w-28 grid place-items-center overflow-hidden border-2 bg-black/40", logoRound)} style={{ boxShadow: "0 12px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset" }}>
+                            <div className={cn("relative h-24 w-24 md:h-28 md:w-28 grid place-items-center overflow-hidden border-2 bg-black/40 animate-float", logoRound)} style={{ boxShadow: "0 12px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset" }}>
                               {cfg.brandLogo ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <>
@@ -884,20 +859,20 @@ export default function HandlePage() {
                         {/* Items list */}
                         <div className="px-3 pb-4 space-y-2.5 bg-gradient-to-b from-gray-50 to-white">
                           <div className="flex items-center justify-between pt-3 pb-2">
-                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{modeLabel(cfg.mode)}</h3>
-                            <span className="text-sm text-gray-500 font-medium">{cfg.items?.length || 0} items</span>
+                            <h3 className="text-base font-extrabold text-gray-900 uppercase tracking-wider">{modeLabel(cfg.mode)}</h3>
+                            <span className="text-base text-gray-500 font-semibold">{cfg.items?.length || 0} items</span>
                           </div>
 
                           {(a?.layout || "cards") === "tiles" ? (
                             <div className="grid grid-cols-2 gap-2">
-                              {cfg.items?.slice(0, 4).map((item, idx) => (
+                              {cfg.items?.map((item, idx) => (
                                 <div key={idx} className="overflow-hidden border shadow-sm transition-all hover:shadow-lg hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
                                   <div className="relative h-20 overflow-hidden bg-gray-100 flex items-center justify-center">
                                     <div className="text-white relative z-10 text-xl">{cfg.mode === "services" ? "✂️" : cfg.mode === "products" ? "🛍️" : "⚡"}</div>
                                   </div>
                                   <div className="p-3">
                                     <div className="text-sm font-bold text-gray-900 truncate mb-1">{item.title || "Item"}</div>
-                                    <div className="text-sm font-bold mb-1.5" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                    <div className="text-sm font-bold mb-1.5 text-gray-900">{item.price || "$0"}</div>
                                     <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="w-full py-2 text-sm font-semibold transition-transform duration-150" style={{ backgroundColor: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
                                   </div>
                                 </div>
@@ -905,14 +880,14 @@ export default function HandlePage() {
                             </div>
                           ) : (a?.layout || "cards") === "menu" ? (
                             <div className="space-y-1.5">
-                              {cfg.items?.slice(0, 3).map((item, idx) => (
+                              {cfg.items?.map((item, idx) => (
                                   <div key={idx} className="flex items-center justify-between p-3 border transition-all hover:shadow-sm hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
                                   <div className="min-w-0">
                                     <div className="text-sm font-bold text-gray-900 truncate">{item.title || "Item"}</div>
                                     {item.note && <div className="text-sm text-gray-600 truncate mt-0.5">{item.note}</div>}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <div className="text-sm font-bold" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                    <div className="text-sm font-bold text-gray-900">{item.price || "$0"}</div>
                                     <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="px-3 py-1.5 text-sm font-semibold transition-transform duration-150" style={{ backgroundColor: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
                                   </div>
                                 </div>
@@ -920,21 +895,25 @@ export default function HandlePage() {
                             </div>
                           ) : (
                             <>
-                              {cfg.items?.slice(0, 3).map((item, idx) => (
+                              {cfg.items?.map((item, idx) => (
                                   <div key={idx} className="mb-3 overflow-hidden border shadow-sm transition-all hover:shadow-lg hover:scale-[1.01]" style={{ borderRadius: `${cardRadius}px`, borderColor: `${accentSolid}40`, background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)` }}>
-                                  <div className="flex gap-3 p-3">
-                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex-shrink-0 relative overflow-hidden" style={{ background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
-                                      <div className="w-full h-full flex items-center justify-center text-2xl relative z-10">{cfg.mode === "services" ? "✂️" : cfg.mode === "products" ? "🛍️" : "⚡"}</div>
+                                  <div className="flex gap-3 p-4 md:p-5" style={{ background: 'rgba(255,255,255,0.10)', borderRadius: `${cardRadius}px`, boxShadow: '0 2px 12px 0 rgba(31,38,135,0.08)' }}>
+                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl flex-shrink-0 relative overflow-hidden bg-white/20 backdrop-blur-sm" style={{ background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
+                                      {item.image ? (
+                                        <img src={item.image} alt={item.title || "Product image"} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-3xl md:text-4xl relative z-10">{cfg.mode === "services" ? "✂️" : cfg.mode === "products" ? "🛍️" : "⚡"}</div>
+                                      )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-start justify-between mb-0.5 gap-1">
+                                      <div className="flex items-start justify-between mb-1 gap-1">
                                         <div className="flex items-center gap-1.5 min-w-0">
-                                          <h4 className="font-bold text-gray-900 text-sm leading-tight truncate">{item.title || "Item"}</h4>
+                                          <h4 className="font-extrabold text-gray-900 text-base md:text-lg leading-tight truncate">{item.title || "Item"}</h4>
                                         </div>
-                                        <span className="font-bold text-sm flex-shrink-0" style={{ color: accentSolid }}>{item.price || "$0"}</span>
+                                        <span className="font-extrabold text-base flex-shrink-0 text-gray-900">{item.price || "$0"}</span>
                                       </div>
-                                      <p className="text-sm text-gray-600 mb-1.5 leading-relaxed font-semibold">{item.note || (cfg.mode === "services" ? "60 min • Book online" : "Details here")}</p>
-                                      <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="w-full py-3 text-sm font-black transition-transform duration-150" style={{ background: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.6, 12)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
+                                      <p className="text-base text-gray-600 mb-2 leading-relaxed font-semibold">{item.note || (cfg.mode === "services" ? "60 min • Book online" : "Details here")}</p>
+                                      <motion.button type="button" whileTap={{ scale: 0.985 }} onClick={() => startCheckout(item)} className="w-full py-4 text-base md:text-lg font-black transition-transform duration-150 rounded-full shadow-md bg-gradient-to-r from-cyan-400 to-purple-400 text-white" style={{ background: ctaBg, color: ctaFg, borderRadius: `${Math.min(cardRadius * 0.6, 16)}px` }}>{a?.ctaText?.trim() || (cfg.mode === "services" ? "Book" : cfg.mode === "products" ? "Add" : "Get")}</motion.button>
                                     </div>
                                   </div>
                                 </div>
@@ -946,7 +925,7 @@ export default function HandlePage() {
                           {(a?.showSocials ?? true) && (social?.instagram || social?.tiktok || social?.website || social?.phone || social?.address) && (
                             <div className="px-3 pb-3 bg-gray-50">
                               <div className="pt-3 pb-2">
-                                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">📞 Get in Touch</h3>
+                                <h3 className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">📞 Get in Touch</h3>
                               </div>
                               <div className="flex flex-wrap gap-1.5">
                                 {ig ? <a href={igUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2 py-1 bg-pink-500 text-white text-[8px] font-bold rounded">📷 Instagram</a> : null}
@@ -1066,6 +1045,10 @@ export default function HandlePage() {
           </div>
         </div>
       ) : null}
+      <footer className="w-full text-center py-6 text-xs text-white/60">
+        © 2026 Piqo Labs LLC. All rights reserved.<br />
+        Piqo is a brand name used for a QR-based storefront and mini-app platform.
+      </footer>
     </main>
   );
 }

@@ -1036,7 +1036,7 @@ export default function Home() {
               >
                 <Image
                   src="/piqo-logo.svg"
-                  alt="Piqo"
+                  alt="piqo"
                   fill
                   className="object-contain"
                 />
@@ -1049,7 +1049,7 @@ export default function Home() {
                   backgroundSize: "200% auto",
                 }}
               >
-                PIQO
+                piqo
               </motion.div>
               <div className="text-xs text-gray-400">Scan. Shop. Done.</div>
             </div>
@@ -1057,9 +1057,9 @@ export default function Home() {
 
           <a
             href="/create"
-            className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all"
+            className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-lg md:text-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all"
           >
-            Get started
+            Build my QR Store
           </a>
         </div>
       </motion.header>
@@ -1073,9 +1073,10 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
+
             className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
           >
-            Turn any business into a QR storefront
+            Turn scans into sales — instantly.
           </motion.h1>
 
           <motion.p
@@ -1084,7 +1085,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-xl md:text-2xl text-gray-400 mb-8 max-w-2xl mx-auto"
           >
-            Sell products, services, or digital downloads. Customers scan, choose, and pay—instantly.
+            No website. No app. Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
           </motion.p>
 
           <motion.div
@@ -1094,12 +1095,45 @@ export default function Home() {
           >
             <a
               href="/create"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
+              className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
             >
-              Create your storefront
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Build my QR Store
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </a>
           </motion.div>
+        </div>
+      </section>
+            {/* Trust Signal Section */}
+            <section className="relative py-6 px-6 flex flex-col items-center justify-center">
+              <div className="flex flex-wrap justify-center gap-4 text-base md:text-lg font-medium text-white/80">
+                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-cyan-400"><path d="M17 9V7a5 5 0 0 0-10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="3" y="9" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 13h.01M17 13h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Built with Stripe
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-green-400"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Secure checkout
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-yellow-400"><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/></svg>
+                  Takes under 5 minutes
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-pink-400"><path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  No monthly fees
+                </div>
+              </div>
+            </section>
+      {/* Use Case Section */}
+      <section className="relative py-12 px-6 flex flex-col items-center justify-center">
+        <div className="max-w-2xl mx-auto text-center">
+          <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-200 to-purple-200 bg-clip-text text-transparent">Perfect for:</h3>
+          <ul className="flex flex-wrap justify-center gap-4 text-lg md:text-xl font-semibold text-white/90">
+            <li className="flex items-center gap-2">✂️ Barbers</li>
+            <li className="flex items-center gap-2">💅 Nail techs</li>
+            <li className="flex items-center gap-2">🧢 Merch sellers</li>
+            <li className="flex items-center gap-2">📲 Digital creators</li>
+          </ul>
         </div>
       </section>
 
@@ -1115,7 +1149,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
           >
-            What you get with Piqo
+            What you get with piqo
           </motion.h2>
           
           <motion.p
@@ -1219,7 +1253,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
           >
-            See what Piqo creates
+            See what piqo creates
           </motion.h2>
           
           <motion.p
@@ -1358,7 +1392,7 @@ export default function Home() {
           >
             <motion.a
               href="/create"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-semibold text-lg shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
+              className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -1373,12 +1407,17 @@ export default function Home() {
                   ease: "linear",
                 }}
               />
-              <span className="relative z-10">Get started for free</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+              <span className="relative z-10">Build my QR Store</span>
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform relative z-10" />
             </motion.a>
           </motion.div>
         </div>
       </section>
+      {/* Footer */}
+      <footer className="w-full text-center py-6 text-xs text-gray-400">
+        © 2026 piqo Labs LLC. All rights reserved.<br />
+        piqo is a brand name used for a QR-based storefront and mini-app platform.
+      </footer>
     </>
   );
 }

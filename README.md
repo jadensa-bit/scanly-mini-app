@@ -1,3 +1,16 @@
+# Legal & Brand Info
+
+**Legal Name:**
+piqo Labs LLC
+
+**Business Description:**
+Software platform providing QR-based storefronts and mobile checkout tools for small businesses and creators.
+
+**Brand Name Styling:**
+Always write as **piqo** (lowercase, modern, intentional)
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

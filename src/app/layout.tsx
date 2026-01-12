@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${inter.variable} ${poppins.variable} ${sora.variable} ${space.variable} ${jakarta.variable} ${dmsans.variable}`}
     >
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased" suppressHydrationWarning={true}>
         {/* Ambient premium background */}
         <div className="fixed inset-0 -z-10">
           <div className="absolute inset-0 bg-black" />

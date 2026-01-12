@@ -70,6 +70,7 @@ type Appearance = {
   layout?: LayoutMode;
   ctaStyle?: CtaStyle;
   ctaShine?: boolean;
+  headerBg?: string; // color or gradient for header/logo background
 
   // ✅ ADVANCED (dope builder extras)
   logoShape?: "square" | "circle";
@@ -510,6 +511,7 @@ useEffect(() => {
     layout: "cards",
     ctaStyle: "accent",
     ctaShine: true,
+    headerBg: "linear-gradient(135deg, #22D3EE 0%, #A78BFA 100%)", // default header/logo background
 
     // ✅ advanced defaults
     logoShape: "square",
@@ -542,6 +544,7 @@ useEffect(() => {
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const [showQr, setShowQr] = useState(false);
   const [previewOn, setPreviewOn] = useState(true);
@@ -900,10 +903,57 @@ useEffect(() => {
 
 
   // actions
-  const addItem = () => setItems((prev) => [...prev, { title: "New item", price: "$0", note: "", badge: "none" }]);
-  const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
-  const updateItem = (idx: number, patch: Partial<BuildItem>) =>
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  const addItem = () => {
+    setItems((prev) => {
+      const next = [...prev, { title: "New item", price: "$0", note: "", badge: "none" }];
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+  const removeItem = (idx: number) => {
+    setItems((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+  const updateItem = (idx: number, patch: Partial<BuildItem>) => {
+    setItems((prev) => {
+      const next = prev.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
 
   const addStaff = () =>
     setStaffProfiles((prev) => [
@@ -1013,7 +1063,10 @@ useEffect(() => {
       items: items.filter((x) => (x.title || "").trim().length > 0),
       active: true,
       createdAt: Date.now(),
-      appearance,
+      appearance: {
+        ...appearance,
+        headerBg: appearance.headerBg || undefined,
+      },
       staffProfiles: staffProfiles.length ? staffProfiles : undefined,
 
       ownerEmail: ownerEmail.trim() || undefined, // legacy keep
@@ -1153,6 +1206,9 @@ useEffect(() => {
 
   // Header background - works with solid or gradient accent
   const headerBg = useMemo(() => {
+    if (appearance.headerBg) {
+      return appearance.headerBg;
+    }
     if (accentMode === "gradient") {
       return `linear-gradient(135deg, ${accentGradient.c1} 0%, ${accentGradient.c2} 100%)`;
     }
@@ -1529,6 +1585,8 @@ useEffect(() => {
 
                 <div className="grid gap-1 sm:col-span-2">
                   <span className="text-xs text-white/80">Logo (optional)</span>
+
+                {/* Header Color Picker */}
                   <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition cursor-pointer">
                     <span className="inline-flex items-center gap-2">
                       <ImageIcon className="h-4 w-4" />
@@ -1856,6 +1914,20 @@ useEffect(() => {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
+                                {/* ...existing code... */}
+                                <label className="grid gap-1 mt-2">
+                                  <span className="text-xs text-white/80">Header color</span>
+                                  <div className="flex items-center gap-3">
+                                    <input
+                                      type="color"
+                                      value={appearance.headerBg || "#22223b"}
+                                      onChange={e => applyAppearancePatchInstant({ headerBg: e.target.value })}
+                                      className="w-10 h-10 rounded-lg border border-white/20 bg-black/40 cursor-pointer"
+                                      style={{ background: appearance.headerBg || "#22223b" }}
+                                    />
+                                    <span className="text-xs text-white/70">Pick a color for your storefront header</span>
+                                  </div>
+                                </label>
                 <label className="grid gap-1">
                   <span className="text-xs text-white/80">Font</span>
                   <div className="relative">
@@ -2874,8 +2946,20 @@ useEffect(() => {
                             // ensure latest draft is saved locally so preview shows current state
                             if (configDraft) localStorage.setItem(storageKey(cleanHandle), JSON.stringify(configDraft));
                           } catch {}
+                          // Open live preview
                           const url = `${window.location.origin}/u/${cleanHandle}?preview=1`;
                           window.open(url, "_blank");
+
+                          // Auto-download QR code
+                          const qrDownloadUrl = qrPngUrl(url, 520);
+                          const link = document.createElement("a");
+                          link.href = qrDownloadUrl;
+                          link.download = `${cleanHandle}-qr.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          setToast("QR code downloaded!");
+                          setTimeout(() => setToast(null), 3000);
                         }
                       } catch {}
                       router.push(`/u/${cleanHandle}?published=1`);
@@ -3209,7 +3293,7 @@ useEffect(() => {
                                     {/* Tiles layout - 2 column grid */}
                                     {(appearance.layout || "cards") === "tiles" ? (
                                       <div className="grid grid-cols-2 gap-2">
-                                        {items.slice(0, 4).map((item, idx) => (
+                                        {items.map((item, idx) => (
                                           <motion.div
                                             key={idx}
                                             initial={{ opacity: 0, scale: 0.9 }}
@@ -3307,7 +3391,7 @@ useEffect(() => {
                                     ) : (appearance.layout || "cards") === "menu" ? (
                                       /* Menu layout - compact rows */
                                       <div className="space-y-1.5">
-                                        {items.slice(0, 3).map((item, idx) => (
+                                        {items.map((item, idx) => (
                                           <motion.div
                                             key={idx}
                                             initial={{ opacity: 0, x: -10 }}
@@ -3355,7 +3439,7 @@ useEffect(() => {
                                     ) : (
                                       /* Cards layout - default */
                                       <>
-                                        {items.slice(0, 3).map((item, idx) => (
+                                        {items.map((item, idx) => (
                                       <motion.div
                                         key={idx}
                                         initial={{ opacity: 0, x: -10 }}
@@ -3785,6 +3869,11 @@ useEffect(() => {
           </div>
         </div>
       </div>
-    </main>
-  );
+    {toast && (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-black/90 text-white text-sm font-semibold shadow-lg border border-white/15 animate-fade-in">
+        {toast}
+      </div>
+    )}
+  </main>
+);
 }
