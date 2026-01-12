@@ -4,6 +4,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { StorefrontPreviewProps } from "../../../components/StorefrontPreview";
 import dynamic from "next/dynamic";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -42,7 +43,7 @@ export default function HandlePage() {
 	const sp = useSearchParams();
 	const router = useRouter();
 
-	const [cfg, setCfg] = useState(null);
+	const [cfg, setCfg] = useState<StorefrontPreviewProps | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [err, setErr] = useState<string | null>(null);
 
