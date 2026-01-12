@@ -905,7 +905,7 @@ useEffect(() => {
   // actions
   const addItem = () => {
     setItems((prev) => {
-      const next = [...prev, { title: "New item", price: "$0", note: "", badge: "none" }];
+      const next = [...prev, { title: "New item", price: "$0", note: "", badge: "none" } as BuildItem];
       // Instant preview update
       if (typeof window !== "undefined" && cleanHandle) {
         const base = configDraft;
