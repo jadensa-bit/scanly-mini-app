@@ -64,7 +64,10 @@ type SiteRow = {
 };
 
 // Helper to trim config (removes large base64 images from items)
-function trimConfig(config) {
+function trimConfig(config: any) {
+  // Adding explicit type annotation to the config parameter
+  // to fix TypeScript error
+  // The type of config is set to any for now
   if (!config || typeof config !== 'object') return config;
   const trimmed = { ...config };
   if (Array.isArray(trimmed.items)) {
