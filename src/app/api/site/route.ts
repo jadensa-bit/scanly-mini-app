@@ -44,6 +44,9 @@ function getSupabase() {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  console.log("Environment check - SUPABASE_URL:", url ? "present" : "MISSING");
+  console.log("Environment check - SUPABASE_SERVICE_ROLE_KEY:", serviceKey ? "present" : "MISSING");
+
   if (!url) throw new Error("Missing SUPABASE_URL in .env.local");
   if (!serviceKey) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY in .env.local");
 
@@ -183,21 +186,36 @@ export async function GET(req: Request) {
 // POST /api/site
 export async function POST(req: Request) {
   try {
+    console.log("POST /api/site called");
     const supabase = getSupabase();
+    console.log("Supabase client created successfully");
 
-    const body = await req.json().catch(() => null);
-    if (!body) return jsonError("Invalid JSON body", 400);
+    const body = await req.json().catch((error) => {
+      console.error("Failed to parse JSON body:", error);
+      return null;
+    });
+    if (!body) {
+      console.error("Invalid JSON body received");
+      return jsonError("Invalid JSON body", 400);
+    }
 
+    console.log("Request body received:", { handle: body?.handle, brandName: body?.brandName });
 
     const handle = normalizeHandle(body?.handle);
     const brandName = String(body?.brandName || "").trim();
 
-    if (!handle) return jsonError("handle is required", 400);
-    if (!brandName) return jsonError("brandName is required", 400);
+    if (!handle) {
+      console.error("Handle is required but missing");
+      return jsonError("handle is required", 400);
+    }
+    if (!brandName) {
+      console.error("BrandName is required but missing");
+      return jsonError("brandName is required", 400);
+    }
 
     // ✅ Ensure stored config uses normalized handle + trimmed brandName
     const config = { ...(body || {}), handle, brandName };
-    console.log("POST /api/site handle:", handle, "brandName:", brandName, "config:", JSON.stringify(config));
+    console.log("POST /api/site handle:", handle, "brandName:", brandName, "config keys:", Object.keys(config));
 
     const out = await upsertSite(supabase, handle, config);
 
@@ -209,6 +227,7 @@ export async function POST(req: Request) {
       });
     }
 
+    console.log("POST /api/site success for handle:", handle);
     return noStoreJson({ ok: true, handle: out.data.handle, table: out.table });
   } catch (e: any) {
     console.error("POST /api/site server error:", e);

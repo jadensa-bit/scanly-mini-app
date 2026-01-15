@@ -845,9 +845,20 @@ async function startStripeConnect() {
       debounce(async (cfg: BuildConfig) => {
         try {
           setSavingServer(true);
+          console.log("Attempting to save draft to server for handle:", cfg.handle);
 
           // best-effort: POST to /api/site to upsert the draft on server
-          const res = await postJson("/api/site", cfg).catch(() => null);
+          const res = await postJson("/api/site", cfg).catch((error) => {
+            console.error("Failed to save draft to server:", error);
+            return null;
+          });
+
+          if (!res) {
+            console.warn("No response from /api/site, draft not saved");
+            return;
+          }
+
+          console.log("Draft save response:", res);
 
           // If POST succeeded and site not published yet, auto-publish once
           try {
@@ -856,14 +867,19 @@ async function startStripeConnect() {
             const hasPublished = (cfg as any).publishedAt || raw?.site?.config?.publishedAt || raw?.config?.publishedAt;
 
             if (ok && !hasPublished) {
+              console.log("Auto-publishing site for handle:", cfg.handle);
               // track auto-publish per handle using local flag to avoid repeats
               try {
                 const key = `${storageKey(cfg.handle)}|autopub`;
                 const seen = localStorage.getItem(key);
                 if (!seen) {
-                  const pub = await postJson("/api/site/publish", { handle: cfg.handle }).catch(() => null);
+                  const pub = await postJson("/api/site/publish", { handle: cfg.handle }).catch((error) => {
+                    console.error("Failed to auto-publish:", error);
+                    return null;
+                  });
                   if (pub?.res?.ok && pub?.data?.ok) {
                     const publishedAt = pub.data.publishedAt || new Date().toISOString();
+                    console.log("Auto-published successfully, publishedAt:", publishedAt);
                     // persist publishedAt into local draft so we won't re-publish
                     try {
                       const storedRaw = localStorage.getItem(storageKey(cfg.handle));
@@ -872,17 +888,30 @@ async function startStripeConnect() {
                       stored.active = true;
                       localStorage.setItem(storageKey(cfg.handle), JSON.stringify(stored));
                       localStorage.setItem(key, "1");
-                    } catch {}
+                    } catch (error) {
+                      console.error("Failed to update local storage after publish:", error);
+                    }
+                  } else {
+                    console.warn("Auto-publish failed:", pub);
                   }
                 }
-              } catch {}
+              } catch (error) {
+                console.error("Auto-publish error:", error);
+              }
             }
-          } catch {}
+          } catch (error) {
+            console.error("Error in auto-publish logic:", error);
+          }
 
-        } catch {}
-        try {
-          setSavingServer(false);
-        } catch {}
+        } catch (error) {
+          console.error("Error in saveDraftServerDebounced:", error);
+        } finally {
+          try {
+            setSavingServer(false);
+          } catch (error) {
+            console.error("Error setting savingServer to false:", error);
+          }
+        }
       }, 1500),
     []
   );
