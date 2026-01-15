@@ -71,7 +71,7 @@ function trimConfig(config: any) {
   if (!config || typeof config !== 'object') return config;
   const trimmed = { ...config };
   if (Array.isArray(trimmed.items)) {
-    trimmed.items = trimmed.items.map(item => {
+    trimmed.items = trimmed.items.map((item: any) => {
       const i = { ...item };
       if (i.image && typeof i.image === 'string' && i.image.length > 500) {
         // Remove or replace large base64 images
