@@ -393,18 +393,50 @@ function safeTime(v: string) {
 }
 
 export default function CreatePage() {
- const hasHydratedRef = useRef(false);
- 
+  const hasHydratedRef = useRef(false);
   const router = useRouter();
 
+  // Declare all state hooks before any useEffect that references them
   const [mode, setMode] = useState<ModeId>("services");
   const [brandName, setBrandName] = useState("My Piqo");
   const [handleRaw, setHandleRaw] = useState("my-piqo");
   const [tagline, setTagline] = useState("Scan → tap → done.");
-
   const [ownerEmail, setOwnerEmail] = useState("");
-
-  const [brandLogo, setBrandLogo] = useState<string>(""); // data URL
+  const [brandLogo, setBrandLogo] = useState("");
+  const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
+  const [appearance, setAppearance] = useState<Appearance>({
+    preset: "neon",
+    accent: "#22D3EE",
+    surface: "glass",
+    background: "glow",
+    radius: 28,
+    font: "display",
+    button: "pill",
+    fontFamily: "inter",
+    bgMode: "solid",
+    bgColor: "#000000",
+    gradient: { c1: "#22D3EE", c2: "#A78BFA", angle: 135 },
+    bgImage: "",
+    bgOverlay: 0.45,
+    layout: "cards",
+    ctaStyle: "accent",
+    ctaShine: true,
+    headerBg: "linear-gradient(135deg, #22D3EE 0%, #A78BFA 100%)",
+    logoShape: "square",
+    headerStyle: "hero",
+    showPoweredBy: true,
+    showStaff: true,
+    showSocials: true,
+    showHours: true,
+    ctaText: "",
+  });
+  const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([]);
+  const [notifications, setNotifications] = useState<Notifications>({
+    email: "",
+    onOrders: true,
+    onBookings: true,
+    smsPhone: "",
+  });
   const [social, setSocial] = useState<SocialLinks>({
     instagram: "",
     tiktok: "",
@@ -412,6 +444,52 @@ export default function CreatePage() {
     phone: "",
     address: "",
   });
+  const [availability, setAvailability] = useState<Availability>({
+    timezone: "America/New_York",
+    slotMinutes: 60,
+    bufferMinutes: 15,
+    advanceDays: 30,
+    days: {
+      mon: { enabled: true, start: "09:00", end: "17:00" },
+      tue: { enabled: true, start: "09:00", end: "17:00" },
+      wed: { enabled: true, start: "09:00", end: "17:00" },
+      thu: { enabled: true, start: "09:00", end: "17:00" },
+      fri: { enabled: true, start: "09:00", end: "17:00" },
+      sat: { enabled: false, start: "09:00", end: "17:00" },
+      sun: { enabled: false, start: "09:00", end: "17:00" },
+    },
+  });
+
+  // Real-time draft save: persist all edits to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const h = slugify(handleRaw);
+    if (!h) return;
+    const draft: BuildConfig = {
+      mode,
+      brandName,
+      handle: h,
+      tagline,
+      items,
+      appearance,
+      staffProfiles,
+      brandLogo,
+      social,
+      availability,
+      notifications,
+      ownerEmail,
+    };
+    try {
+      localStorage.setItem(storageKey(h), JSON.stringify(draft));
+    } catch {}
+  }, [mode, brandName, handleRaw, tagline, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail]);
+
+  // Force immediate preview update for tagline changes
+  useEffect(() => {
+    setPreviewTick((x) => x + 1);
+  }, [tagline]);
+
+  // ...existing code...
   // 🔁 Restore draft on load (CRITICAL FIX)
 const _restoredFor = useRef<string | null>(null);
 useEffect(() => {
@@ -424,6 +502,8 @@ useEffect(() => {
   } catch {}
 }, []);
 
+
+// On mount or handle change, reload config from server after Stripe onboarding, merge with local edits if present
 useEffect(() => {
   if (typeof window === "undefined") return;
 
@@ -432,55 +512,60 @@ useEffect(() => {
   if (_restoredFor.current === h) return;
   _restoredFor.current = h;
 
-  try {
-    const raw = localStorage.getItem(storageKey(h));
-    if (!raw) return;
-
-    const saved: BuildConfig = JSON.parse(raw);
-
-    // hydrate state safely
-    setMode(saved.mode);
-    setBrandName(saved.brandName);
-    setHandleRaw(saved.handle);
-    setTagline(saved.tagline || "");
-    setItems(saved.items || []);
-    setAppearance(saved.appearance || appearance);
-    setStaffProfiles(saved.staffProfiles || []);
-    setBrandLogo(saved.brandLogo || "");
-    setSocial(saved.social || {});
-    setAvailability(saved.availability || availability);
-    setNotifications(saved.notifications || notifications);
-    setOwnerEmail(saved.ownerEmail || "");
-
-  } catch (e) {
-    console.warn("Failed to restore Piqo draft", e);
+  // Helper to merge configs (local wins for unsaved fields)
+  function mergeConfigs(server, local) {
+    if (!server) return local;
+    if (!local) return server;
+    return {
+      ...server,
+      ...local,
+      items: local.items && local.items.length ? local.items : server.items,
+      appearance: { ...server.appearance, ...local.appearance },
+      staffProfiles: local.staffProfiles && local.staffProfiles.length ? local.staffProfiles : server.staffProfiles,
+      social: { ...server.social, ...local.social },
+      availability: { ...server.availability, ...local.availability },
+      notifications: { ...server.notifications, ...local.notifications },
+    };
   }
+
+  // If returning from Stripe, always fetch latest config from server
+  async function restoreConfig() {
+    let serverConfig = null;
+    try {
+      const res = await fetch(`/api/site?handle=${encodeURIComponent(h)}`, { cache: "no-store" });
+      const data = await res.json();
+      if (data?.site?.config) serverConfig = data.site.config;
+    } catch {}
+
+    let localConfig = null;
+    try {
+      const raw = localStorage.getItem(storageKey(h));
+      if (raw) localConfig = JSON.parse(raw);
+    } catch {}
+
+    const merged = mergeConfigs(serverConfig, localConfig);
+    if (!merged) return;
+
+    setMode(merged.mode);
+    setBrandName(merged.brandName);
+    setHandleRaw(merged.handle);
+    setTagline(merged.tagline || "");
+    setItems(merged.items || []);
+    setAppearance(merged.appearance || appearance);
+    setStaffProfiles(merged.staffProfiles || []);
+    setBrandLogo(merged.brandLogo || "");
+    setSocial(merged.social || {});
+    setAvailability(merged.availability || availability);
+    setNotifications(merged.notifications || notifications);
+    setOwnerEmail(merged.ownerEmail || "");
+  }
+
+  restoreConfig();
 }, [handleRaw]);
 
 
   // ✅ Availability + notifications (new)
-  const [availability, setAvailability] = useState<Availability>({
-    timezone: "America/New_York",
-    slotMinutes: 30,
-    bufferMinutes: 10,
-    advanceDays: 14,
-    days: {
-      mon: { enabled: true, start: "09:00", end: "17:00" },
-      tue: { enabled: true, start: "09:00", end: "17:00" },
-      wed: { enabled: true, start: "09:00", end: "17:00" },
-      thu: { enabled: true, start: "09:00", end: "17:00" },
-      fri: { enabled: true, start: "09:00", end: "17:00" },
-      sat: { enabled: false, start: "10:00", end: "14:00" },
-      sun: { enabled: false, start: "10:00", end: "14:00" },
-    },
-  });
-
-  const [notifications, setNotifications] = useState<Notifications>({
-    email: "",
-    onOrders: true,
-    onBookings: true,
-    smsPhone: "",
-  });
+  // ...existing code...
 
   useEffect(() => {
     // keep notifications.email in sync with ownerEmail if user edits it
@@ -488,59 +573,12 @@ useEffect(() => {
   }, [ownerEmail]);
 
   const cleanHandle = useMemo(() => slugify(handleRaw), [handleRaw]);
-  const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
+  // ...existing code...
 
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<"setup" | "design" | "details" | "payment">("setup");
 
-  const [appearance, setAppearance] = useState<Appearance>({
-    preset: "neon",
-    accent: "#22D3EE",
-    surface: "glass",
-    background: "glow",
-    radius: 28,
-    font: "display",
-    button: "pill",
 
-    fontFamily: "inter",
-    bgMode: "solid",
-    bgColor: "#000000",
-    gradient: { c1: "#22D3EE", c2: "#A78BFA", angle: 135 },
-    bgImage: "",
-    bgOverlay: 0.45,
-    layout: "cards",
-    ctaStyle: "accent",
-    ctaShine: true,
-    headerBg: "linear-gradient(135deg, #22D3EE 0%, #A78BFA 100%)", // default header/logo background
-
-    // ✅ advanced defaults
-    logoShape: "square",
-    headerStyle: "hero",
-    showPoweredBy: true,
-    showStaff: true,
-    showSocials: true,
-    showHours: true,
-    ctaText: "",
-  });
-
-  const [staffProfiles, setStaffProfiles] = useState<StaffProfile[]>([
-    {
-      name: "Ari",
-      role: "Barber",
-      rating: "4.9",
-      bio: "Clean fades + sharp lineups. Fast hands, no wasted time.",
-      specialties: ["Fades", "Lineups", "Beard work", "Enhancements"],
-      next: ["11:00 AM", "12:00 PM", "2:30 PM"],
-    },
-    {
-      name: "Jay",
-      role: "Barber",
-      rating: "4.8",
-      bio: "Detail-driven cuts. Great if you want the ‘fresh all week’ look.",
-      specialties: ["Tapers", "Scissor work", "Texture"],
-      next: ["11:30 AM", "12:45 PM", "3:30 PM"],
-    },
-  ]);
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -549,6 +587,11 @@ useEffect(() => {
   const [showQr, setShowQr] = useState(false);
   const [previewOn, setPreviewOn] = useState(true);
   const [previewTick, setPreviewTick] = useState(0);
+
+  // Force preview update when items change
+  useEffect(() => {
+    setPreviewTick(prev => prev + 1);
+  }, [items]);
 
   const publicUrl = useMemo(() => buildPublicUrl(cleanHandle || "yourname"), [cleanHandle]);
   const qrUrl = useMemo(() => qrPngUrl(publicUrl, 520), [publicUrl]);
@@ -1834,9 +1877,24 @@ useEffect(() => {
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (!file || !file.type.startsWith("image/")) return;
-                                  const url = await fileToDataUrl(file);
+                                  // Upload to server to get hosted URL
+                                  let imageUrl = "";
+                                  try {
+                                    const fd = new FormData();
+                                    fd.append("file", file, file.name || "upload.jpg");
+                                    const res = await fetch("/api/uploads", { method: "POST", body: fd });
+                                    const data = await res.json().catch(() => ({}));
+                                    if (res.ok && data?.url) {
+                                      imageUrl = data.url;
+                                    } else {
+                                      // fallback to base64 if upload fails
+                                      imageUrl = await fileToDataUrl(file);
+                                    }
+                                  } catch {
+                                    imageUrl = await fileToDataUrl(file);
+                                  }
                                   setItems((prev) =>
-                                    prev.map((x, i) => (i === idx ? { ...x, image: url } : x))
+                                    prev.map((x, i) => (i === idx ? { ...x, image: imageUrl } : x))
                                   );
                                 }}
                               />
@@ -3125,7 +3183,7 @@ useEffect(() => {
 
                       {previewOn ? (
                         <motion.div
-                          key={`preview-${mode}`}
+                          key={previewTick}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="relative mx-auto w-full h-[600px] overflow-hidden"

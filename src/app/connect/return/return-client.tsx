@@ -9,8 +9,13 @@ export default function ReturnClient() {
   const handle = sp.get("handle") || "";
 
   useEffect(() => {
-    // if you want, auto-send them back to builder after returning
-    // router.replace(`/create?handle=${encodeURIComponent(handle)}`);
+    if (handle) {
+      // Automatically redirect to builder with handle after short delay
+      const timeout = setTimeout(() => {
+        router.replace(`/create?handle=${encodeURIComponent(handle)}`);
+      }, 1200); // 1.2s for user feedback
+      return () => clearTimeout(timeout);
+    }
   }, [handle, router]);
 
   return (

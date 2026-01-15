@@ -10,13 +10,19 @@ import { createClient } from "@supabase/supabase-js";
 -------------------- */
 function mustEnv(k: string) {
   const v = (process.env[k] ?? "").trim();
-  if (!v) throw new Error(`${k} is missing`);
+  if (!v) {
+    console.error(`[stripe-connect] ENV MISSING: ${k}`);
+    throw new Error(`${k} is missing`);
+  }
   return v;
 }
+
 
 const STRIPE_SECRET_KEY = mustEnv("STRIPE_SECRET_KEY");
 const SUPABASE_URL = mustEnv("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
+console.log(`[stripe-connect] Using STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.slice(0, 6) + '...' : 'MISSING'}`);
+console.log(`[stripe-connect] Using SUPABASE_URL: ${SUPABASE_URL}`);
 
 /* --------------------
    clients
@@ -57,25 +63,57 @@ type SiteRow = {
   stripe_account_id: string | null;
 };
 
-async function ensureSiteRow(handle: string, ownerEmail?: string) {
-  const baseConfig = {
-    handle,
-    brandName: "My Scanly",
-    tagline: "Scan → tap → done.",
-    mode: "services",
-    items: [],
-    active: true,
-    createdAt: Date.now(),
-  };
+// Helper to trim config (removes large base64 images from items)
+function trimConfig(config) {
+  if (!config || typeof config !== 'object') return config;
+  const trimmed = { ...config };
+  if (Array.isArray(trimmed.items)) {
+    trimmed.items = trimmed.items.map(item => {
+      const i = { ...item };
+      if (i.image && typeof i.image === 'string' && i.image.length > 500) {
+        // Remove or replace large base64 images
+        i.image = undefined;
+      }
+      return i;
+    });
+  }
+  return trimmed;
+}
 
-  // ✅ Upsert prevents duplicates if two requests happen at once
+async function ensureSiteRow(handle: string, ownerEmail?: string) {
+  // Try to fetch the latest config for this handle
+  let latestConfig = null;
+  try {
+    const { data: existing, error: selErr } = await supabase
+      .from("sites")
+      .select("config")
+      .eq("handle", handle)
+      .maybeSingle();
+    if (!selErr && existing && existing.config) {
+      latestConfig = trimConfig(existing.config);
+    }
+  } catch {}
+
+  // If no config exists, use a default
+  if (!latestConfig) {
+    latestConfig = {
+      handle,
+      brandName: "My Scanly",
+      tagline: "Scan → tap → done.",
+      mode: "services",
+      items: [],
+      active: true,
+      createdAt: Date.now(),
+    };
+  }
+
+  // Upsert with the latest config and owner email (only update 'sites' table)
   const { data, error } = await supabase
     .from("sites")
     .upsert(
       {
         handle,
-        config: baseConfig,
-        // only set owner_email if provided
+        config: latestConfig,
         ...(ownerEmail ? { owner_email: ownerEmail } : {}),
         updated_at: new Date().toISOString(),
       },
@@ -83,7 +121,7 @@ async function ensureSiteRow(handle: string, ownerEmail?: string) {
     )
     .select("handle, config, owner_email, stripe_account_id")
     .single();
-
+  console.log(`[stripe-connect] ensureSiteRow upsert result:`, { data, error });
   if (error) throw new Error(`Supabase error ensuring site row: ${error.message}`);
 
   // Safety: if config is missing, repair it
@@ -157,28 +195,22 @@ export async function POST(req: Request) {
 
       accountId = acct.id;
 
-      // write stripe_account_id into candidate site tables (be resilient to different schema names)
-      const TABLE_CANDIDATES = ["sites", "scanly_sites", "site"];
-      for (const tbl of TABLE_CANDIDATES) {
-        try {
-          const { error: updErr } = await supabase
-            .from(tbl)
-            .update({
-              stripe_account_id: accountId,
-              ...(emailFromBody ? { owner_email: emailFromBody } : {}),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("handle", handle);
-
-          if (updErr) {
-            // if table/column missing, skip to next
-            const msg = String(updErr.message || "").toLowerCase();
-            if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("column")) continue;
-            return jsonError("Failed saving stripe_account_id", 500, { detail: updErr.message });
-          }
-        } catch (e) {
-          // ignore and continue to next candidate
+      // Only update the 'sites' table for stripe_account_id
+      try {
+        const { error: updErr } = await supabase
+          .from("sites")
+          .update({
+            stripe_account_id: accountId,
+            ...(emailFromBody ? { owner_email: emailFromBody } : {}),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("handle", handle);
+        console.log(`[stripe-connect] Update table 'sites' result:`, { updErr });
+        if (updErr) {
+          return jsonError("Failed saving stripe_account_id", 500, { detail: updErr.message });
         }
+      } catch (e) {
+        console.warn(`[stripe-connect] Exception updating table 'sites':`, e);
       }
     }
 
@@ -194,10 +226,10 @@ export async function POST(req: Request) {
       return_url,
       type: "account_onboarding",
     });
-
+    console.log(`[stripe-connect] Created onboarding link:`, link);
     return NextResponse.json({ ok: true, url: link.url, accountId });
   } catch (e: any) {
-    console.error("stripe/connect route error:", e);
+    console.error("[stripe-connect] route error:", e);
     return jsonError("Connect failed", 500, { detail: e?.message || String(e) });
   }
 }
