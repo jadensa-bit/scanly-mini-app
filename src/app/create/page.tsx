@@ -478,6 +478,8 @@ export default function CreatePage() {
       availability,
       notifications,
       ownerEmail,
+      active: true,
+      createdAt: Date.now(),
     };
     try {
       localStorage.setItem(storageKey(h), JSON.stringify(draft));
@@ -513,7 +515,7 @@ useEffect(() => {
   _restoredFor.current = h;
 
   // Helper to merge configs (local wins for unsaved fields)
-  function mergeConfigs(server, local) {
+  function mergeConfigs(server: any, local: any) {
     if (!server) return local;
     if (!local) return server;
     return {
