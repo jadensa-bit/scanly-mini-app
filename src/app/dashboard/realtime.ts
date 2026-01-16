@@ -81,7 +81,7 @@ export function subscribeToOrders(onUpdate: (order: any) => void, siteHandles: s
       }
 
       // Fetch the full order data
-      const orderId = payload.new?.id;
+      const orderId = (payload.new as any)?.id;
       if (orderId) {
         try {
           const { data, error } = await supabase
