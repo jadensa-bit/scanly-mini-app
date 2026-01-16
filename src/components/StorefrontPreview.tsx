@@ -1,7 +1,10 @@
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, X, Download } from "lucide-react";
+import { useParams } from "next/navigation";
+import QRCode from "qrcode";
+import { supabase } from "@/lib/supabaseclient";
 
 // Type definitions
 type Item = {
@@ -64,6 +67,13 @@ export type StorefrontPreviewProps = {
   availability?: Availability;
   notifications?: any;
   mode?: string;
+  handle?: string; // ✅ Added handle as optional prop
+  payments?: {
+    enabled: boolean;
+    depositRequired: boolean;
+    depositPercentage: number;
+    currencyCode: string;
+  };
 };
 
 // Utility functions (typed)
@@ -79,6 +89,146 @@ function hexToRgba(hex: string = "#22D3EE", alpha: number = 0.2): string {
 }
 
 export default function StorefrontPreview(props: StorefrontPreviewProps) {
+  // Get handle from props first (preferred), then try URL params as fallback
+  const params = useParams();
+  const handle = props.handle || (params?.handle as string) || "";
+
+  // Booking state
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [bookingStep, setBookingStep] = useState<"browse" | "confirm" | "success">("browse");
+  const [slots, setSlots] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTeamMember, setSelectedTeamMember] = useState<string>("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+  const qrCanvasRef = useRef<HTMLImageElement>(null);
+
+  // Fetch slots and team members when item is selected
+  useEffect(() => {
+    if (!selectedItem || bookingStep !== "confirm" || !handle) {
+      console.log("⏭️ Skipping fetch - selectedItem:", !!selectedItem, "bookingStep:", bookingStep, "handle:", handle);
+      return;
+    }
+    
+    const fetchData = async () => {
+      try {
+        console.log(`📋 Fetching slots and team for handle: ${handle}`);
+        const [slotsRes, teamRes] = await Promise.all([
+          fetch(`/api/slots?handle=${encodeURIComponent(handle)}`),
+          fetch(`/api/team?handle=${encodeURIComponent(handle)}`),
+        ]);
+        const slotsData = await slotsRes.json();
+        const teamData = await teamRes.json();
+        console.log("✅ Slots fetched:", slotsData.slots?.length || 0);
+        console.log("✅ Team members fetched:", teamData.team || []);
+        setSlots(slotsData.slots || []);
+        setTeamMembers(teamData.team || []);
+      } catch (err) {
+        console.error("❌ Failed to fetch slots or team:", err);
+        setSlots([]);
+        setTeamMembers([]);
+      }
+    };
+    
+    fetchData();
+    
+    // Subscribe to slot changes in real-time
+    const slotSubscription = supabase
+      .channel(`slots-${handle}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'slots' }, (payload: any) => {
+        console.log('🔄 Slot updated:', payload.new);
+        // Refetch slots to show updated availability
+        fetchData();
+      })
+      .subscribe();
+    
+    return () => {
+      slotSubscription.unsubscribe();
+    };
+  }, [selectedItem, bookingStep, handle]);
+
+  // Create booking
+  const createBooking = async () => {
+    if (!selectedDate || !selectedSlot || !customerName.trim() || !customerEmail.trim()) {
+      setBookingError("Please fill in all required fields (date, time, name, email)");
+      return;
+    }
+
+    setBookingLoading(true);
+    setBookingError(null);
+
+    try {
+      // If payment is required, redirect to checkout instead of creating booking directly
+      if (payments?.enabled) {
+        // Redirect to checkout with booking details
+        const checkoutParams = new URLSearchParams({
+          handle: handle || "",
+          slot_id: selectedSlot.id,
+          team_member_id: selectedTeamMember || "",
+          customer_name: customerName.trim(),
+          customer_email: customerEmail.trim(),
+          item_title: selectedItem?.title || "",
+          item_price: selectedItem?.price || "",
+        });
+        window.location.href = `/api/bookings/checkout?${checkoutParams.toString()}`;
+        return;
+      }
+
+      // No payment required - create booking immediately
+      const res = await fetch("/api/bookings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          handle,
+          slot_id: selectedSlot.id,
+          team_member_id: selectedTeamMember || null,
+          customer_name: customerName.trim(),
+          customer_email: customerEmail.trim(),
+          item_title: selectedItem?.title,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Booking failed");
+      }
+
+      const bookingData = await res.json();
+      
+      // Generate QR code for check-in - encode booking confirmation
+      const qrText = `${handle}|${customerEmail}|${new Date(selectedSlot.start_time).toISOString()}`;
+      try {
+        const qrDataUrl = await QRCode.toDataURL(qrText, { width: 200, margin: 2 });
+        setQrCodeUrl(qrDataUrl);
+      } catch (qrErr) {
+        console.error("Failed to generate QR code:", qrErr);
+      }
+
+      setBookingStep("success");
+    } catch (err: any) {
+      setBookingError(err.message || "Failed to create booking");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const resetBooking = () => {
+    setSelectedItem(null);
+    setBookingStep("browse");
+    setSelectedSlot(null);
+    setSelectedDate("");
+    setSelectedTeamMember("");
+    setCustomerName("");
+    setCustomerEmail("");
+    setBookingError(null);
+    setQrCodeUrl("");
+  };
+
   // Accept all config fields as props
   const {
     brandName = "",
@@ -92,6 +242,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     availability = { days: {}, slotMinutes: 30, advanceDays: 7 },
     notifications = {},
     mode = "services",
+    payments = { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" },
   } = props;
 
   // Derived values (copied from create page)
@@ -379,7 +530,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               {mode === "services" ? "60 min • Book online" : item.note || "Details here"}
                             </p>
                             <motion.button
-                              className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden"
+                              className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
                               style={{
                                 background: ctaBg,
                                 color: ctaFg,
@@ -387,6 +538,12 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               }}
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                if (mode === "services") {
+                                  setSelectedItem(item);
+                                  setBookingStep("confirm");
+                                }
+                              }}
                             >
                               {shine && (
                                 <motion.div
@@ -535,6 +692,230 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           </div>
         </div>
       </div>
+
+      {/* Booking Modal - appears when user taps Book */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center sm:justify-center"
+            onClick={resetBooking}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:w-96 sm:rounded-2xl bg-white text-gray-900 shadow-xl"
+              style={{ borderTopLeftRadius: bookingStep === "browse" ? "24px" : "8px", borderTopRightRadius: bookingStep === "browse" ? "24px" : "8px" }}
+            >
+              {/* Close button */}
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b bg-white">
+                <span className="text-sm font-semibold">{bookingStep === "success" ? "✓ Confirmed!" : "Book " + selectedItem.title}</span>
+                <button
+                  onClick={resetBooking}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-4 max-h-[70vh] overflow-y-auto">
+                {bookingStep === "confirm" ? (
+                  <>
+                    {/* Booking Confirmation Form */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-semibold mb-2">Service: {selectedItem.title}</p>
+                        <p className="text-xs text-gray-600">{selectedItem.price}</p>
+                      </div>
+
+                      {/* Date Picker */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-2">Select a date</label>
+                        <input
+                          type="date"
+                          value={selectedDate}
+                          onChange={(e) => {
+                            setSelectedDate(e.target.value);
+                            setSelectedSlot(null); // Reset slot when date changes
+                          }}
+                          min={new Date().toISOString().split('T')[0]}
+                          max={new Date(Date.now() + (availability?.advanceDays || 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+
+                      {/* Time Slot Picker */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-2">Select a time slot</label>
+                        {!selectedDate ? (
+                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                            Please select a date first
+                          </div>
+                        ) : slots.length === 0 ? (
+                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                            No available slots for this date. Try another date or contact directly.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
+                            {slots
+                              .filter((slot: any) => new Date(slot.start_time).toLocaleDateString() === new Date(selectedDate).toLocaleDateString())
+                              .slice(0, 9)
+                              .map((slot: any) => (
+                              <button
+                                key={slot.id}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`p-2 rounded-lg text-xs font-semibold transition ${
+                                  selectedSlot?.id === slot.id
+                                    ? "bg-cyan-500 text-white"
+                                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                                }`}
+                              >
+                                {new Date(slot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Team Member Selector */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-2">
+                          Choose your specialist 
+                          {teamMembers.length > 0 && <span className="text-gray-500">({teamMembers.length})</span>}
+                        </label>
+                        {teamMembers.length === 0 ? (
+                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                            No specialists available. Booking is open to anyone.
+                          </div>
+                        ) : (
+                          <select
+                            value={selectedTeamMember}
+                            onChange={(e) => setSelectedTeamMember(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                          >
+                            <option value="">Any available</option>
+                            {teamMembers.map((member: any) => (
+                              <option key={member.id} value={member.id}>
+                                {member.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+
+                      {/* Customer Info */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1">Your name</label>
+                        <input
+                          type="text"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          placeholder="John Doe"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="john@example.com"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+
+                      {bookingError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                          {bookingError}
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <button
+                        onClick={createBooking}
+                        disabled={bookingLoading || !selectedSlot}
+                        className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          background: !bookingLoading && selectedSlot ? accentSolid : "#ccc",
+                        }}
+                      >
+                        {bookingLoading ? "Booking..." : "Confirm Booking"}
+                      </button>
+                      <button
+                        onClick={resetBooking}
+                        className="w-full py-2 rounded-lg font-semibold border border-gray-200 hover:bg-gray-50 transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : bookingStep === "success" ? (
+                  <>
+                    {/* Success Screen */}
+                    <div className="text-center space-y-4 py-6">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200 }}
+                        className="text-5xl mx-auto"
+                      >
+                        ✓
+                      </motion.div>
+                      <div>
+                        <h3 className="text-lg font-bold">Booking Confirmed!</h3>
+                        <p className="text-xs text-gray-600 mt-1">We'll send a confirmation email shortly</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg space-y-1 text-xs text-left">
+                        <div><strong>Service:</strong> {selectedItem.title}</div>
+                        <div><strong>Customer:</strong> {customerName}</div>
+                        <div><strong>Email:</strong> {customerEmail}</div>
+                        {selectedSlot && (
+                          <div><strong>Time:</strong> {new Date(selectedSlot.start_time).toLocaleDateString()} {new Date(selectedSlot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                        )}
+                        {selectedTeamMember && (
+                          <div><strong>Specialist:</strong> {teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name || "Selected"}</div>
+                        )}
+                      </div>
+
+                      {/* QR Code for Check-in */}
+                      {qrCodeUrl && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg border border-gray-200"
+                        >
+                          <p className="text-xs font-semibold text-gray-700">Scan for Check-in</p>
+                          <img
+                            src={qrCodeUrl}
+                            alt="Check-in QR Code"
+                            className="w-32 h-32 rounded-lg border border-gray-300 bg-white"
+                            ref={qrCanvasRef}
+                          />
+                          <p className="text-[10px] text-gray-500 text-center">Screenshot this QR code to check in on arrival</p>
+                        </motion.div>
+                      )}
+
+                      <button
+                        onClick={resetBooking}
+                        className="w-full py-3 rounded-lg font-semibold text-white transition"
+                        style={{ background: accentSolid }}
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

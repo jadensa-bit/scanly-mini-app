@@ -160,6 +160,13 @@ export async function POST(req: Request) {
     let bookingWarn: string | null = null;
 
     if (bookingId) {
+      // First fetch the booking to get the slot_id
+      const { data: bookingData } = await supabase
+        .from("bookings")
+        .select("slot_id")
+        .eq("id", bookingId)
+        .single();
+      
       const { error: updErr } = await supabase
         .from("bookings")
         .update({
@@ -175,6 +182,20 @@ export async function POST(req: Request) {
         console.error("Booking update failed:", updErr);
       } else {
         wroteBooking = true;
+        
+        // Mark the slot as booked if booking has a slot_id
+        if (bookingData?.slot_id) {
+          const { error: slotErr } = await supabase
+            .from("slots")
+            .update({ is_booked: true })
+            .eq("id", bookingData.slot_id);
+          
+          if (slotErr) {
+            console.warn("⚠️ Failed to mark slot as booked:", slotErr.message);
+          } else {
+            console.log(`✅ Slot ${bookingData.slot_id} marked as booked via webhook`);
+          }
+        }
       }
     }
 

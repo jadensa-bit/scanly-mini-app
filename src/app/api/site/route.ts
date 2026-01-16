@@ -2,8 +2,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 function noStoreJson(data: any, status = 200) {
   return NextResponse.json(data, {
@@ -94,7 +95,7 @@ function extractOwnerEmail(config: any) {
   return a || b || c || null;
 }
 
-async function upsertSite(supabase: any, handle: string, config: any) {
+async function upsertSite(supabase: any, handle: string, config: any, userId?: string) {
   const owner_email = extractOwnerEmail(config);
 
   // store full config JSON under config column
@@ -102,10 +103,14 @@ async function upsertSite(supabase: any, handle: string, config: any) {
     handle,
     config,
     ...(owner_email ? { owner_email } : {}),
+    ...(userId ? { user_id: userId } : {}),
     updated_at: new Date().toISOString(),
   };
 
+  console.log("📝 upsertSite - payload user_id:", payload.user_id || "NOT SET", "handle:", handle);
+
   for (const table of TABLE_CANDIDATES) {
+    console.log(`🔄 Trying table: ${table}`);
     // preserve existing stripe_account_id if present on the existing row
     try {
       const { data: existing, error: selErr } = await supabase.from(table).select("stripe_account_id").eq("handle", handle).maybeSingle();
@@ -113,6 +118,7 @@ async function upsertSite(supabase: any, handle: string, config: any) {
         // attach existing stripe_account_id so upsert won't wipe it
         // @ts-ignore
         payload.stripe_account_id = existing.stripe_account_id;
+        console.log(`✅ Preserved stripe_account_id from ${table}`);
       }
     } catch {}
     const { data, error } = await supabase
@@ -122,6 +128,7 @@ async function upsertSite(supabase: any, handle: string, config: any) {
       .maybeSingle();
 
     const msg = String(error?.message || "").toLowerCase();
+    console.log(`📊 Table ${table} response:`, { success: !error, error: error?.message, handle: data?.handle });
 
     // Table/column mismatch → try next
     if (
@@ -132,13 +139,21 @@ async function upsertSite(supabase: any, handle: string, config: any) {
         msg.includes("column") ||
         msg.includes("not found"))
     ) {
+      console.log(`⏭️ Skipping ${table} - table doesn't exist or missing column`);
       continue;
     }
 
-    if (error) return { table, data: null, error };
-    if (data?.handle) return { table, data, error: null };
+    if (error) {
+      console.error(`❌ Error in ${table}:`, error);
+      return { table, data: null, error };
+    }
+    if (data?.handle) {
+      console.log(`✅ Successfully upserted to ${table} with user_id: ${userId}`);
+      return { table, data, error: null };
+    }
   }
 
+  console.error(`❌ Could not upsert into any table: ${TABLE_CANDIDATES.join(", ")}`);
   return {
     table: null,
     data: null,
@@ -184,9 +199,53 @@ export async function GET(req: Request) {
 }
 
 // POST /api/site
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     console.log("POST /api/site called");
+
+    // Get user from session (first try cookies, then try Bearer token)
+    let user = null;
+    let userId: string | undefined;
+    
+    const supabaseAuth = await createServerClient();
+    console.log("✅ Server client created");
+    const { data: { user: cookieUser }, error } = await supabaseAuth.auth.getUser();
+    console.log("👤 getUser from cookies result:", { user: cookieUser?.id || "null", error: error?.message });
+    
+    if (cookieUser) {
+      user = cookieUser;
+      userId = cookieUser.id;
+    } else {
+      // Try to extract user from Bearer token in Authorization header
+      console.log("🔐 Checking Authorization header...");
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        console.log("📌 Bearer token found, verifying with Supabase...");
+        
+        const supabase = getSupabase();
+        try {
+          const { data: { user: tokenUser }, error: tokenError } = await supabase.auth.getUser(token);
+          console.log("👤 getUser from token result:", { user: tokenUser?.id || "null", error: tokenError?.message });
+          
+          if (tokenUser) {
+            user = tokenUser;
+            userId = tokenUser.id;
+          }
+        } catch (tokenErr) {
+          console.error("❌ Token verification failed:", tokenErr);
+        }
+      }
+    }
+
+    // ✅ CRITICAL: Verify user is authenticated before proceeding
+    if (!user || !userId) {
+      console.error("POST /api/site: User not authenticated");
+      return jsonError("Unauthorized: Please log in first", 401);
+    }
+
+    console.log("✅ User authenticated:", userId);
+    
     const supabase = getSupabase();
     console.log("Supabase client created successfully");
 
@@ -215,9 +274,10 @@ export async function POST(req: Request) {
 
     // ✅ Ensure stored config uses normalized handle + trimmed brandName
     const config = { ...(body || {}), handle, brandName };
-    console.log("POST /api/site handle:", handle, "brandName:", brandName, "config keys:", Object.keys(config));
+    console.log("POST /api/site handle:", handle, "brandName:", brandName, "staffProfiles:", body?.staffProfiles?.length || 0, "config keys:", Object.keys(config));
 
-    const out = await upsertSite(supabase, handle, config);
+    // ✅ Always pass userId since we verified authentication above
+    const out = await upsertSite(supabase, handle, config, userId);
 
     if (out.error) {
       console.error("POST /api/site supabase error:", out.error);
@@ -225,6 +285,41 @@ export async function POST(req: Request) {
         detail: String((out.error as any)?.message || out.error),
         triedTables: TABLE_CANDIDATES,
       });
+    }
+
+    // ✅ Save team members from staffProfiles
+    if (body?.staffProfiles && Array.isArray(body.staffProfiles) && body.staffProfiles.length > 0) {
+      try {
+        console.log(`📋 Processing ${body.staffProfiles.length} staff profiles for ${handle}`);
+        
+        // First, delete old team members for this handle
+        const { error: deleteError } = await supabase.from("team_members").delete().eq("creator_handle", handle);
+        if (deleteError) {
+          console.warn("⚠️ Failed to delete old team members:", deleteError.message);
+        }
+
+        // Then insert new ones
+        const teamMembers = body.staffProfiles.map((staff: any, idx: number) => ({
+          name: (staff.name || "Staff").trim(),
+          creator_handle: handle,
+          created_at: new Date().toISOString(),
+        }));
+
+        console.log(`📝 Inserting team members:`, teamMembers);
+
+        const { data, error: teamError } = await supabase
+          .from("team_members")
+          .insert(teamMembers)
+          .select();
+
+        if (teamError) {
+          console.error("❌ Failed to save team members:", teamError.message);
+        } else {
+          console.log(`✅ Saved ${data?.length || teamMembers.length} team members for ${handle}:`, data);
+        }
+      } catch (teamErr: any) {
+        console.warn("⚠️ Team member save failed (non-critical):", teamErr.message);
+      }
     }
 
     console.log("POST /api/site success for handle:", handle);

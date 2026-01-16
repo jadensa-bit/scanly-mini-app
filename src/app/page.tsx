@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AuthButtons from "@/components/AuthButtons";
 
 type ModeId = "services" | "products" | "digital";
 
@@ -97,8 +98,6 @@ const USE_ANYWHERE = [
 function cn(...c: (string | false | undefined)[]) {
   return c.filter(Boolean).join(" ");
 }
-
-/** Branded storefront phone preview with full realistic demo */
 function AnimatedPhonePreview({
   mode,
 }: {
@@ -247,7 +246,20 @@ function AnimatedPhonePreview({
               <Sparkles className="h-3.5 w-3.5" />
               Live demo • {mode.exampleName}
             </span>
-            <span className="text-white/60">{mode.title}</span>
+            <span className="flex items-center gap-2">
+              <a
+                href="/login"
+                className="px-3 py-1 rounded-full text-xs font-semibold border border-cyan-200 text-cyan-700 bg-white hover:bg-cyan-50 transition"
+              >
+                Login
+              </a>
+              <a
+                href="/create"
+                className="px-3 py-1 rounded-full text-xs font-semibold border border-purple-200 text-purple-700 bg-white hover:bg-purple-50 transition"
+              >
+                Create
+              </a>
+            </span>
           </div>
 
           {/* Screen */}
@@ -1007,11 +1019,7 @@ export default function Home() {
 
   return (
     <>
-      {/* Navigation links for new features */}
-      <nav className="w-full flex justify-center gap-6 py-4 bg-black/30 backdrop-blur-md">
-        <Link href="/dashboard" className="text-cyan-400 hover:underline font-semibold">Dashboard</Link>
-        <Link href="/checkin" className="text-purple-400 hover:underline font-semibold">QR Check-in</Link>
-      </nav>
+      {/* Navigation links removed - Login available in header */}
 
       {/* Header */}
       <motion.header
@@ -1056,10 +1064,10 @@ export default function Home() {
           </div>
 
           <a
-            href="/create"
-            className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-lg md:text-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all"
+            href="/login"
+            className="px-4 py-2 bg-cyan-600 text-white rounded-full font-semibold text-sm hover:bg-cyan-700 transition-all"
           >
-            Build my QR Store
+            Login
           </a>
         </div>
       </motion.header>
@@ -1074,7 +1082,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
 
-            className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-5xl md:text-7xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
           >
             Turn scans into sales — instantly.
           </motion.h1>
@@ -1094,16 +1102,17 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <a
-              href="/create"
+              href="/signup"
               className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
             >
-              Build my QR Store
+              Create Account to Build Your QR Store
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </a>
           </motion.div>
         </div>
       </section>
-            {/* Trust Signal Section */}
+
+      {/* Trust Signal Section */}
             <section className="relative py-6 px-6 flex flex-col items-center justify-center">
               <div className="flex flex-wrap justify-center gap-4 text-base md:text-lg font-medium text-white/80">
                 <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
@@ -1124,6 +1133,22 @@ export default function Home() {
                 </div>
               </div>
             </section>
+
+      {/* Existing Users Section - Moved after trust signals for better flow */}
+      <section className="relative py-12 px-6 bg-gradient-to-r from-cyan-950/20 to-purple-950/20 border-y border-white/10">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Already have a piqo?</h2>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">Access your dashboard to manage your store, or use QR check-in for customer bookings.</p>
+            <AuthButtons />
+          </motion.div>
+        </div>
+      </section>
+
       {/* Use Case Section */}
       <section className="relative py-12 px-6 flex flex-col items-center justify-center">
         <div className="max-w-2xl mx-auto text-center">
@@ -1391,7 +1416,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
           >
             <motion.a
-              href="/create"
+              href="/signup"
               className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -1407,7 +1432,7 @@ export default function Home() {
                   ease: "linear",
                 }}
               />
-              <span className="relative z-10">Build my QR Store</span>
+              <span className="relative z-10">Create Account to Build Your QR Store</span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform relative z-10" />
             </motion.a>
           </motion.div>

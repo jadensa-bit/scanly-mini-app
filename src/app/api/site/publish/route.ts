@@ -23,6 +23,25 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
+
+    // Auto-generate slots for services/booking modes
+    try {
+      const slotsRes = await fetch(new URL("/api/slots/generate", process.env.NEXTAUTH_URL || "http://localhost:3000").toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle, daysInAdvance: 30 }),
+      });
+      
+      if (slotsRes.ok) {
+        const slotsData = await slotsRes.json();
+        console.log(`✅ Generated ${slotsData.slotsCount} slots for ${handle}`);
+      } else {
+        console.warn(`⚠️ Could not generate slots: ${await slotsRes.text()}`);
+      }
+    } catch (err: any) {
+      console.warn(`⚠️ Slot generation failed (non-critical): ${err.message}`);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });

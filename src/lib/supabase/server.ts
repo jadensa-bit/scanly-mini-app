@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+  console.log("🍪 Available cookies:", allCookies.map(c => c.name).join(", ") || "(none)");
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,10 +13,12 @@ export async function createClient() {
     {
       cookies: {
         async getAll() {
-          return cookieStore.getAll().map(cookie => ({
+          const cookies = cookieStore.getAll().map(cookie => ({
             name: cookie.name,
             value: cookie.value,
           }));
+          console.log("🍪 getAll() returning cookies:", cookies.map(c => c.name).join(", ") || "(none)");
+          return cookies;
         },
         async setAll(cookiesToSet) {
           try {

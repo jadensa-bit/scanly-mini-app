@@ -93,8 +93,10 @@ export default function HandlePage() {
 
 	// Use the full-featured StorefrontPreview for pixel-perfect rendering
 	// Pass all config fields as props for full fidelity
+	const handle = (params?.handle || "").toString();
 	return (
 		<StorefrontPreview
+			handle={handle}
 			brandName={cfg.brandName}
 			tagline={cfg.tagline}
 			items={cfg.items}
@@ -105,6 +107,7 @@ export default function HandlePage() {
 			social={cfg.social}
 			availability={cfg.availability}
 			notifications={cfg.notifications}
+			payments={cfg.payments}
 		/>
 	);
 }
