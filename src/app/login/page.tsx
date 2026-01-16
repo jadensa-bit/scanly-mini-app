@@ -48,30 +48,11 @@ function LoginForm() {
       }
     }
 
-    // Get the session and explicitly set it in a way the server can read
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      console.log("✅ Session obtained after login, refreshing to sync with server");
-      // Call a helper endpoint to sync the session to cookies
-      await fetch('/api/auth/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ session }),
-      }).catch(err => console.error('Session sync failed:', err));
-    }
-
     // Small delay to ensure cookies are set and session is stable
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Revalidate server-side session before redirecting
-    router.refresh();
-    
-    // Then redirect to the specified page or dashboard
-    setTimeout(() => {
-      router.push(redirect);
-      setLoading(false);
-    }, 100);
+    // Force a full page refresh to ensure middleware picks up the new session
+    window.location.href = redirect;
   };
 
   return (
