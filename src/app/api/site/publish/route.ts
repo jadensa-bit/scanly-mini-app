@@ -26,17 +26,36 @@ export async function POST(req: Request) {
 
     // Auto-generate slots for services/booking modes
     try {
-      const slotsRes = await fetch(new URL("/api/slots/generate", process.env.NEXTAUTH_URL || "http://localhost:3000").toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle, daysInAdvance: 30 }),
-      });
+      // Get the site config to check if it's a services site
+      const { data: site } = await supabase
+        .from("sites")
+        .select("config")
+        .eq("handle", handle)
+        .single();
       
-      if (slotsRes.ok) {
-        const slotsData = await slotsRes.json();
-        console.log(`✅ Generated ${slotsData.slotsCount} slots for ${handle}`);
+      const mode = site?.config?.mode;
+      if (mode === 'services' || mode === 'booking') {
+        console.log(`📅 Generating slots for ${mode} site: ${handle}`);
+        
+        // Call generate endpoint using relative URL
+        const baseUrl = req.headers.get('origin') || req.headers.get('host') || 'http://localhost:3000';
+        const slotsUrl = `${baseUrl}/api/slots/generate`;
+        
+        const slotsRes = await fetch(slotsUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle, daysInAdvance: 30 }),
+        });
+        
+        if (slotsRes.ok) {
+          const slotsData = await slotsRes.json();
+          console.log(`✅ Generated ${slotsData.slotsCount || 0} slots for ${handle}`);
+        } else {
+          const errorText = await slotsRes.text();
+          console.warn(`⚠️ Could not generate slots for ${handle}:`, errorText);
+        }
       } else {
-        console.warn(`⚠️ Could not generate slots: ${await slotsRes.text()}`);
+        console.log(`ℹ️ Skipping slot generation for non-services site (mode: ${mode})`);
       }
     } catch (err: any) {
       console.warn(`⚠️ Slot generation failed (non-critical): ${err.message}`);
