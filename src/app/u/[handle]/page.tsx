@@ -97,6 +97,7 @@ export default function HandlePage() {
 	return (
 		<StorefrontPreview
 			handle={handle}
+			mode={cfg.mode}
 			brandName={cfg.brandName}
 			tagline={cfg.tagline}
 			items={cfg.items}

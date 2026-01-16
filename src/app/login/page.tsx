@@ -36,12 +36,12 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
       
-      // Show resend option if email not confirmed
-      if (error.message?.toLowerCase().includes('email') && 
-          (error.message?.toLowerCase().includes('confirm') || 
-           error.message?.toLowerCase().includes('verified'))) {
-        setShowResend(true);
-      }
+      // Email confirmation is disabled, so don't show resend button
+      // if (error.message?.toLowerCase().includes('email') && 
+      //     (error.message?.toLowerCase().includes('confirm') || 
+      //      error.message?.toLowerCase().includes('verified'))) {
+      //   setShowResend(true);
+      // }
       
       return;
     }

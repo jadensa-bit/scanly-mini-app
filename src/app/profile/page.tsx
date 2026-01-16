@@ -184,6 +184,7 @@ export default function ProfilePage() {
     setMessage('Account deletion requested. Please contact support to complete the process.');
     setLoading(false);
     router.push('/');
+    router.refresh();
   };
 
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 to-purple-50"><div className="text-lg text-cyan-700">Loading...</div></div>;
@@ -194,6 +195,7 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-2">
           {/* Logo already rendered above, remove duplicate */}
           <h1 className="text-2xl font-bold text-cyan-800 text-center">{name ? name : 'Your Profile'}</h1>
+          <p className="text-sm text-gray-600">{email}</p>
           <p className="text-center text-gray-500 text-sm">Manage your piqo account, update your info, and view your recent activity.</p>
           
           {/* New Piqo Button */}
@@ -362,7 +364,7 @@ export default function ProfilePage() {
             Delete Account
           </button>
           <button
-            onClick={async () => { await supabase.auth.signOut(); router.push('/'); }}
+            onClick={async () => { await supabase.auth.signOut(); router.push('/'); router.refresh(); }}
             className="w-full py-2 rounded-lg bg-cyan-100 text-cyan-700 hover:bg-cyan-200 font-semibold transition"
           >
             Log Out

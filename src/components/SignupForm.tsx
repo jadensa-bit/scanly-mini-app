@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseclient';
 import PiqoLogoFull from './PiqoLogoFull';
 import Link from 'next/link';
 import { Mail, Lock, User } from 'lucide-react';
@@ -36,8 +37,22 @@ export default function SignupForm() {
         return;
       }
 
-      // Redirect to create page to build their site
-      router.push('/create');
+      // Sign in the user immediately with their credentials
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signInError) {
+        console.error('Sign in error:', signInError);
+        // Still redirect even if sign in fails - session might be created
+      }
+
+      // Wait a moment for auth to fully settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Redirect to dashboard immediately
+      router.push('/dashboard');
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       setLoading(false);
@@ -155,27 +170,28 @@ export default function SignupForm() {
 
         {/* Divider */}
         <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-          </div>
-        </div>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Already have an account?</span>
+              </div>
+            </div>
 
-        {/* Login Link */}
-        <Link
-          href="/login"
-          className="w-full block text-center py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
-        >
-          Log In
-        </Link>
+            {/* Login Link */}
+            <Link
+              href="/login"
+              className="w-full block text-center py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+            >
+              Log In
+            </Link>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-500">
-          By signing up, you agree to our Terms of Service and Privacy Policy
-        </p>
+            {/* Footer */}
+            <p className="text-center text-xs text-gray-500">
+              By signing up, you agree to our Terms of Service and Privacy Policy
+            </p>
       </div>
     </div>
   );
 }
+

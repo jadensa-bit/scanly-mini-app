@@ -108,12 +108,31 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const qrCanvasRef = useRef<HTMLImageElement>(null);
 
-  // Fetch slots and team members when item is selected
+  // Accept all config fields as props
+  const {
+    brandName = "",
+    tagline = "",
+    items = [],
+    appearance = {},
+    staffProfiles = [],
+    ownerEmail = "",
+    brandLogo = "",
+    social = {},
+    availability = { days: {}, slotMinutes: 30, advanceDays: 7 },
+    notifications = {},
+    mode = "services",
+    payments = { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" },
+  } = props;
+
+  // Fetch slots and team members when modal opens for services
   useEffect(() => {
-    if (!selectedItem || bookingStep !== "confirm" || !handle) {
-      console.log("⏭️ Skipping fetch - selectedItem:", !!selectedItem, "bookingStep:", bookingStep, "handle:", handle);
+    // Only fetch if we have a handle and the booking modal is open (selectedItem is set)
+    if (!selectedItem || !handle || mode !== 'services') {
+      console.log("⏭️ Skipping fetch - selectedItem:", !!selectedItem, "mode:", mode, "handle:", handle);
       return;
     }
+    
+    console.log(`🚀 Starting fetch for handle: ${handle}, mode: ${mode}`);
     
     const fetchData = async () => {
       try {
@@ -122,10 +141,16 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           fetch(`/api/slots?handle=${encodeURIComponent(handle)}`),
           fetch(`/api/team?handle=${encodeURIComponent(handle)}`),
         ]);
+        
+        console.log('📊 Slots response status:', slotsRes.status);
+        console.log('📊 Team response status:', teamRes.status);
+        
         const slotsData = await slotsRes.json();
         const teamData = await teamRes.json();
-        console.log("✅ Slots fetched:", slotsData.slots?.length || 0);
-        console.log("✅ Team members fetched:", teamData.team || []);
+        
+        console.log("✅ Slots fetched:", slotsData.slots?.length || 0, "slots:", slotsData);
+        console.log("✅ Team members fetched:", teamData.team?.length || 0, "team:", teamData);
+        
         setSlots(slotsData.slots || []);
         setTeamMembers(teamData.team || []);
       } catch (err) {
@@ -137,25 +162,52 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     
     fetchData();
     
-    // Subscribe to slot changes in real-time
+    // Subscribe to real-time changes for slots and team members
     const slotSubscription = supabase
       .channel(`slots-${handle}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'slots' }, (payload: any) => {
-        console.log('🔄 Slot updated:', payload.new);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'slots' }, (payload: any) => {
+        console.log('🔄 Slot changed:', payload.eventType, payload.new);
         // Refetch slots to show updated availability
+        fetchData();
+      })
+      .subscribe();
+    
+    const teamSubscription = supabase
+      .channel(`team-${handle}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `creator_handle=eq.${handle}` }, (payload: any) => {
+        console.log('🔄 Team member changed:', payload.eventType, payload.new);
+        // Refetch team members to show updates
+        fetchData();
+      })
+      .subscribe();
+    
+    const siteSubscription = supabase
+      .channel(`site-${handle}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sites', filter: `handle=eq.${handle}` }, (payload: any) => {
+        console.log('🔄 Site config updated:', payload.new);
+        // Refetch everything when site settings change
         fetchData();
       })
       .subscribe();
     
     return () => {
       slotSubscription.unsubscribe();
+      teamSubscription.unsubscribe();
+      siteSubscription.unsubscribe();
     };
-  }, [selectedItem, bookingStep, handle]);
+  }, [selectedItem, handle, mode]);
 
   // Create booking
   const createBooking = async () => {
-    if (!selectedDate || !selectedSlot || !customerName.trim() || !customerEmail.trim()) {
-      setBookingError("Please fill in all required fields (date, time, name, email)");
+    // For services, require date and slot
+    if (mode === 'services' && (!selectedDate || !selectedSlot)) {
+      setBookingError("Please select a date and time slot");
+      return;
+    }
+
+    // Always require customer name and email
+    if (!customerName.trim() || !customerEmail.trim()) {
+      setBookingError("Please enter your name and email");
       return;
     }
 
@@ -163,9 +215,63 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     setBookingError(null);
 
     try {
-      // If payment is required, redirect to checkout instead of creating booking directly
+      // For products/digital products, create order first then redirect to Stripe
+      if (mode === "products" || mode === "digital") {
+        // Create order in database first
+        const orderRes = await fetch("/api/orders/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handle,
+            customer_name: customerName.trim(),
+            customer_email: customerEmail.trim(),
+            item_title: selectedItem?.title,
+            item_price: selectedItem?.price,
+            mode: mode,
+          }),
+        });
+
+        if (!orderRes.ok) {
+          const data = await orderRes.json();
+          throw new Error(data.error || "Failed to create order");
+        }
+
+        const orderData = await orderRes.json();
+        
+        // Now redirect to Stripe checkout with order ID (POST request)
+        const checkoutRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handle: handle || "",
+            mode: mode,
+            item_title: selectedItem?.title || "",
+            item_price: selectedItem?.price || "",
+            customer_name: customerName.trim(),
+            customer_email: customerEmail.trim(),
+            order_id: orderData.order?.id || "",
+          }),
+        });
+
+        if (!checkoutRes.ok) {
+          const data = await checkoutRes.json();
+          throw new Error(data.error || "Checkout failed");
+        }
+
+        const checkoutData = await checkoutRes.json();
+        
+        // Redirect to Stripe checkout URL
+        if (checkoutData.url) {
+          window.location.href = checkoutData.url;
+        } else {
+          throw new Error("No checkout URL returned");
+        }
+        return;
+      }
+
+      // For services, check if payment is required
       if (payments?.enabled) {
-        // Redirect to checkout with booking details
+        // Redirect to booking checkout with deposit
         const checkoutParams = new URLSearchParams({
           handle: handle || "",
           slot_id: selectedSlot.id,
@@ -179,7 +285,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
         return;
       }
 
-      // No payment required - create booking immediately
+      // No payment required for services - create booking immediately
       const res = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,22 +334,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     setBookingError(null);
     setQrCodeUrl("");
   };
-
-  // Accept all config fields as props
-  const {
-    brandName = "",
-    tagline = "",
-    items = [],
-    appearance = {},
-    staffProfiles = [],
-    ownerEmail = "",
-    brandLogo = "",
-    social = {},
-    availability = { days: {}, slotMinutes: 30, advanceDays: 7 },
-    notifications = {},
-    mode = "services",
-    payments = { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" },
-  } = props;
 
   // Derived values (copied from create page)
   const cardRadius = appearance.radius || 16;
@@ -539,10 +629,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => {
-                                if (mode === "services") {
-                                  setSelectedItem(item);
-                                  setBookingStep("confirm");
-                                }
+                                setSelectedItem(item);
+                                setBookingStep("confirm");
                               }}
                             >
                               {shine && (
@@ -713,7 +801,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             >
               {/* Close button */}
               <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b bg-white">
-                <span className="text-sm font-semibold">{bookingStep === "success" ? "✓ Confirmed!" : "Book " + selectedItem.title}</span>
+                <span className="text-sm font-semibold">
+                  {bookingStep === "success" 
+                    ? "✓ Confirmed!" 
+                    : mode === 'services' 
+                      ? "Book " + selectedItem.title 
+                      : "Get product now"}
+                </span>
                 <button
                   onClick={resetBooking}
                   className="p-1 hover:bg-gray-100 rounded-lg transition"
@@ -725,87 +819,92 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               <div className="p-4 max-h-[70vh] overflow-y-auto">
                 {bookingStep === "confirm" ? (
                   <>
-                    {/* Booking Confirmation Form */}
+                    {/* Booking/Product Confirmation Form */}
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-semibold mb-2">Service: {selectedItem.title}</p>
+                        <p className="text-sm font-semibold mb-2">{mode === 'services' ? 'Service' : 'Item'}: {selectedItem.title}</p>
                         <p className="text-xs text-gray-600">{selectedItem.price}</p>
                       </div>
 
-                      {/* Date Picker */}
-                      <div>
-                        <label className="block text-xs font-semibold mb-2">Select a date</label>
-                        <input
-                          type="date"
-                          value={selectedDate}
-                          onChange={(e) => {
-                            setSelectedDate(e.target.value);
-                            setSelectedSlot(null); // Reset slot when date changes
-                          }}
-                          min={new Date().toISOString().split('T')[0]}
-                          max={new Date(Date.now() + (availability?.advanceDays || 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
-                        />
-                      </div>
+                      {/* Show booking fields ONLY for services */}
+                      {mode === 'services' && (
+                        <>
+                          {/* Date Picker */}
+                          <div>
+                            <label className="block text-xs font-semibold mb-2">Select a date</label>
+                            <input
+                              type="date"
+                              value={selectedDate}
+                              onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                setSelectedSlot(null); // Reset slot when date changes
+                              }}
+                              min={new Date().toISOString().split('T')[0]}
+                              max={new Date(Date.now() + (availability?.advanceDays || 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                            />
+                          </div>
 
-                      {/* Time Slot Picker */}
-                      <div>
-                        <label className="block text-xs font-semibold mb-2">Select a time slot</label>
-                        {!selectedDate ? (
-                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
-                            Please select a date first
+                          {/* Time Slot Picker */}
+                          <div>
+                            <label className="block text-xs font-semibold mb-2">Select a time slot</label>
+                            {!selectedDate ? (
+                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                                Please select a date first
+                              </div>
+                            ) : slots.length === 0 ? (
+                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                                No available slots for this date. Try another date or contact directly.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-3 gap-2">
+                                {slots
+                                  .filter((slot: any) => new Date(slot.start_time).toLocaleDateString() === new Date(selectedDate).toLocaleDateString())
+                                  .slice(0, 9)
+                                  .map((slot: any) => (
+                                  <button
+                                    key={slot.id}
+                                    onClick={() => setSelectedSlot(slot)}
+                                    className={`p-2 rounded-lg text-xs font-semibold transition ${
+                                      selectedSlot?.id === slot.id
+                                        ? "bg-cyan-500 text-white"
+                                        : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                                    }`}
+                                  >
+                                    {new Date(slot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ) : slots.length === 0 ? (
-                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
-                            No available slots for this date. Try another date or contact directly.
-                          </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-2">
-                            {slots
-                              .filter((slot: any) => new Date(slot.start_time).toLocaleDateString() === new Date(selectedDate).toLocaleDateString())
-                              .slice(0, 9)
-                              .map((slot: any) => (
-                              <button
-                                key={slot.id}
-                                onClick={() => setSelectedSlot(slot)}
-                                className={`p-2 rounded-lg text-xs font-semibold transition ${
-                                  selectedSlot?.id === slot.id
-                                    ? "bg-cyan-500 text-white"
-                                    : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-                                }`}
+
+                          {/* Team Member Selector */}
+                          <div>
+                            <label className="block text-xs font-semibold mb-2">
+                              Choose your specialist 
+                              {teamMembers.length > 0 && <span className="text-gray-500">({teamMembers.length})</span>}
+                            </label>
+                            {teamMembers.length === 0 ? (
+                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                                No specialists available. Booking is open to anyone.
+                              </div>
+                            ) : (
+                              <select
+                                value={selectedTeamMember}
+                                onChange={(e) => setSelectedTeamMember(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
                               >
-                                {new Date(slot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </button>
-                            ))}
+                                <option value="">Any available</option>
+                                {teamMembers.map((member: any) => (
+                                  <option key={member.id} value={member.name}>
+                                    {member.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
-                        )}
-                      </div>
-
-                      {/* Team Member Selector */}
-                      <div>
-                        <label className="block text-xs font-semibold mb-2">
-                          Choose your specialist 
-                          {teamMembers.length > 0 && <span className="text-gray-500">({teamMembers.length})</span>}
-                        </label>
-                        {teamMembers.length === 0 ? (
-                          <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
-                            No specialists available. Booking is open to anyone.
-                          </div>
-                        ) : (
-                          <select
-                            value={selectedTeamMember}
-                            onChange={(e) => setSelectedTeamMember(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
-                          >
-                            <option value="">Any available</option>
-                            {teamMembers.map((member: any) => (
-                              <option key={member.id} value={member.id}>
-                                {member.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
+                        </>
+                      )}
 
                       {/* Customer Info */}
                       <div>
@@ -839,13 +938,15 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       {/* Action Buttons */}
                       <button
                         onClick={createBooking}
-                        disabled={bookingLoading || !selectedSlot}
+                        disabled={bookingLoading || (mode === 'services' && !selectedSlot) || !customerName || !customerEmail}
                         className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
-                          background: !bookingLoading && selectedSlot ? accentSolid : "#ccc",
+                          background: !bookingLoading && (mode !== 'services' || selectedSlot) && customerName && customerEmail ? accentSolid : "#ccc",
                         }}
                       >
-                        {bookingLoading ? "Booking..." : "Confirm Booking"}
+                        {bookingLoading 
+                          ? (mode === 'services' ? "Booking..." : "Processing...") 
+                          : (mode === 'services' ? "Confirm Booking" : "Continue to Payment")}
                       </button>
                       <button
                         onClick={resetBooking}

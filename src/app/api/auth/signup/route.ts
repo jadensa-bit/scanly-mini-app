@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       user_metadata: {
         name,
       },
-      email_confirm: false, // ✅ Matches Supabase settings (confirmation disabled)
+      email_confirm: false, // No email confirmation needed
     });
 
     if (authError) {
@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Force confirm the email (since email confirmations are disabled)
+    await supabase.auth.admin.updateUserById(authData.user.id, {
+      email_confirm: true,
+    });
 
     // Create profile in profiles table
     const { data: profileData, error: profileError } = await supabase

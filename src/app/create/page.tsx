@@ -400,6 +400,7 @@ export default function CreatePage() {
   const [mode, setMode] = useState<ModeId>("services");
   const [brandName, setBrandName] = useState("My Piqo");
   const [handleRaw, setHandleRaw] = useState("my-piqo");
+  const [handleInput, setHandleInput] = useState("my-piqo"); // Local input state for immediate UI updates
   const [tagline, setTagline] = useState("Scan → tap → done.");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [brandLogo, setBrandLogo] = useState("");
@@ -486,6 +487,15 @@ export default function CreatePage() {
     } catch {}
   }, [mode, brandName, handleRaw, tagline, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail]);
 
+  // Debounce handle input to prevent spazzing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHandleRaw(handleInput);
+    }, 300); // Update handleRaw 300ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [handleInput]);
+
   // Force immediate preview update for tagline changes
   useEffect(() => {
     setPreviewTick((x) => x + 1);
@@ -493,77 +503,101 @@ export default function CreatePage() {
 
   // ...existing code...
   // 🔁 Restore draft on load (CRITICAL FIX)
-const _restoredFor = useRef<string | null>(null);
-useEffect(() => {
-  // read optional ?handle= from URL and prefill the handle input (use window instead of next hook)
-  if (typeof window === "undefined") return;
-  try {
-    const params = new URLSearchParams(window.location.search || "");
-    const param = params.get("handle") || "";
-    if (param) setHandleRaw(param);
-  } catch {}
-}, []);
-
-
-// On mount or handle change, reload config from server after Stripe onboarding, merge with local edits if present
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  const h = slugify(handleRaw);
-  if (!h) return;
-  if (_restoredFor.current === h) return;
-  _restoredFor.current = h;
-
-  // Helper to merge configs (local wins for unsaved fields)
-  function mergeConfigs(server: any, local: any) {
-    if (!server) return local;
-    if (!local) return server;
-    return {
-      ...server,
-      ...local,
-      items: local.items && local.items.length ? local.items : server.items,
-      appearance: { ...server.appearance, ...local.appearance },
-      staffProfiles: local.staffProfiles && local.staffProfiles.length ? local.staffProfiles : server.staffProfiles,
-      social: { ...server.social, ...local.social },
-      availability: { ...server.availability, ...local.availability },
-      notifications: { ...server.notifications, ...local.notifications },
-    };
-  }
-
-  // If returning from Stripe, always fetch latest config from server
-  async function restoreConfig() {
-    let serverConfig = null;
+  const _restoredFor = useRef<string | null>(null);
+  useEffect(() => {
+    // read optional ?handle= from URL and prefill the handle input (use window instead of next hook)
+    if (typeof window === "undefined") return;
     try {
-      const res = await fetch(`/api/site?handle=${encodeURIComponent(h)}`, { cache: "no-store" });
-      const data = await res.json();
-      if (data?.site?.config) serverConfig = data.site.config;
+      const params = new URLSearchParams(window.location.search || "");
+      const param = params.get("handle") || "";
+      if (param) {
+        setHandleRaw(param);
+        setHandleInput(param);
+      }
     } catch {}
+  }, []);
 
-    let localConfig = null;
-    try {
-      const raw = localStorage.getItem(storageKey(h));
-      if (raw) localConfig = JSON.parse(raw);
-    } catch {}
 
-    const merged = mergeConfigs(serverConfig, localConfig);
-    if (!merged) return;
+  // On mount or handle change, reload config from server after Stripe onboarding, merge with local edits if present
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    setMode(merged.mode);
-    setBrandName(merged.brandName);
-    setHandleRaw(merged.handle);
-    setTagline(merged.tagline || "");
-    setItems(merged.items || []);
-    setAppearance(merged.appearance || appearance);
-    setStaffProfiles(merged.staffProfiles || []);
-    setBrandLogo(merged.brandLogo || "");
-    setSocial(merged.social || {});
-    setAvailability(merged.availability || availability);
-    setNotifications(merged.notifications || notifications);
-    setOwnerEmail(merged.ownerEmail || "");
-  }
+    const h = slugify(handleRaw);
+    if (!h) return;
+    
+    // Check if we've already restored this handle
+    const isFirstRestore = _restoredFor.current !== h;
+    if (isFirstRestore) {
+      _restoredFor.current = h;
+    }
 
-  restoreConfig();
-}, [handleRaw]);
+    // Helper to merge configs (local wins for unsaved fields)
+    function mergeConfigs(server: any, local: any) {
+      if (!server) return local;
+      if (!local) return server;
+      return {
+        ...server,
+        ...local,
+        items: local.items && local.items.length ? local.items : server.items,
+        appearance: { ...server.appearance, ...local.appearance },
+        staffProfiles: local.staffProfiles && local.staffProfiles.length ? local.staffProfiles : server.staffProfiles,
+        social: { ...server.social, ...local.social },
+        availability: { ...server.availability, ...local.availability },
+        notifications: { ...server.notifications, ...local.notifications },
+      };
+    }
+
+    // If returning from Stripe, always fetch latest config from server
+    async function restoreConfig(handleVal: string) {
+      let serverConfig = null;
+      try {
+        const res = await fetch(`/api/site?handle=${encodeURIComponent(handleVal)}`, { cache: "no-store" });
+        const data = await res.json();
+        if (data?.site?.config) serverConfig = data.site.config;
+      } catch {}
+
+      let localConfig = null;
+      try {
+        const raw = localStorage.getItem(storageKey(handleVal));
+        if (raw) localConfig = JSON.parse(raw);
+      } catch {}
+
+      const merged = mergeConfigs(serverConfig, localConfig);
+      if (!merged) return;
+
+      // Set all fields from merged config
+      if (merged.mode) setMode(merged.mode);
+      if (merged.brandName) setBrandName(merged.brandName);
+      // Only update handleRaw if it's different to prevent loops
+      if (merged.handle && merged.handle !== handleVal) {
+        setHandleRaw(merged.handle);
+        setHandleInput(merged.handle);
+      }
+      if (merged.tagline) setTagline(merged.tagline);
+      if (merged.items) setItems(merged.items);
+      if (merged.appearance) setAppearance(merged.appearance);
+      if (merged.staffProfiles) setStaffProfiles(merged.staffProfiles);
+      if (merged.brandLogo) setBrandLogo(merged.brandLogo);
+      if (merged.social) setSocial(merged.social);
+      if (merged.availability) setAvailability(merged.availability);
+      if (merged.notifications) setNotifications(merged.notifications);
+      if (merged.ownerEmail) setOwnerEmail(merged.ownerEmail);
+      
+      // Force preview update after restore
+      skipNextPreviewTickRef.current = false;
+      setPreviewTick((x) => x + 1);
+    }
+
+    // First restore - do it immediately, subsequent changes - debounce
+    if (isFirstRestore) {
+      restoreConfig(h);
+    } else {
+      const timer = setTimeout(() => {
+        restoreConfig(h);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [handleRaw]);
 
 
   // ✅ Availability + notifications (new)
@@ -633,7 +667,13 @@ useEffect(() => {
       setStripeErr(null);
       return;
     }
-    fetchStripeStatus(cleanHandle);
+    
+    // Debounce Stripe status checks to avoid excessive API calls
+    const timer = setTimeout(() => {
+      fetchStripeStatus(cleanHandle);
+    }, 800); // Wait 800ms after user stops typing
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleanHandle]);
 
@@ -917,7 +957,7 @@ async function startStripeConnect() {
             console.error("Error setting savingServer to false:", error);
           }
         }
-      }, 1500),
+      }, 1500), // end debounce
     []
   );
 
@@ -956,15 +996,16 @@ async function startStripeConnect() {
   saveDraftDebounced(configDraft);
 }, [configDraft, saveDraftDebounced]);
 
-useEffect(() => {
-  if (!configDraft) return;
-  // Prevent saving during initial restore
-  if (!hasHydratedRef.current) return;
-  // only attempt server save when we have a valid handle
-  try {
-    saveDraftServerDebounced(configDraft);
-  } catch {}
-}, [configDraft, saveDraftServerDebounced]);
+// Removed auto-save to server - only save when user clicks "Go live"
+// useEffect(() => {
+//   if (!configDraft) return;
+//   // Prevent saving during initial restore
+//   if (!hasHydratedRef.current) return;
+//   // only attempt server save when we have a valid handle
+//   try {
+//     saveDraftServerDebounced(configDraft);
+//   } catch {}
+// }, [configDraft, saveDraftServerDebounced]);
 
   // Broadcast live preview updates to any open preview window/tab
   useEffect(() => {
@@ -1632,8 +1673,8 @@ useEffect(() => {
                 <label className="grid gap-1">
                   <span className="text-xs text-white/80">Your unique handle</span>
                   <input
-                    value={handleRaw}
-                    onChange={(e) => setHandleRaw(e.target.value)}
+                    value={handleInput}
+                    onChange={(e) => setHandleInput(e.target.value)}
                     className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
                     placeholder="Ex: freshcutz"
                   />
@@ -3954,11 +3995,11 @@ useEffect(() => {
           </div>
         </div>
       </div>
-    {toast && (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-black/90 text-white text-sm font-semibold shadow-lg border border-white/15 animate-fade-in">
-        {toast}
-      </div>
-    )}
-  </main>
-);
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-black/90 text-white text-sm font-semibold shadow-lg border border-white/15 animate-fade-in">
+          {toast}
+        </div>
+      )}
+    </main>
+  );
 }

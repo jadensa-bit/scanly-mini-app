@@ -25,7 +25,9 @@ export default function Header() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setUser(null);
     router.push('/');
+    router.refresh();
   };
 
   return (

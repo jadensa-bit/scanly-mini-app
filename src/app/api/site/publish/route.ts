@@ -13,6 +13,9 @@ export async function POST(req: Request) {
   try {
     const supabase = getSupabase();
     const { handle } = await req.json();
+    
+    console.log(`🚀 Publishing site: ${handle}`);
+    
     if (!handle) return NextResponse.json({ ok: false, error: "Missing handle" }, { status: 400 });
 
     const { error } = await supabase
@@ -21,8 +24,11 @@ export async function POST(req: Request) {
       .eq("handle", handle);
 
     if (error) {
+      console.error(`❌ Failed to publish ${handle}:`, error);
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
+    
+    console.log(`✅ Site ${handle} marked as published`);
 
     // Auto-generate slots for services/booking modes
     try {
@@ -34,25 +40,94 @@ export async function POST(req: Request) {
         .single();
       
       const mode = site?.config?.mode;
+      console.log(`📋 Site mode for ${handle}: ${mode}`);
+      
       if (mode === 'services' || mode === 'booking') {
         console.log(`📅 Generating slots for ${mode} site: ${handle}`);
         
-        // Call generate endpoint using relative URL
-        const baseUrl = req.headers.get('origin') || req.headers.get('host') || 'http://localhost:3000';
-        const slotsUrl = `${baseUrl}/api/slots/generate`;
+        // First, delete existing future slots to regenerate fresh
+        const { error: deleteError } = await supabase
+          .from('slots')
+          .delete()
+          .eq('creator_handle', handle)
+          .gte('start_time', new Date().toISOString())
+          .eq('is_booked', false);
         
-        const slotsRes = await fetch(slotsUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ handle, daysInAdvance: 30 }),
-        });
-        
-        if (slotsRes.ok) {
-          const slotsData = await slotsRes.json();
-          console.log(`✅ Generated ${slotsData.slotsCount || 0} slots for ${handle}`);
+        if (deleteError) {
+          console.warn(`⚠️ Could not delete old slots: ${deleteError.message}`);
         } else {
-          const errorText = await slotsRes.text();
-          console.warn(`⚠️ Could not generate slots for ${handle}:`, errorText);
+          console.log(`🗑️ Deleted old unbooked slots for ${handle}`);
+        }
+        
+        // Generate slots directly inline (avoid HTTP call issues)
+        const daysInAdvance = 30;
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + daysInAdvance);
+
+        const availability = site?.config?.availability || {
+          slotMinutes: 60,
+          days: {
+            mon: { enabled: true, start: "09:00", end: "17:00" },
+            tue: { enabled: true, start: "09:00", end: "17:00" },
+            wed: { enabled: true, start: "09:00", end: "17:00" },
+            thu: { enabled: true, start: "09:00", end: "17:00" },
+            fri: { enabled: true, start: "09:00", end: "17:00" },
+          },
+        };
+        const slotMinutes = availability.slotMinutes || 30;
+        const days = availability.days || {};
+
+        const dayMap: Record<string, number> = {
+          mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0,
+        };
+
+        const slots = [];
+        let current = new Date(startDate);
+
+        while (current < endDate) {
+          const dayName = Object.keys(dayMap).find((k) => dayMap[k] === current.getDay());
+          const dayConfig = dayName ? days[dayName] : null;
+
+          if (dayConfig?.enabled && dayConfig.start && dayConfig.end) {
+            const [startHour, startMin] = (dayConfig.start || "09:00").split(":").map(Number);
+            const [endHour, endMin] = (dayConfig.end || "17:00").split(":").map(Number);
+
+            let slotStart = new Date(current);
+            slotStart.setHours(startHour, startMin, 0, 0);
+
+            let slotEnd = new Date(slotStart);
+            slotEnd.setMinutes(slotEnd.getMinutes() + slotMinutes);
+
+            const dayEnd = new Date(current);
+            dayEnd.setHours(endHour, endMin, 0, 0);
+
+            while (slotEnd <= dayEnd) {
+              slots.push({
+                creator_handle: handle,
+                start_time: slotStart.toISOString(),
+                end_time: slotEnd.toISOString(),
+                is_booked: false,
+              });
+
+              slotStart = new Date(slotEnd);
+              slotEnd = new Date(slotStart);
+              slotEnd.setMinutes(slotEnd.getMinutes() + slotMinutes);
+            }
+          }
+
+          current.setDate(current.getDate() + 1);
+        }
+
+        if (slots.length > 0) {
+          const { error: insertError } = await supabase.from("slots").insert(slots);
+          if (insertError) {
+            console.error(`❌ Failed to insert slots: ${insertError.message}`);
+          } else {
+            console.log(`✅ Generated ${slots.length} slots for ${handle}`);
+          }
+        } else {
+          console.log(`⚠️ No slots generated - check availability settings`);
         }
       } else {
         console.log(`ℹ️ Skipping slot generation for non-services site (mode: ${mode})`);

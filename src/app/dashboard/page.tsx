@@ -207,7 +207,7 @@ export default function DashboardPage() {
       setLoading(false);
       
       // Set up realtime subscription with the user's site handles for data isolation
-      const siteHandles = (sites as Site[]).map(s => s.handle);
+      const siteHandles = ((sites as Site[]) || []).map(s => s.handle);
       console.log("🔔 Setting up realtime subscription for handles:", siteHandles);
       
       // Add NEW bookings from realtime at the top
