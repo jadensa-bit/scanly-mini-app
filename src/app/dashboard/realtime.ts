@@ -16,7 +16,7 @@ export function subscribeToBookings(onUpdate: (booking: any) => void, siteHandle
         return;
       }
       // Fetch the full booking data with team member info
-      const bookingId = payload.new?.id;
+      const bookingId = (payload.new as any)?.id;
       if (bookingId) {
         try {
           const { data, error } = await supabase
