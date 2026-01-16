@@ -64,10 +64,26 @@ export async function GET(req: NextRequest) {
   let successTable = null;
 
   for (const table of TABLE_CANDIDATES) {
-    const { data, error } = await supabase
+    // Try both user_id and owner_email for filtering
+    let { data, error } = await supabase
       .from(table)
       .select('*')
       .eq('user_id', userId);
+
+    // If no sites found by user_id, try filtering by owner_email
+    if ((!error && (!data || data.length === 0)) || (error && String(error.message).includes('column "user_id" does not exist'))) {
+      console.log(`⏭️ Dashboard: No sites found by user_id in ${table}, trying owner_email`);
+      const { data: emailData, error: emailError } = await supabase
+        .from(table)
+        .select('*')
+        .eq('owner_email', user.email);
+      
+      if (!emailError && emailData && emailData.length > 0) {
+        data = emailData;
+        error = null;
+        console.log(`✅ Dashboard: Found ${data.length} sites by owner_email in ${table}`);
+      }
+    }
 
     const msg = String(error?.message || "").toLowerCase();
     
