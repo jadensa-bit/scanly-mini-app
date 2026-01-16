@@ -28,14 +28,7 @@ console.log(`[stripe-connect] Environment check: ${process.env.NODE_ENV || 'deve
 /* --------------------
    clients
 -------------------- */
-let stripe;
-try {
-  stripe = new Stripe(STRIPE_SECRET_KEY);
-  console.log(`[stripe-connect] Stripe SDK initialized successfully`);
-} catch (e) {
-  console.error(`[stripe-connect] Failed to initialize Stripe SDK:`, e);
-  throw new Error(`Stripe initialization failed: ${e.message}`);
-}
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
