@@ -38,7 +38,7 @@ const PLATFORM_FEE_BPS = Number(getEnv("PLATFORM_FEE_BPS") || "0");
 /* --------------------
    clients
 -------------------- */
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-12-18.acacia" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },

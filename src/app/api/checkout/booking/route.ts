@@ -10,9 +10,7 @@ if (!stripeSecret) {
   console.warn("⚠️ Missing STRIPE_SECRET_KEY in env");
 }
 
-const stripe = new Stripe(stripeSecret || "sk_test_missing", {
-  apiVersion: "2024-12-18.acacia",
-});
+const stripe = new Stripe(stripeSecret || "sk_test_missing");
 
 function jsonError(message: string, status = 400, extra?: any) {
   return NextResponse.json({ ok: false, error: message, ...(extra ?? {}) }, { status });

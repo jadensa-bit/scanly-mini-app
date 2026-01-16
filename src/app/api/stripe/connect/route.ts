@@ -27,7 +27,7 @@ console.log(`[stripe-connect] Using SUPABASE_URL: ${SUPABASE_URL}`);
 /* --------------------
    clients
 -------------------- */
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" });
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },

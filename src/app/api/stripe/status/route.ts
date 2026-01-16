@@ -19,7 +19,7 @@ let stripe: Stripe;
 try {
   const key = mustEnv("STRIPE_SECRET_KEY");
   console.log(`[stripe-status] Using STRIPE_SECRET_KEY: ${key ? key.slice(0, 6) + '...' : 'MISSING'}`);
-  stripe = new Stripe(key, { apiVersion: "2024-12-18.acacia" });
+  stripe = new Stripe(key);
 } catch (e) {
   console.error("[stripe-status] Failed to initialize Stripe:", e);
   throw e;
