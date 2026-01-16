@@ -15,7 +15,7 @@ if (!STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is missing.");
 if (!SUPABASE_URL) throw new Error("SUPABASE_URL is missing.");
 if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2025-12-15.clover" });
+const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
