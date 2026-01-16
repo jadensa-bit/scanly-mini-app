@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabaseclient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createProfile } from '@/lib/createProfile';
@@ -8,7 +8,7 @@ import PiqoLogoFull from '@/components/PiqoLogoFull';
 import Link from 'next/link';
 import { Mail, Lock } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -181,5 +181,17 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-gray-500">Loading...</div>
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
