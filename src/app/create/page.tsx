@@ -658,13 +658,17 @@ async function startStripeConnect() {
     const res = await fetch("/api/stripe/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ handle: h }),
+      body: JSON.stringify({ 
+        handle: h,
+        email: notifications.email || ownerEmail || "" 
+      }),
     });
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setStripeErr(data?.error || "Could not start Stripe Connect.");
+      console.error("Stripe Connect error:", data);
+      setStripeErr(data?.error || data?.detail || "Could not start Stripe Connect.");
       return;
     }
 
@@ -675,6 +679,7 @@ async function startStripeConnect() {
 
     setStripeErr("Stripe Connect route did not return a URL.");
   } catch (e: any) {
+    console.error("Stripe Connect exception:", e);
     setStripeErr(e?.message || "Could not start Stripe Connect.");
   } finally {
     setStripeLoading(false);
