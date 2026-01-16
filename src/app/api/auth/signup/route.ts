@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       user_metadata: {
         name,
       },
-      email_confirm: false,
+      email_confirm: false, // ✅ Matches Supabase settings (confirmation disabled)
     });
 
     if (authError) {

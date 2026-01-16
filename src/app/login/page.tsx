@@ -13,6 +13,9 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
@@ -21,6 +24,8 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setShowResend(false);
+    setResendSuccess('');
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -30,6 +35,14 @@ function LoginForm() {
     if (error) {
       setError(error.message);
       setLoading(false);
+      
+      // Show resend option if email not confirmed
+      if (error.message?.toLowerCase().includes('email') && 
+          (error.message?.toLowerCase().includes('confirm') || 
+           error.message?.toLowerCase().includes('verified'))) {
+        setShowResend(true);
+      }
+      
       return;
     }
 
@@ -53,6 +66,40 @@ function LoginForm() {
     
     // Force a full page refresh to ensure middleware picks up the new session
     window.location.href = redirect;
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setResendLoading(true);
+    setResendSuccess('');
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to resend confirmation email');
+        setResendLoading(false);
+        return;
+      }
+
+      setResendSuccess('✅ Confirmation email sent! Check your inbox.');
+      setShowResend(false);
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   return (
@@ -81,12 +128,38 @@ function LoginForm() {
             <p className="text-gray-600 text-sm">Sign in to your piqo account and continue building</p>
           </div>
 
+          {/* Success Message */}
+          {resendSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+              <div className="text-green-600 font-semibold text-sm flex-1">
+                {resendSuccess}
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
               <div className="text-red-600 font-semibold text-sm flex-1">
                 {error}
               </div>
+            </div>
+          )}
+
+          {/* Resend Confirmation Button */}
+          {showResend && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-blue-900 text-sm mb-3">
+                Haven't received your confirmation email?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={resendLoading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                {resendLoading ? 'Sending...' : 'Resend Confirmation Email'}
+              </button>
             </div>
           )}
 

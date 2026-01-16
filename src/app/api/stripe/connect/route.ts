@@ -21,13 +21,21 @@ function mustEnv(k: string) {
 const STRIPE_SECRET_KEY = mustEnv("STRIPE_SECRET_KEY");
 const SUPABASE_URL = mustEnv("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
-console.log(`[stripe-connect] Using STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.slice(0, 6) + '...' : 'MISSING'}`);
+console.log(`[stripe-connect] Using STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.slice(0, 7) + '...' : 'MISSING'}`);
 console.log(`[stripe-connect] Using SUPABASE_URL: ${SUPABASE_URL}`);
+console.log(`[stripe-connect] Environment check: ${process.env.NODE_ENV || 'development'}`);
 
 /* --------------------
    clients
 -------------------- */
-const stripe = new Stripe(STRIPE_SECRET_KEY);
+let stripe;
+try {
+  stripe = new Stripe(STRIPE_SECRET_KEY);
+  console.log(`[stripe-connect] Stripe SDK initialized successfully`);
+} catch (e) {
+  console.error(`[stripe-connect] Failed to initialize Stripe SDK:`, e);
+  throw new Error(`Stripe initialization failed: ${e.message}`);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
