@@ -92,7 +92,8 @@ function hexToRgba(hex: string = "#22D3EE", alpha: number = 0.2): string {
 }
 
 // Convert 24-hour time to 12-hour AM/PM format
-function formatTime12Hour(time24: string): string {
+function formatTime12Hour(time24: string | undefined): string {
+  if (!time24) return '';
   const [hourStr, minute] = time24.split(':');
   let hour = parseInt(hourStr, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';
