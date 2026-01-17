@@ -181,7 +181,7 @@ export async function POST(req: Request) {
     if (!destinationAccountId) {
       console.log(`⚠️ No Stripe account for handle: ${handle} - creating order without payment`);
       
-      const orderItemsForDb = lineItems.map(item => ({
+      const orderItemsForDb = lineItems.map((item: any) => ({
         title: item.item_title,
         price: item.item_price,
         quantity: item.quantity,
