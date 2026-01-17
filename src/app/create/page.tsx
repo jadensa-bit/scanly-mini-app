@@ -1760,6 +1760,18 @@ async function startStripeConnect() {
                   );
                 })}
               </div>
+              {/* Mode-specific helper text */}
+              <div className="mt-3 text-xs text-white/60 bg-black/20 rounded-xl p-3 border border-white/8">
+                {mode === "services" && (
+                  <p>📅 <strong className="text-white/80">Services</strong> let customers book appointments. Add services, set availability & staff below.</p>
+                )}
+                {mode === "products" && (
+                  <p>🛍️ <strong className="text-white/80">Products</strong> are for physical items. Add products, upload images, set prices below.</p>
+                )}
+                {mode === "digital" && (
+                  <p>⚡ <strong className="text-white/80">Digital</strong> items deliver instantly. Add files/links, customers get them after checkout.</p>
+                )}
+              </div>
             </motion.section>
 
             {/* Brand Basics */}
@@ -2688,7 +2700,15 @@ async function startStripeConnect() {
             </section>
 
             {/* Availability (new) */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
+            <section className={cn(
+              "rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 transition-all duration-300",
+              mode !== "services" && "opacity-40 max-h-24 overflow-hidden relative"
+            )}>
+              {mode !== "services" && (
+                <div className="absolute top-3 right-3 z-10 px-2 py-1 bg-white/10 rounded-lg text-[10px] text-white/60 border border-white/10">
+                  Not used for this mode
+                </div>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                   <Zap className="h-4 w-4" />
@@ -2928,9 +2948,18 @@ async function startStripeConnect() {
               </div>
             </section>
 
-            {/* Team Management - only for services */}
-            {mode === "services" && (
-              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
+            {/* Team Management - for services mode */}
+            <section className={cn(
+              "rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 transition-all duration-300",
+              mode !== "services" && "opacity-40 max-h-24 overflow-hidden relative"
+            )}>
+              {mode !== "services" && (
+                <div className="absolute top-3 right-3 z-10 px-2 py-1 bg-white/10 rounded-lg text-[10px] text-white/60 border border-white/10">
+                  Not used for this mode
+                </div>
+              )}
+              {mode === "services" && (
+                <>
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                     <Users className="h-4 w-4 text-blue-400" />
@@ -3119,8 +3148,15 @@ async function startStripeConnect() {
                     💡 <span className="font-medium">Tip:</span> Team members show on your services storefront when "Staff / team section" is enabled in Style → Sections.
                   </div>
                 </div>
-              </section>
-            )}
+                </>
+              )}
+              {mode !== "services" && (
+                <div className="text-sm text-white/60">
+                  <Users className="h-5 w-5 text-white/40 mx-auto mb-2" />
+                  Team management (Services mode only)
+                </div>
+              )}
+            </section>
 
             {/* Next Button */}
             <div className="mt-6 flex justify-end">
@@ -4178,6 +4214,10 @@ async function startStripeConnect() {
                 ) : (
                   "Add a handle to publish"
                 )}
+              </div>
+              {/* Stripe optional hint */}
+              <div className="mt-3 text-center text-[11px] text-white/60 bg-white/5 rounded-xl p-2.5 border border-white/10">
+                💳 You can publish without Stripe. Connect Stripe anytime to accept payments.
               </div>
             </section>
             </div>
