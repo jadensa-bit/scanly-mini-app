@@ -231,7 +231,7 @@ export async function POST(req: Request) {
 
     // Optional: Check for duplicate pending orders to prevent spam/retry conflicts
     // For multi-item orders, we'll create a composite key
-    const orderSignature = lineItems.map(li => `${li.item_title}:${li.quantity}`).sort().join('|');
+    const orderSignature = lineItems.map((li: any) => `${li.item_title}:${li.quantity}`).sort().join('|');
     const { data: existingOrder } = await supabase
       .from("scanly_orders")
       .select("id, stripe_session_id")
