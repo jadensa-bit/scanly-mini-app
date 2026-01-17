@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Inter,
   Poppins,
@@ -11,15 +11,71 @@ import "./globals.css";
 import Header from "@/components/Header";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-poppins", display: "swap" });
-const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sora", display: "swap" });
-const space = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-space", display: "swap" });
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-jakarta", display: "swap" });
-const dmsans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-dmsans", display: "swap" });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sora",
+  display: "swap",
+});
+const space = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space",
+  display: "swap",
+});
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
+const dmsans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-dmsans",
+  display: "swap",
+});
 
+/* ---------------------------
+   Viewport (PWA / iOS-safe)
+---------------------------- */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#000000",
+};
+
+/* ---------------------------
+   Metadata + PWA config
+---------------------------- */
 export const metadata: Metadata = {
   title: "Piqo",
   description: "Piqo — Scan. Shop. Done.",
+
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-192.png" }],
+  },
+
+  appleWebApp: {
+    capable: true,
+    title: "Piqo",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,12 +84,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${inter.variable} ${poppins.variable} ${sora.variable} ${space.variable} ${jakarta.variable} ${dmsans.variable}`}
     >
-      <body className="min-h-screen antialiased" suppressHydrationWarning={true}>
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
         {/* Ambient premium background */}
         <div className="fixed inset-0 -z-10">
           <div className="absolute inset-0 bg-black" />
 
-          {/* soft “ink” vignette */}
+          {/* soft vignette */}
           <div
             className="absolute inset-0 opacity-[0.55]"
             style={{
@@ -42,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
 
-          {/* neon accents (subtle) */}
+          {/* neon accents */}
           <div
             className="absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full blur-3xl opacity-40"
             style={{
