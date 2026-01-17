@@ -103,7 +103,7 @@ function LoginForm() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-white to-purple-50 p-4">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-white to-purple-50 p-3 sm:p-4">
       <style>{`
         #email:-webkit-autofill,
         #password:-webkit-autofill {
@@ -117,15 +117,15 @@ function LoginForm() {
         }
       `}</style>
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-5 sm:p-8 space-y-5 sm:space-y-6">
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <PiqoLogoFull />
           </div>
           
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">Welcome back</h1>
-            <p className="text-gray-600 text-sm">Sign in to your piqo account and continue building</p>
+          <div className="text-center space-y-1.5 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">Welcome back</h1>
+            <p className="text-gray-600 text-xs sm:text-sm">Sign in to your piqo account and continue building</p>
           </div>
 
           {/* Success Message */}
@@ -209,7 +209,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="w-full mt-4 sm:mt-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 active:scale-95 text-white font-semibold py-3 sm:py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl min-h-[48px] sm:min-h-0"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -228,7 +228,7 @@ function LoginForm() {
           {/* Signup Link */}
           <Link
             href="/signup"
-            className="w-full block text-center py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+            className="w-full block text-center py-3 sm:py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 active:scale-95 transition min-h-[48px] sm:min-h-0 flex items-center justify-center"
           >
             Create Account
           </Link>

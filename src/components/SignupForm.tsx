@@ -141,7 +141,7 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="w-full max-w-md px-4 sm:px-0">
+    <div className="w-full max-w-md px-3 sm:px-4">
       <style>{`
         #name:-webkit-autofill,
         #email:-webkit-autofill,

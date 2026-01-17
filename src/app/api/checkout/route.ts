@@ -124,33 +124,102 @@ export async function POST(req: Request) {
 
     const handle = normalizeHandle(body?.handle);
     const mode = String(body?.mode ?? "").trim();
-    const item_title = String(body?.item_title ?? "").trim();
-    const item_price = String(body?.item_price ?? "").trim();
+    
+    // Support both single item (legacy) and multiple items (cart)
+    const items = body?.items || [];
+    const singleItem = body?.item_title ? {
+      item_title: String(body?.item_title ?? "").trim(),
+      item_price: String(body?.item_price ?? "").trim(),
+      quantity: 1,
+      note: String(body?.note ?? "").trim(),
+    } : null;
+
+    // Use cart items if provided, otherwise fall back to single item
+    const lineItems = items.length > 0 ? items : (singleItem ? [singleItem] : []);
 
     if (!handle) return NextResponse.json({ error: "Missing handle" }, { status: 400 });
     if (!mode) return NextResponse.json({ error: "Missing mode" }, { status: 400 });
-    if (!item_title) return NextResponse.json({ error: "Missing item_title" }, { status: 400 });
+    if (lineItems.length === 0) return NextResponse.json({ error: "No items to checkout" }, { status: 400 });
 
-    const amount = toCents(item_price);
+    // Calculate total amount from all items
+    let totalAmount = 0;
+    const stripeLineItems: any[] = [];
+
+    for (const item of lineItems) {
+      const itemTitle = String(item.item_title || "").trim();
+      const itemPrice = String(item.item_price || "").trim();
+      const quantity = Number(item.quantity) || 1;
+
+      if (!itemTitle) continue;
+
+      const amountPerItem = toCents(itemPrice);
+      if (amountPerItem <= 0) continue;
+
+      totalAmount += amountPerItem * quantity;
+
+      stripeLineItems.push({
+        price_data: {
+          currency: "usd",
+          product_data: { name: itemTitle },
+          unit_amount: amountPerItem,
+        },
+        quantity: quantity,
+      });
+    }
+
+    if (stripeLineItems.length === 0) {
+      return NextResponse.json({ error: "No valid items to checkout" }, { status: 400 });
+    }
 
     // Stripe Checkout requires a positive amount.
-    const amountSafe = Math.max(50, amount); // min $0.50
+    const amountSafe = Math.max(50, totalAmount); // min $0.50
 
     // 0) Get creator’s connected Stripe account id
     const destinationAccountId = await fetchStripeAccountIdByHandle(handle);
 
+    // If no Stripe account, create order as completed without payment
     if (!destinationAccountId) {
-      // Changed status from 409 to 400 for better semantics (409 implies conflict, but here it's a setup issue).
-      // Added more details for debugging.
-      console.error(`No Stripe account found for handle: ${handle}`);
-      return NextResponse.json(
-        {
-          error: "Creator not set up for payments",
-          detail: "The site owner needs to complete Stripe Connect onboarding.",
+      console.log(`⚠️ No Stripe account for handle: ${handle} - creating order without payment`);
+      
+      const orderItemsForDb = lineItems.map(item => ({
+        title: item.item_title,
+        price: item.item_price,
+        quantity: item.quantity,
+        note: item.note || '',
+      }));
+
+      const { data: order, error: insertError } = await supabase
+        .from("scanly_orders")
+        .insert({
           handle,
-        },
-        { status: 400 }
-      );
+          mode,
+          item_title: lineItems.length === 1 ? lineItems[0].item_title : `${lineItems.length} items`,
+          item_price: lineItems.length === 1 ? lineItems[0].item_price : `$${(amountSafe / 100).toFixed(2)}`,
+          status: "completed",
+          paid: false,
+          amount_cents: amountSafe,
+          currency: "usd",
+          customer_name: body?.customer_name || null,
+          customer_email: body?.customer_email || null,
+          order_items: orderItemsForDb,
+        })
+        .select()
+        .single();
+
+      if (insertError || !order) {
+        console.error("Supabase insert error:", insertError);
+        return NextResponse.json(
+          { error: "Failed to create order", detail: insertError?.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        noPayment: true,
+        orderId: order.id,
+        message: "Order created successfully! Payment processing is not yet enabled for this store.",
+      });
     }
 
     if (!destinationAccountId.startsWith("acct_")) {
@@ -161,52 +230,60 @@ export async function POST(req: Request) {
     }
 
     // Optional: Check for duplicate pending orders to prevent spam/retry conflicts
+    // For multi-item orders, we'll create a composite key
+    const orderSignature = lineItems.map(li => `${li.item_title}:${li.quantity}`).sort().join('|');
     const { data: existingOrder } = await supabase
       .from("scanly_orders")
-      .select("id")
+      .select("id, stripe_session_id")
       .eq("handle", handle)
       .eq("status", "pending")
-      .eq("item_title", item_title)
       .eq("amount_cents", amountSafe)
       .maybeSingle();
 
-    if (existingOrder) {
-      // Return existing session URL instead of creating a new one
-      const { data: sessionData } = await supabase
-        .from("scanly_orders")
-        .select("stripe_session_id")
-        .eq("id", existingOrder.id)
-        .single();
-
-      if (sessionData?.stripe_session_id) {
-        const session = await stripe.checkout.sessions.retrieve(sessionData.stripe_session_id);
-        return NextResponse.json({
-          ok: true,
-          url: session.url,
-          orderId: existingOrder.id,
-          connectedAccountId: destinationAccountId,
-          platformFeeCents: calcFee(amountSafe),
-        });
+    if (existingOrder?.stripe_session_id) {
+      try {
+        const session = await stripe.checkout.sessions.retrieve(existingOrder.stripe_session_id);
+        if (session.url) {
+          return NextResponse.json({
+            ok: true,
+            url: session.url,
+            orderId: existingOrder.id,
+            connectedAccountId: destinationAccountId,
+            platformFeeCents: calcFee(amountSafe),
+          });
+        }
+      } catch (e) {
+        // Session might be expired, continue to create new one
       }
     }
 
     // Optional platform fee (0 by default)
     const applicationFee = calcFee(amountSafe);
 
-    // 1) Create pending order in Supabase
+    // 1) Create pending order in Supabase - store items as JSON
+    const orderItemsForDb = lineItems.map(item => ({
+      title: item.item_title,
+      price: item.item_price,
+      quantity: item.quantity,
+      note: item.note || '',
+    }));
+
     const { data: order, error: insertError } = await supabase
       .from("scanly_orders")
       .insert({
         handle,
         mode,
-        item_title,
-        item_price,
+        item_title: lineItems.length === 1 ? lineItems[0].item_title : `${lineItems.length} items`,
+        item_price: lineItems.length === 1 ? lineItems[0].item_price : `$${(amountSafe / 100).toFixed(2)}`,
         status: "pending",
         paid: false,
         amount_cents: amountSafe,
         currency: "usd",
         stripe_connected_account_id: destinationAccountId,
         platform_fee_cents: applicationFee,
+        customer_name: body?.customer_name || null,
+        customer_email: body?.customer_email || null,
+        order_items: orderItemsForDb, // Store multiple items as JSON
       })
       .select()
       .single();
@@ -219,27 +296,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Create Stripe Checkout Session (DESTINATION CHARGE)
-    // Money goes to connected account; optionally take application fee.
+    // 2) Create Stripe Checkout Session (DESTINATION CHARGE) with multiple line items
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: { name: item_title },
-            unit_amount: amountSafe,
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: stripeLineItems,
       payment_intent_data: {
         application_fee_amount: applicationFee > 0 ? applicationFee : undefined,
         transfer_data: {
           destination: destinationAccountId,
         },
-        // Optional but nice for Connect reporting:
-        // on_behalf_of: destinationAccountId,
       },
       success_url: `${APP_URL}/u/${handle}?success=1&order=${order.id}`,
       cancel_url: `${APP_URL}/u/${handle}?canceled=1&order=${order.id}`,
@@ -247,7 +312,7 @@ export async function POST(req: Request) {
         order_id: String(order.id),
         handle,
         mode,
-        item_title,
+        item_count: String(lineItems.length),
         amount_cents: String(amountSafe),
         connected_account_id: destinationAccountId,
         platform_fee_cents: String(applicationFee),

@@ -1024,22 +1024,22 @@ export default function Home() {
 
       {/* Header */}
       <motion.header
-        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-xl bg-black/40"
+        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-2xl bg-gradient-to-r from-black/60 via-gray-900/60 to-black/60 shadow-2xl"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-5 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <motion.div
               className="relative h-14 w-14"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ duration: 0.3 }}
             >
-              <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 blur-md" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full blur opacity-40 group-hover:opacity-60 transition duration-200" />
               <motion.div
-                className="absolute inset-0"
+                className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black rounded-full border border-white/20 flex items-center justify-center"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
@@ -1047,26 +1047,26 @@ export default function Home() {
                   src="/piqo-logo.svg"
                   alt="piqo"
                   fill
-                  className="object-contain"
+                  className="object-contain p-2"
                 />
               </motion.div>
             </motion.div>
             <div>
               <motion.div
-                className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent animate-gradient-x"
+                className="text-3xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
                 style={{
                   backgroundSize: "200% auto",
                 }}
               >
                 piqo
               </motion.div>
-              <div className="text-xs text-gray-400">Scan. Shop. Done.</div>
+              <div className="text-xs text-gray-400 font-semibold tracking-wide">Scan. Shop. Done.</div>
             </div>
           </div>
 
           <a
             href="/login"
-            className="px-4 py-2 bg-cyan-600 text-white rounded-full font-semibold text-sm hover:bg-cyan-700 transition-all"
+            className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-full font-bold text-sm transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105"
           >
             Login
           </a>
@@ -1074,25 +1074,29 @@ export default function Home() {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/20 via-purple-950/20 to-black pointer-events-none" />
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-28 pb-20 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
+        {/* Animated Background Orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 -left-4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+        </div>
         
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-
-            className="text-5xl md:text-7xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            transition={{ duration: 0.8 }}
+            className="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight"
           >
             Turn scans into sales — instantly.
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-xl md:text-2xl text-gray-400 mb-8 max-w-2xl mx-auto"
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto font-medium leading-relaxed"
           >
             No website. No app. Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
           </motion.p>
@@ -1101,6 +1105,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col items-center"
           >
             <a
               href="/signup"
@@ -1110,6 +1115,7 @@ export default function Home() {
               <span className="sm:hidden">Start Free</span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </a>
+            <p className="text-xs text-gray-400 mt-3">No credit card required</p>
           </motion.div>
         </div>
       </section>
@@ -1140,44 +1146,73 @@ export default function Home() {
             </section>
 
       {/* Existing Users Section - Moved after trust signals for better flow */}
-      <section className="relative py-12 px-6 bg-gradient-to-r from-cyan-950/20 to-purple-950/20 border-y border-white/10">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="relative py-20 px-6 bg-gradient-to-br from-cyan-950/30 via-purple-950/20 to-black border-y border-white/10 overflow-hidden">
+        {/* Subtle animated background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Already have a piqo?</h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">Access your dashboard to manage your store, or use QR check-in for customer bookings.</p>
+            <h2 className="text-4xl md:text-5xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Already have a piqo?
+            </h2>
+            <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto font-medium">
+              Access your dashboard to manage your store, or use QR check-in for customer bookings.
+            </p>
             <AuthButtons />
           </motion.div>
         </div>
       </section>
 
       {/* Use Case Section */}
-      <section className="relative py-12 px-6 flex flex-col items-center justify-center">
-        <div className="max-w-2xl mx-auto text-center">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-cyan-200 to-purple-200 bg-clip-text text-transparent">Perfect for:</h3>
+      <section className="relative py-16 px-6 flex flex-col items-center justify-center overflow-hidden">
+        {/* Subtle animated background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-pink-500 rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="max-w-2xl mx-auto text-center relative z-10">
+          <h3 className="text-3xl md:text-4xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Perfect for:
+          </h3>
           <ul className="flex flex-wrap justify-center gap-4 text-lg md:text-xl font-semibold text-white/90">
-            <li className="flex items-center gap-2">✂️ Barbers</li>
-            <li className="flex items-center gap-2">💅 Nail techs</li>
-            <li className="flex items-center gap-2">🧢 Merch sellers</li>
-            <li className="flex items-center gap-2">📲 Digital creators</li>
+            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
+              ✂️ Barbers
+            </li>
+            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
+              💅 Nail techs
+            </li>
+            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
+              🧢 Merch sellers
+            </li>
+            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
+              📲 Digital creators
+            </li>
           </ul>
         </div>
       </section>
 
       {/* What you get */}
-      <section className="relative py-24 px-6 overflow-hidden">
-        {/* Subtle background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/5 to-transparent pointer-events-none" />
+      <section className="relative py-28 px-6 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
+        {/* Background orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+          <div className="absolute top-1/4 left-10 w-72 h-72 bg-cyan-500 rounded-full filter blur-3xl opacity-20 animate-blob"></div>
+          <div className="absolute bottom-1/4 right-10 w-72 h-72 bg-purple-500 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <motion.h2
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-5xl md:text-6xl font-black text-center mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
           >
             What you get with piqo
           </motion.h2>
@@ -1187,12 +1222,12 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-center text-white/70 mb-12 max-w-xl mx-auto"
+            className="text-center text-gray-300 mb-16 max-w-2xl mx-auto text-lg font-medium"
           >
             Everything you need to start selling—no tech skills required
           </motion.p>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 icon: ScanLine,
@@ -1203,7 +1238,7 @@ export default function Home() {
               {
                 icon: CreditCard,
                 title: "Instant checkout",
-                desc: "Customers pay with Apple Pay, Google Pay, or card. You get paid directly.",
+                desc: "Customers pay with Apple Pay, Google Pay, or card. Money goes straight to your bank.",
                 step: "02",
               },
               {
@@ -1215,27 +1250,34 @@ export default function Home() {
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative p-6 rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl hover:border-cyan-500/30 transition-all group overflow-hidden"
+                transition={{ delay: i * 0.15, duration: 0.5 }}
+                className="relative group"
               >
-                {/* Subtle animated gradient on hover */}
-                <motion.div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.08))",
-                  }}
-                />
-                <div className="absolute top-4 right-4 text-5xl font-bold text-white/5 group-hover:text-cyan-500/10 transition-colors">
-                  {item.step}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-8 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden">
+                  {/* Subtle animated gradient on hover */}
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.08))",
+                    }}
+                  />
+                  <div className="absolute top-6 right-6 text-7xl font-black text-white/5 group-hover:text-cyan-500/10 transition-colors">
+                    {item.step}
+                  </div>
+                  <div className="relative z-10">
+                    <div className="w-14 h-14 mb-5 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg">
+                      <item.icon className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">
+                      {item.title}
+                    </h3>
+                    <p className="text-gray-400 text-base leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
-                <item.icon className="w-10 h-10 mb-4 text-cyan-400 relative z-10" />
-                <h3 className="text-lg font-semibold text-white/90 mb-2 relative z-10">
-                  {item.title}
-                </h3>
-                <p className="text-white/70 text-sm relative z-10">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -1281,7 +1323,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-5xl md:text-6xl font-black text-center mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
           >
             See what piqo creates
           </motion.h2>
@@ -1291,7 +1333,7 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-center text-white/70 mb-16 max-w-2xl mx-auto"
+            className="text-center text-gray-300 mb-16 max-w-2xl mx-auto text-lg font-medium"
           >
             Switch between demo brands to see real examples of what your customers will experience
           </motion.p>
@@ -1395,13 +1437,20 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative py-32 px-6">
-        <div className="container mx-auto max-w-4xl text-center">
+      <section className="relative py-32 px-6 overflow-hidden">
+        {/* Animated background orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl opacity-30 animate-blob"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="container mx-auto max-w-4xl text-center relative z-10">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+            className="text-6xl md:text-7xl font-black mb-8 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
           >
             Ready to go live?
           </motion.h2>
@@ -1410,7 +1459,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-gray-400 mb-8"
+            className="text-2xl text-gray-300 mb-12 font-medium"
           >
             Create your storefront in 2 minutes. No code, no monthly fees.
           </motion.p>

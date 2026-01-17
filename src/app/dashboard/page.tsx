@@ -73,6 +73,49 @@ export default function DashboardPage() {
   // Booking detail modal state
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [bookingDetailOpen, setBookingDetailOpen] = useState(false);
+  
+  // Week selection state
+  const [selectedWeek, setSelectedWeek] = useState<'this' | 'last' | 'next'>('this');
+  const [selectedOrderWeek, setSelectedOrderWeek] = useState<'this' | 'last' | 'next'>('this');
+
+  // Helper functions for week calculations
+  const getWeekBounds = (weekOffset: number) => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - dayOfWeek + (weekOffset * 7));
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    endOfWeek.setHours(23, 59, 59, 999);
+    return { startOfWeek, endOfWeek };
+  };
+
+  const getWeekLabel = (week: 'this' | 'last' | 'next') => {
+    const offset = week === 'this' ? 0 : week === 'last' ? -1 : 1;
+    const { startOfWeek, endOfWeek } = getWeekBounds(offset);
+    const startMonth = startOfWeek.toLocaleDateString('en-US', { month: 'short' });
+    const endMonth = endOfWeek.toLocaleDateString('en-US', { month: 'short' });
+    const startDay = startOfWeek.getDate();
+    const endDay = endOfWeek.getDate() - 1;
+    if (startMonth === endMonth) {
+      return `${startMonth} ${startDay}-${endDay}`;
+    }
+    return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+  };
+
+  const groupByDate = (items: any[], dateField: string) => {
+    const grouped: { [date: string]: any[] } = {};
+    items.forEach(item => {
+      const dateValue = item[dateField];
+      if (!dateValue) return;
+      const date = new Date(dateValue);
+      const dateKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(item);
+    });
+    return grouped;
+  };
 
   // Derived stats
   const totalBookings = totalBookingsCount || bookings.length;
@@ -81,6 +124,26 @@ export default function DashboardPage() {
   const checkedInCount = bookings.filter(b => b.checked_in).length;
   const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
   
+  // Filter bookings by selected week (using scheduled time)
+  const bookingWeekOffset = selectedWeek === 'this' ? 0 : selectedWeek === 'last' ? -1 : 1;
+  const { startOfWeek: bookingWeekStart, endOfWeek: bookingWeekEnd } = getWeekBounds(bookingWeekOffset);
+  const filteredBookings = bookings.filter(b => {
+    const scheduleDate = b.slot_start_time ? new Date(b.slot_start_time) : (b.created_at ? new Date(b.created_at) : null);
+    if (!scheduleDate) return false;
+    return scheduleDate >= bookingWeekStart && scheduleDate < bookingWeekEnd;
+  });
+  const groupedBookings = groupByDate(filteredBookings, 'slot_start_time');
+
+  // Filter orders by selected week
+  const orderWeekOffset = selectedOrderWeek === 'this' ? 0 : selectedOrderWeek === 'last' ? -1 : 1;
+  const { startOfWeek: orderWeekStart, endOfWeek: orderWeekEnd } = getWeekBounds(orderWeekOffset);
+  const filteredOrders = orders.filter(o => {
+    const orderDate = o.created_at ? new Date(o.created_at) : null;
+    if (!orderDate) return false;
+    return orderDate >= orderWeekStart && orderDate < orderWeekEnd;
+  });
+  const groupedOrders = groupByDate(filteredOrders, 'created_at');
+
   // Recent Activity metrics
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -300,96 +363,113 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-purple-50">
+    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black relative overflow-x-hidden">
+      {/* Animated Background Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <PiqoLogoFull />
+      <header className="relative bg-gradient-to-r from-white/10 via-white/5 to-white/10 backdrop-blur-2xl border-b border-white/10 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-5">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl sm:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-200"></div>
+                <div className="relative w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-gray-900 to-black rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/20">
+                  <PiqoLogoFull />
+                </div>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 text-sm mt-0.5">Manage your piqos, bookings & orders</p>
+                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 tracking-tight">Dashboard</h1>
+                <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm mt-0.5 sm:mt-1 lg:mt-2 font-medium">Manage your piqos, bookings & orders in real-time</p>
               </div>
             </div>
             <Link
               href="/create"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white font-semibold rounded-lg transition shadow-lg hover:shadow-xl"
+              className="relative group flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 active:scale-95 text-white font-bold rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-xs sm:text-sm lg:text-base min-h-[44px] sm:min-h-0"
             >
-              <Plus className="h-5 w-5" />
-              New Piqo
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">Create New Piqo</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 lg:py-10 relative">
         {/* Recent Activity Summary */}
         {!loading && (
-          <section className="mb-8">
-            <div className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl shadow-lg p-[2px]">
-              <div className="bg-white rounded-[10px] p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
-                  Recent Activity
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <section className="mb-8 sm:mb-10">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+              <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/10">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-cyan-500 rounded-lg sm:rounded-xl blur-md opacity-50"></div>
+                    <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 uppercase tracking-wider">Recent Activity</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                   {/* Next Appointment */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="h-5 w-5 text-purple-600" />
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-0 rounded-lg sm:rounded-none bg-white/5 sm:bg-transparent border border-white/10 sm:border-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Next Appointment</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:mb-1.5">Next Appointment</p>
                       {nextAppointment ? (
                         <div>
-                          <p className="font-bold text-gray-900 text-sm truncate">{nextAppointment.customer_name || nextAppointment.customer_email?.split('@')[0] || 'Customer'}</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-bold text-white text-xs sm:text-sm truncate">{nextAppointment.customer_name || nextAppointment.customer_email?.split('@')[0] || 'Customer'}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-400">
                             {new Date(nextAppointment.slot_start_time!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {new Date(nextAppointment.slot_start_time!).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                           </p>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 italic">No upcoming appointments</p>
+                        <p className="text-xs sm:text-sm text-gray-500 italic">No upcoming appointments</p>
                       )}
                     </div>
                   </div>
 
                   {/* Last Order */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center flex-shrink-0">
-                      <ShoppingCart className="h-5 w-5 text-pink-600" />
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-0 rounded-lg sm:rounded-none bg-white/5 sm:bg-transparent border border-white/10 sm:border-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-pink-500/20 flex items-center justify-center flex-shrink-0">
+                      <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-pink-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Last Order</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:mb-1.5">Last Order</p>
                       {lastOrder ? (
                         <div>
-                          <p className="font-bold text-gray-900 text-sm truncate">{lastOrder.item_title || 'Product'}</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-bold text-white text-xs sm:text-sm truncate">{lastOrder.item_title || 'Product'}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-400">
                             {new Date(lastOrder.created_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {lastOrder.item_price || '$0'}
                           </p>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 italic">No orders yet</p>
+                        <p className="text-xs sm:text-sm text-gray-500 italic">No orders yet</p>
                       )}
                     </div>
                   </div>
 
                   {/* Revenue (Last 7 Days) */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                      <ChevronRight className="h-5 w-5 text-green-600" />
+                  <div className="flex items-start gap-2.5 sm:gap-3 p-3 sm:p-0 rounded-lg sm:rounded-none bg-white/5 sm:bg-transparent border border-white/10 sm:border-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Revenue (7 Days)</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 sm:mb-1.5">Revenue (7 Days)</p>
                       {recentOrders.length > 0 ? (
                         <div>
-                          <p className="font-bold text-gray-900 text-lg">${revenue7Days.toFixed(2)}</p>
-                          <p className="text-xs text-gray-600">{recentOrders.length} order{recentOrders.length !== 1 ? 's' : ''}</p>
+                          <p className="font-bold text-white text-base sm:text-lg">${revenue7Days.toFixed(2)}</p>
+                          <p className="text-[10px] sm:text-xs text-gray-400">{recentOrders.length} order{recentOrders.length !== 1 ? 's' : ''}</p>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 italic">No recent sales</p>
+                        <p className="text-xs sm:text-sm text-gray-500 italic">No recent sales</p>
                       )}
                     </div>
                   </div>
@@ -400,128 +480,206 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Section */}
-        <section className="mb-10 grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl shadow p-6 border-l-4 border-cyan-500">
-            <p className="text-gray-600 text-sm font-medium">Published Piqos</p>
-            <p className="text-4xl font-bold text-cyan-600 mt-2">{totalSites}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 border-l-4 border-purple-500">
-            <p className="text-gray-600 text-sm font-medium">Total Bookings</p>
-            <p className="text-4xl font-bold text-purple-600 mt-2">{totalBookings}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
-            <p className="text-gray-600 text-sm font-medium">Checked In</p>
-            <p className="text-4xl font-bold text-green-600 mt-2">{checkedInCount}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 border-l-4 border-pink-500">
-            <p className="text-gray-600 text-sm font-medium">Orders</p>
-            <p className="text-4xl font-bold text-pink-600 mt-2">{totalOrders}</p>
-          </div>
+        <section className="mb-8 sm:mb-12 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-cyan-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <p className="text-cyan-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Published Piqos</p>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 to-cyan-500 group-hover:scale-105 transition-transform duration-300">{totalSites}</p>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-purple-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <p className="text-purple-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Total Bookings</p>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-400" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-purple-500 group-hover:scale-105 transition-transform duration-300">{totalBookings}</p>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-green-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-green-400/50 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <p className="text-green-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Checked In</p>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-400" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-300 to-emerald-500 group-hover:scale-105 transition-transform duration-300">{checkedInCount}</p>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-pink-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-pink-400/50 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <p className="text-pink-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Orders</p>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-pink-400" />
+                </div>
+              </div>
+              <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-pink-300 to-pink-500 group-hover:scale-105 transition-transform duration-300">{totalOrders}</p>
+            </div>
+          </motion.div>
         </section>
 
         {/* Sites Section */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
+        <section className="mb-10 sm:mb-14">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-5 sm:mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <ShoppingCart className="h-6 w-6 text-cyan-600" />
-                Your Piqos
-              </h2>
-              <p className="text-gray-600 text-sm mt-1">View and manage all your published stores</p>
+              <div className="flex items-center gap-2.5 sm:gap-4 mb-1 sm:mb-2">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-cyan-500 rounded-lg sm:rounded-xl blur-md opacity-50"></div>
+                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg">
+                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  </div>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Your Piqos</h2>
+              </div>
+              <p className="text-gray-400 text-xs sm:text-sm ml-11 sm:ml-14 font-medium">View and manage all your published stores</p>
             </div>
             <Link
               href="/create"
-              className="px-4 py-2 bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-semibold rounded-lg transition"
+              className="px-4 sm:px-5 py-2.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/50 text-cyan-400 font-semibold rounded-lg sm:rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/30 text-sm text-center min-h-[44px] sm:min-h-0 flex items-center justify-center"
             >
               Create New
             </Link>
           </div>
           {sites.length === 0 ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center">
-              <p className="text-gray-600 mb-4">You haven't created any piqos yet.</p>
-              <Link href="/create" className="inline-block px-6 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center">
+              <p className="text-gray-400 mb-4 text-sm sm:text-base">You haven't created any piqos yet.</p>
+              <Link href="/create" className="inline-block px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-xl transition min-h-[44px] flex items-center justify-center">
                 Create your first piqo
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {sites.map((site) => {
                 const color = site.config?.appearance?.accent || '#06b6d4';
                 const hasStripeAccount = !!site.stripe_account_id;
                 const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
                 const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
+                const mode = site.config?.mode || 'unknown';
                 
                 return (
-                  <div key={site.handle} className="bg-white rounded-xl shadow hover:shadow-lg transition p-6 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: color }}>
-                        {site.config?.brandName?.[0]?.toUpperCase() || site.handle[0]?.toUpperCase() || 'P'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate" title={site.config?.brandName || site.handle}>{site.config?.brandName || site.handle}</h3>
-                        <p className="text-xs text-gray-500 truncate">{site.handle}</p>
+                  <div key={site.handle} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300 p-3 sm:p-4 flex flex-col gap-3 group active:scale-[0.98]">
+                    {/* Header: Logo + Brand name + handle + mode badge */}
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      {/* Brand Logo */}
+                      {site.config?.brandLogo ? (
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/10">
+                          <img 
+                            src={site.config.brandLogo} 
+                            alt={site.config?.brandName || site.handle}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shrink-0 ring-2 ring-white/10">
+                          {(site.config?.brandName || site.handle)[0].toUpperCase()}
+                        </div>
+                      )}
+                      {/* Brand info and mode badge */}
+                      <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5" title={site.config?.brandName || site.handle}>
+                            {site.config?.brandName || site.handle}
+                          </h3>
+                          <p className="text-[11px] sm:text-xs text-gray-400 truncate">@{site.handle}</p>
+                        </div>
+                        {/* Mode badge */}
+                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider shrink-0 ${
+                          mode === 'services' ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30' :
+                          mode === 'products' ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30' :
+                          mode === 'digital' ? 'bg-pink-500/20 text-pink-300 ring-1 ring-pink-500/30' :
+                          mode === 'booking' ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30' :
+                          'bg-gray-500/20 text-gray-300 ring-1 ring-gray-500/30'
+                        }`}>
+                          <span className="hidden sm:inline">{mode === 'services' ? '🔧' : mode === 'products' ? '🛍️' : mode === 'digital' ? '⚡' : mode === 'booking' ? '📅' : '📦'} </span>{mode}
+                        </span>
                       </div>
                     </div>
-                    
-                    {/* Stripe Status Badge */}
-                    <div className="pt-2 border-t border-gray-100">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payments</span>
-                        {stripeFullyEnabled ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
-                            Connected
-                          </span>
-                        ) : stripeIncomplete ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span>
-                            Setup incomplete
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                            Not connected
-                          </span>
-                        )}
+
+                    {/* Metadata: Stripe status + published date */}
+                    <div className="flex items-center justify-between gap-2 pt-2 sm:pt-2.5 border-t border-white/5">
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-[10px] sm:text-xs text-gray-500">
+                          {site.updated_at ? new Date(site.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                        </span>
                       </div>
-                      <Link
-                        href={`/connect?handle=${site.handle}`}
-                        className="w-full flex items-center justify-center gap-1 px-3 py-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 rounded-lg font-medium text-xs transition border border-purple-200"
-                      >
-                        <Settings className="h-3.5 w-3.5" />
-                        {stripeFullyEnabled ? 'Manage Stripe' : stripeIncomplete ? 'Finish Stripe setup' : 'Connect Stripe'}
+                      {stripeFullyEnabled ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 text-[10px] sm:text-xs font-semibold ring-1 ring-green-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                          <span className="hidden xs:inline">Stripe</span>
+                        </span>
+                      ) : stripeIncomplete ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[10px] sm:text-xs font-semibold ring-1 ring-yellow-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                          <span className="hidden xs:inline">Stripe</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 text-[10px] sm:text-xs font-semibold ring-1 ring-gray-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                          <span className="hidden xs:inline">No Stripe</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Primary actions: Edit + View */}
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <button 
+                        onClick={() => openEditPreview(site.handle, site.config)}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-blue-600/80 to-cyan-600/80 hover:from-blue-600 hover:to-cyan-600 active:scale-95 border border-blue-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 min-h-[44px] sm:min-h-0">
+                        <Edit className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <Link 
+                        href={`/u/${site.handle}`}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-600 hover:to-emerald-600 active:scale-95 border border-green-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 min-h-[44px] sm:min-h-0">
+                        <Eye className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                        <span>View</span>
                       </Link>
                     </div>
-                    <div className="flex flex-col gap-2 pt-2">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => openEditPreview(site.handle, site.config)}
-                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium text-sm transition">
-                          <Edit className="h-4 w-4" />
-                          Edit
-                        </button>
-                        <Link href={`/u/${site.handle}`} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-lg font-medium text-sm transition">
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Link>
-                        <button 
-                          onClick={() => downloadQR(site.handle)}
-                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg font-medium text-sm transition"
-                        >
-                          <Download className="h-4 w-4" />
-                          QR
-                        </button>
-                      </div>
+
+                    {/* Secondary actions: Stripe + QR + Delete */}
+                    <div className="flex gap-1.5 pt-2 border-t border-white/5">
+                      <Link
+                        href={`/connect?handle=${site.handle}`}
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-purple-600/20 hover:bg-purple-600/30 active:scale-95 border border-purple-500/40 text-purple-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title={stripeFullyEnabled ? 'Manage Stripe' : stripeIncomplete ? 'Finish Stripe setup' : 'Connect Stripe'}
+                      >
+                        <Settings className="h-3 w-3" />
+                        <span>{stripeFullyEnabled ? 'Manage' : stripeIncomplete ? 'Setup' : 'Stripe'}</span>
+                      </Link>
+                      <button 
+                        onClick={() => downloadQR(site.handle)}
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/40 text-cyan-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title="Download QR Code"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>QR</span>
+                      </button>
                       <button 
                         onClick={() => deleteSite(site.handle)}
                         disabled={deletingHandle === site.handle}
-                        className="w-full flex items-center justify-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium text-sm transition disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-red-600/20 hover:bg-red-600/30 active:scale-95 border border-red-500/40 text-red-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 disabled:opacity-50 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title="Delete Piqo"
                       >
-                        <Trash2 className="h-4 w-4" />
-                        {deletingHandle === site.handle ? 'Deleting...' : 'Delete'}
+                        <Trash2 className="h-3 w-3" />
+                        <span>{deletingHandle === site.handle ? '...' : 'Delete'}</span>
                       </button>
                     </div>
-                    <div className="text-xs text-gray-400 pt-2 border-t">{site.updated_at ? new Date(site.updated_at).toLocaleDateString() : 'Never'}</div>
                   </div>
                 );
               })}
@@ -530,69 +688,143 @@ export default function DashboardPage() {
         </section>
 
         {/* Bookings Section */}
-        <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Calendar className="h-6 w-6 text-purple-600" />
-                Recent Bookings
-              </h2>
-              <p className="text-gray-600 text-sm mt-1">Live updates from your booking pages</p>
+        <section className="mb-14">
+          <div className="mb-8">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-purple-500 rounded-xl blur-md opacity-50"></div>
+                    <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Recent Bookings</h2>
+                </div>
+                <p className="text-gray-400 text-sm ml-14 font-medium">Live updates from your booking pages</p>
+              </div>
+              <div className="text-right bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-3">
+                <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-purple-500">{bookings.length}</p>
+                <p className="text-xs text-purple-400 uppercase tracking-widest font-bold mt-1">Total</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-purple-600">{bookings.length}</p>
-              <p className="text-xs text-gray-500">Total bookings</p>
+            {/* Week Switcher */}
+            <div className="ml-14 flex items-center gap-2">
+              <button
+                onClick={() => setSelectedWeek('last')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedWeek === 'last'
+                    ? 'bg-purple-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                Last Week
+              </button>
+              <button
+                onClick={() => setSelectedWeek('this')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedWeek === 'this'
+                    ? 'bg-purple-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                This Week
+              </button>
+              <button
+                onClick={() => setSelectedWeek('next')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedWeek === 'next'
+                    ? 'bg-purple-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                Next Week
+              </button>
+              <span className="ml-2 text-xs text-gray-500 font-medium">{getWeekLabel(selectedWeek)}</span>
             </div>
           </div>
           {loading ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center text-gray-600">Loading...</div>
-          ) : bookings.length === 0 ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center">
-              <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No bookings yet. Create a booking piqo to get started!</p>
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="inline-block w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-400 font-medium">Loading bookings...</p>
+              </div>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-purple-500/10 flex items-center justify-center">
+                  <Calendar className="h-10 w-10 text-purple-500" />
+                </div>
+                <p className="text-xl font-bold text-white mb-2">No bookings for {getWeekLabel(selectedWeek)}</p>
+                <p className="text-gray-400 mb-6">Try selecting a different week or create a booking piqo to get started.</p>
+                <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                  <Plus className="h-5 w-5" />
+                  Create Booking Piqo
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead className="bg-gradient-to-r from-purple-50 to-purple-50 border-b border-purple-100">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-purple-900 uppercase tracking-wider">Customer</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-purple-900 uppercase tracking-wider">Service</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-purple-900 uppercase tracking-wider">Scheduled</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-purple-900 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-purple-900 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {bookings.slice(0, 10).map((b: Booking, index: number) => (
-                      <tr key={String(b.id) || `booking-${index}`} className="hover:bg-purple-50 transition duration-150">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-xs font-bold">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  {Object.keys(groupedBookings).length === 0 ? (
+                    <div className="p-12 text-center">
+                      <p className="text-gray-400">No bookings found for this week</p>
+                    </div>
+                  ) : (
+                    Object.entries(groupedBookings).map(([dateKey, dateBookings], groupIndex) => (
+                      <div key={dateKey}>
+                        {/* Date Header */}
+                        <div className="bg-gradient-to-r from-purple-600/30 to-pink-600/30 border-y border-purple-500/30 px-6 py-3">
+                          <h3 className="text-sm font-bold text-purple-200 uppercase tracking-wider">{dateKey}</h3>
+                        </div>
+                        <table className="min-w-full">
+                          <thead className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-b border-purple-500/30">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-widest">Customer</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-widest">Service</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-widest">Time</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-widest">Status</th>
+                              <th className="px-6 py-4 text-left text-xs font-bold text-purple-300 uppercase tracking-widest">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                          {(dateBookings as Booking[]).map((b: Booking, index: number) => (
+                      <tr key={String(b.id) || `booking-${index}`} className="hover:bg-white/5 transition-all duration-200 group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-sm font-bold shadow-lg">
                               {(b.customer_name || b.customer_email || 'U')[0].toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 truncate">{b.customer_name || b.customer_email?.split('@')[0] || '—'}</p>
+                              <p className="text-sm font-semibold text-white truncate">{b.customer_name || b.customer_email?.split('@')[0] || '—'}</p>
                               {b.team_member_name && (
-                                <p className="text-xs text-gray-500 truncate">with {b.team_member_name}</p>
+                                <p className="text-xs text-gray-400 truncate">with {b.team_member_name}</p>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm text-gray-900 font-medium truncate">{b.item_title || '—'}</p>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-white font-medium truncate">{b.item_title || '—'}</p>
                           {b.site_brand_name && (
-                            <p className="text-xs text-gray-500 truncate">{b.site_brand_name}</p>
+                            <p className="text-xs text-gray-400 truncate">{b.site_brand_name}</p>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-6 py-4 text-sm text-gray-300">
                           {b.slot_start_time ? (
                             <div>
-                              <p className="font-semibold whitespace-nowrap">{new Date(b.slot_start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                              <p className="text-xs text-gray-500 whitespace-nowrap">
+                              <p className="font-semibold whitespace-nowrap">
                                 {new Date(b.slot_start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                               </p>
+                              {b.slot_end_time && (
+                                <p className="text-xs text-gray-500 whitespace-nowrap">
+                                  to {new Date(b.slot_end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                </p>
+                              )}
                             </div>
                           ) : (
                             <span className="text-gray-400 text-xs">—</span>
@@ -616,107 +848,182 @@ export default function DashboardPage() {
                             <span className="text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm">
-                          <div className="flex items-center gap-1.5">
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
                                 setSelectedBooking(b);
                                 setBookingDetailOpen(true);
                               }}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/50 text-purple-300 font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg"
                             >
-                              <Eye className="h-3 w-3" />
+                              <Eye className="h-3.5 w-3.5" />
                             </button>
                             {b.status === 'pending' ? (
                               <>
                                 <button
                                   onClick={() => confirmBooking(b.id, 'confirmed')}
                                   disabled={confirmingBookingId === b.id}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 font-semibold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 text-green-300 font-semibold text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg"
                                 >
-                                  <Check className="h-3 w-3" />
+                                  <Check className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   onClick={() => confirmBooking(b.id, 'cancelled')}
                                   disabled={confirmingBookingId === b.id}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 font-semibold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-semibold text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg"
                                 >
-                                  <X className="h-3 w-3" />
+                                  <X className="h-3.5 w-3.5" />
                                 </button>
                               </>
                             ) : (
                               <button
                                 onClick={() => deleteBooking(b.id)}
                                 disabled={deletingBookingId === b.id}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 font-semibold text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 hover:shadow-lg"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
                           </div>
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-              {bookings.length > 10 && (
-                <div className="px-6 py-4 bg-gray-50 border-t text-center">
-                  <p className="text-sm text-gray-600">Showing 10 of {bookings.length} bookings</p>
+                          </tbody>
+                        </table>
+                      </div>
+                    ))
+                  )}
                 </div>
-              )}
+                {filteredBookings.length > 0 && (
+                  <div className="px-6 py-4 bg-white/5 border-t border-white/10 text-center">
+                    <p className="text-sm text-gray-400">{filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} for {getWeekLabel(selectedWeek)}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </section>
 
         {/* Orders Section */}
         <section>
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ShoppingCart className="h-6 w-6 text-pink-600" />
-              Recent Orders
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">Track all purchases from your stores</p>
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-pink-500 rounded-xl blur-md opacity-50"></div>
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow-lg">
+                  <ShoppingCart className="h-5 w-5 text-white" />
+                </div>
+              </div>
+              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400">Recent Orders</h2>
+            </div>
+            <p className="text-gray-400 text-sm ml-14 mb-4 font-medium">Track all purchases from your stores</p>
+            {/* Week Switcher for Orders */}
+            <div className="ml-14 flex items-center gap-2">
+              <button
+                onClick={() => setSelectedOrderWeek('last')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedOrderWeek === 'last'
+                    ? 'bg-pink-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                Last Week
+              </button>
+              <button
+                onClick={() => setSelectedOrderWeek('this')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedOrderWeek === 'this'
+                    ? 'bg-pink-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                This Week
+              </button>
+              <button
+                onClick={() => setSelectedOrderWeek('next')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  selectedOrderWeek === 'next'
+                    ? 'bg-pink-500 text-white shadow-lg'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                Next Week
+              </button>
+              <span className="ml-2 text-xs text-gray-500 font-medium">{getWeekLabel(selectedOrderWeek)}</span>
+            </div>
           </div>
           {loading ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center text-gray-600">Loading...</div>
-          ) : orders.length === 0 ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center text-gray-600">No orders yet. Create a product piqo to start selling!</div>
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="inline-block w-16 h-16 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-400 font-medium">Loading orders...</p>
+              </div>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-pink-500/10 flex items-center justify-center">
+                  <ShoppingCart className="h-10 w-10 text-pink-500" />
+                </div>
+                <p className="text-xl font-bold text-white mb-2">No orders for {getWeekLabel(selectedOrderWeek)}</p>
+                <p className="text-gray-400 mb-6">Try selecting a different week or create a store to start selling.</p>
+                <Link href="/create" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg">
+                  <Plus className="h-5 w-5" />
+                  Create Product Piqo
+                </Link>
+              </div>
+            </div>
           ) : (
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-              <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-pink-50 to-pink-50 border-b border-pink-100">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Customer</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Item</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Store</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Price</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Ordered On</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-pink-900 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {orders.slice(0, 10).map((o: Order, index: number) => (
-                    <tr key={String(o.id) || `order-${index}`} className="hover:bg-pink-50 transition duration-150">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                {Object.keys(groupedOrders).length === 0 ? (
+                  <div className="p-12 text-center">
+                    <p className="text-gray-400">No orders found for this week</p>
+                  </div>
+                ) : (
+                  Object.entries(groupedOrders).map(([dateKey, dateOrders]) => (
+                    <div key={dateKey}>
+                      {/* Date Header */}
+                      <div className="bg-gradient-to-r from-pink-600/30 to-orange-600/30 border-y border-pink-500/30 px-6 py-3">
+                        <h3 className="text-sm font-bold text-pink-200 uppercase tracking-wider">{dateKey}</h3>
+                      </div>
+                      <table className="min-w-full">
+                        <thead className="bg-gradient-to-r from-pink-600/20 to-orange-600/20 border-b border-pink-500/30">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Customer</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Item</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Store</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Type</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Price</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Time</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-pink-300 uppercase tracking-widest">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                        {(dateOrders as Order[]).map((o: Order, index: number) => (
+                    <tr key={String(o.id) || `order-${index}`} className="hover:bg-white/5 transition-all duration-200 group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 text-white flex items-center justify-center text-sm font-bold">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 text-white flex items-center justify-center text-sm font-bold shadow-lg">
                             {(o.customer_name || o.customer_email || 'U')[0].toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{o.customer_name || o.customer_email?.split('@')[0] || '—'}</p>
-                            <p className="text-xs text-gray-500">{o.customer_email || '—'}</p>
+                            <p className="text-sm font-semibold text-white">{o.customer_name || o.customer_email?.split('@')[0] || '—'}</p>
+                            <p className="text-xs text-gray-400">{o.customer_email || '—'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{o.item_title || '—'}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-white">{o.item_title || '—'}</td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
-                          <p className="font-semibold text-gray-900">{o.site_brand_name || o.handle || '—'}</p>
+                          <p className="font-semibold text-white">{o.site_brand_name || o.handle || '—'}</p>
                           {o.site_brand_name && o.handle && (
-                            <p className="text-xs text-gray-500">@{o.handle}</p>
+                            <p className="text-xs text-gray-400">@{o.handle}</p>
                           )}
                         </div>
                       </td>
@@ -733,35 +1040,14 @@ export default function DashboardPage() {
                           <span className="text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm font-bold text-gray-900">{o.item_price || '—'}</td>
-                      <td className="px-6 py-4 text-sm">
-                        {o.status ? (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold gap-1 ${
-                            o.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            o.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            o.status === 'refunded' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            <span className={`w-2 h-2 rounded-full ${
-                              o.status === 'completed' ? 'bg-green-600' :
-                              o.status === 'pending' ? 'bg-yellow-600' :
-                              o.status === 'refunded' ? 'bg-red-600' :
-                              'bg-gray-600'
-                            }`}></span>
-                            {o.status === 'completed' && o.mode === 'digital' ? 'Delivered' : o.status === 'completed' ? 'Paid' : o.status}
-                          </span>
+                      <td className="px-6 py-4 text-sm font-bold text-white">{o.item_price || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300">
+                        {o.created_at ? (
+                          <p className="font-semibold whitespace-nowrap">
+                            {new Date(o.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </p>
                         ) : (
                           <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {o.created_at ? (
-                          <div>
-                            <p className="font-semibold">{new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                            <p className="text-xs text-gray-500">{new Date(o.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
-                          </div>
-                        ) : (
-                          '—'
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -770,7 +1056,7 @@ export default function DashboardPage() {
                             setSelectedOrder(o);
                             setOrderDetailOpen(true);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-100 hover:bg-pink-200 text-pink-700 font-semibold text-xs transition"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/50 text-pink-300 font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           View
@@ -778,8 +1064,18 @@ export default function DashboardPage() {
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
+                        </tbody>
+                      </table>
+                    </div>
+                  ))
+                )}
+              </div>
+              {filteredOrders.length > 0 && (
+                <div className="px-6 py-4 bg-white/5 border-t border-white/10 text-center">
+                  <p className="text-sm text-gray-400">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} for {getWeekLabel(selectedOrderWeek)}</p>
+                </div>
+              )}
+            </div>
             </div>
           )}
         </section>

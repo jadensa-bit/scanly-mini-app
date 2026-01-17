@@ -29,6 +29,7 @@ import {
   MapPin,
   Instagram,
   Globe,
+  Mail,
 } from "lucide-react";
 
 type ModeId = "services" | "booking" | "digital" | "products";
@@ -115,6 +116,8 @@ type SocialLinks = {
   website?: string;
   phone?: string;
   address?: string;
+  email?: string;
+  bio?: string;
 };
 
 type WeekdayId = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -468,6 +471,10 @@ export default function CreatePage() {
       sun: { enabled: false, start: "09:00", end: "17:00" },
     },
   });
+
+  // Collapsible state for optional sections (Products/Digital modes)
+  const [hoursExpanded, setHoursExpanded] = useState(false);
+  const [staffExpanded, setStaffExpanded] = useState(false);
 
   // Real-time draft save: persist all edits to localStorage
   useEffect(() => {
@@ -853,6 +860,8 @@ async function startStripeConnect() {
         website: (social.website || "").trim() || undefined,
         phone: (social.phone || "").trim() || undefined,
         address: (social.address || "").trim() || undefined,
+        email: (social.email || "").trim() || undefined,
+        bio: (social.bio || "").trim() || undefined,
       },
 
       availability: availability && mode === 'services' ? {
@@ -1257,6 +1266,8 @@ async function startStripeConnect() {
         website: (social.website || "").trim() || undefined,
         phone: (social.phone || "").trim() || undefined,
         address: (social.address || "").trim() || undefined,
+        email: (social.email || "").trim() || undefined,
+        bio: (social.bio || "").trim() || undefined,
       },
 
       availability,
@@ -2700,15 +2711,7 @@ async function startStripeConnect() {
             </section>
 
             {/* Availability (new) */}
-            <section className={cn(
-              "rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 transition-all duration-300",
-              mode !== "services" && "opacity-40 max-h-24 overflow-hidden relative"
-            )}>
-              {mode !== "services" && (
-                <div className="absolute top-3 right-3 z-10 px-2 py-1 bg-white/10 rounded-lg text-[10px] text-white/60 border border-white/10">
-                  Not used for this mode
-                </div>
-              )}
+            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                   <Zap className="h-4 w-4" />
@@ -2941,25 +2944,43 @@ async function startStripeConnect() {
                     />
                   </div>
                 </label>
+
+                <label className="grid gap-1 sm:col-span-2">
+                  <span className="text-xs text-white/80">Contact Email</span>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
+                    <input
+                      type="email"
+                      value={social.email || ""}
+                      onChange={(e) => setSocial((s) => ({ ...s, email: e.target.value }))}
+                      className="w-full rounded-2xl border border-white/12 bg-black/40 pl-11 pr-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                      placeholder="hello@yourbrand.com"
+                    />
+                  </div>
+                </label>
+
+                <label className="grid gap-1 sm:col-span-2">
+                  <span className="text-xs text-white/80">Short Bio</span>
+                  <textarea
+                    value={social.bio || ""}
+                    onChange={(e) => setSocial((s) => ({ ...s, bio: e.target.value }))}
+                    rows={3}
+                    className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25 resize-none"
+                    placeholder="Tell customers about yourself or your business..."
+                    maxLength={300}
+                  />
+                  <span className="text-[10px] text-white/50 text-right">{(social.bio || "").length}/300</span>
+                </label>
               </div>
 
               <div className="mt-2 text-[11px] text-white/65">
-                These show as quick action buttons on the mini-app once you wire them into /u/[handle].
+                Add your bio and contact info to help customers learn more about you. This appears when they click the "About" button on your piqo.
               </div>
             </section>
 
-            {/* Team Management - for services mode */}
-            <section className={cn(
-              "rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 transition-all duration-300",
-              mode !== "services" && "opacity-40 max-h-24 overflow-hidden relative"
-            )}>
-              {mode !== "services" && (
-                <div className="absolute top-3 right-3 z-10 px-2 py-1 bg-white/10 rounded-lg text-[10px] text-white/60 border border-white/10">
-                  Not used for this mode
-                </div>
-              )}
-              {mode === "services" && (
-                <>
+            {/* Team Management - only for services */}
+            {mode === "services" && (
+              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                     <Users className="h-4 w-4 text-blue-400" />
@@ -3148,15 +3169,8 @@ async function startStripeConnect() {
                     💡 <span className="font-medium">Tip:</span> Team members show on your services storefront when "Staff / team section" is enabled in Style → Sections.
                   </div>
                 </div>
-                </>
-              )}
-              {mode !== "services" && (
-                <div className="text-sm text-white/60">
-                  <Users className="h-5 w-5 text-white/40 mx-auto mb-2" />
-                  Team management (Services mode only)
-                </div>
-              )}
-            </section>
+              </section>
+            )}
 
             {/* Next Button */}
             <div className="mt-6 flex justify-end">

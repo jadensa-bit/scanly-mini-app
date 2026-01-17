@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Download } from "lucide-react";
+import { Sparkles, X, Download, ShoppingBag, User, Mail, Phone, MapPin } from "lucide-react";
 import { useParams } from "next/navigation";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabaseclient";
@@ -26,6 +26,8 @@ type Social = {
   website?: string;
   phone?: string;
   address?: string;
+  email?: string;
+  bio?: string;
 };
 type Day = {
   enabled: boolean;
@@ -130,11 +132,25 @@ function slotMatchesStaffSchedule(slot: any, staffMember: any): boolean {
   return slotTimeMinutes >= startMinutes && slotTimeMinutes < endMinutes;
 }
 
+// Cart item type
+type CartItem = {
+  item: Item;
+  quantity: number;
+};
+
 export default function StorefrontPreview(props: StorefrontPreviewProps) {
   // Get handle from props first (preferred), then try URL params as fallback
   const params = useParams();
   const handle = props.handle || (params?.handle as string) || "";
 
+  // Cart state (for products and digital)
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  
+  // Creator info modal
+  const [showCreatorInfo, setShowCreatorInfo] = useState(false);
+  
   // Booking state
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [bookingStep, setBookingStep] = useState<"browse" | "confirm" | "success">("browse");
@@ -153,6 +169,44 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   
   // Track if we've already attempted slot generation to prevent infinite loops
   const slotsGenerationAttempted = useRef<Record<string, boolean>>({});
+
+  // Cart helper functions
+  const addToCart = (item: Item, qty: number = 1) => {
+    setCart(prev => {
+      const existing = prev.find(ci => ci.item.title === item.title);
+      if (existing) {
+        return prev.map(ci =>
+          ci.item.title === item.title
+            ? { ...ci, quantity: ci.quantity + qty }
+            : ci
+        );
+      }
+      return [...prev, { item, quantity: qty }];
+    });
+  };
+
+  const removeFromCart = (itemTitle: string) => {
+    setCart(prev => prev.filter(ci => ci.item.title !== itemTitle));
+  };
+
+  const updateCartQuantity = (itemTitle: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(itemTitle);
+      return;
+    }
+    setCart(prev =>
+      prev.map(ci =>
+        ci.item.title === itemTitle ? { ...ci, quantity } : ci
+      )
+    );
+  };
+
+  const cartTotal = cart.reduce((total, ci) => {
+    const price = parseFloat(String(ci.item.price || '0').replace(/[^0-9.]/g, ''));
+    return total + (price * ci.quantity);
+  }, 0);
+
+  const cartItemCount = cart.reduce((count, ci) => count + ci.quantity, 0);
 
   // Accept all config fields as props
   const {
@@ -406,6 +460,54 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     setBookingError(null);
 
     try {
+      // For products/digital products with cart functionality
+      if ((mode === "products" || mode === "digital") && cart.length > 0) {
+        // Create checkout session with multiple items
+        const checkoutRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            handle: handle || "",
+            mode: mode,
+            customer_name: customerName.trim(),
+            customer_email: customerEmail.trim(),
+            items: cart.map(ci => ({
+              item_title: ci.item.title || "",
+              item_price: ci.item.price || "",
+              quantity: ci.quantity,
+              note: ci.item.note || "",
+            })),
+          }),
+        });
+
+        if (!checkoutRes.ok) {
+          const data = await checkoutRes.json();
+          throw new Error(data.error || "Checkout failed");
+        }
+
+        const checkoutData = await checkoutRes.json();
+        
+        // If no payment required (Stripe not set up), show confirmation
+        if (checkoutData.noPayment) {
+          setCart([]); // Clear cart
+          setShowCart(false);
+          alert(`✅ Order received!\n\n${checkoutData.message}\n\nOrder ID: ${checkoutData.orderId}`);
+          // Reset form
+          setCustomerName("");
+          setCustomerEmail("");
+          setBookingLoading(false);
+          return;
+        }
+        
+        // Redirect to Stripe checkout URL
+        if (checkoutData.url) {
+          window.location.href = checkoutData.url;
+        } else {
+          throw new Error("No checkout URL returned");
+        }
+        return;
+      }
+
       // For products/digital products, create order first then redirect to Stripe
       if (mode === "products" || mode === "digital") {
         // Create order in database first
@@ -719,6 +821,20 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       <h2 className="text-base font-bold text-gray-900 truncate">{brandName || "Your Brand"}</h2>
                       <p className="text-xs text-gray-500 truncate">{tagline || "Your tagline here"}</p>
                     </div>
+                    {/* About Creator button - only show if bio or contact info exists */}
+                    {(() => {
+                      const hasInfo = !!(social?.bio || social?.email || social?.phone || social?.address);
+                      console.log('🔍 About button check:', { hasInfo, social });
+                      return hasInfo ? (
+                        <button
+                          onClick={() => setShowCreatorInfo(true)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="About Creator"
+                        >
+                          <User className="h-5 w-5 text-gray-600" />
+                        </button>
+                      ) : null;
+                    })()}
                   </motion.div>
                 )}
                 {/* Items list */}
@@ -813,32 +929,78 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
                               {item.note || (mode === "services" ? "60 min • Book online" : "Details here")}
                             </p>
-                            <motion.button
-                              className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
-                              style={{
-                                background: ctaBg,
-                                color: ctaFg,
-                                borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
-                              }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => {
-                                setSelectedItem(item);
-                                setBookingStep("confirm");
-                              }}
-                            >
-                              {shine && (
-                                <motion.div
-                                  className="absolute inset-0"
-                                  style={{ background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)` }}
-                                  animate={{ x: ["-100%", "200%"] }}
-                                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                />
-                              )}
-                              <span className="relative z-10">
-                                {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
-                              </span>
-                            </motion.button>
+                            {mode === "products" || mode === "digital" ? (
+                              <div className="flex gap-1.5">
+                                <div className="flex items-center border rounded-md overflow-hidden bg-white" style={{ borderColor: `${accentSolid}40` }}>
+                                  <button
+                                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                    className="px-2 py-1 text-xs font-bold hover:bg-gray-100 transition"
+                                  >
+                                    −
+                                  </button>
+                                  <span className="px-2 text-[10px] font-bold min-w-[20px] text-center">{quantity}</span>
+                                  <button
+                                    onClick={() => setQuantity(quantity + 1)}
+                                    className="px-2 py-1 text-xs font-bold hover:bg-gray-100 transition"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <motion.button
+                                  className="flex-1 py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
+                                  style={{
+                                    background: ctaBg,
+                                    color: ctaFg,
+                                    borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
+                                  }}
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => {
+                                    addToCart(item, quantity);
+                                    setQuantity(1);
+                                  }}
+                                >
+                                  {shine && (
+                                    <motion.div
+                                      className="absolute inset-0"
+                                      style={{ background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)` }}
+                                      animate={{ x: ["-100%", "200%"] }}
+                                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    />
+                                  )}
+                                  <span className="relative z-10">
+                                    🛒 Add
+                                  </span>
+                                </motion.button>
+                              </div>
+                            ) : (
+                              <motion.button
+                                className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
+                                style={{
+                                  background: ctaBg,
+                                  color: ctaFg,
+                                  borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                  setSelectedItem(item);
+                                  setBookingStep("confirm");
+                                }}
+                              >
+                                {shine && (
+                                  <motion.div
+                                    className="absolute inset-0"
+                                    style={{ background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)` }}
+                                    animate={{ x: ["-100%", "200%"] }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                  />
+                                )}
+                                <span className="relative z-10">
+                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : "Get")}
+                                </span>
+                              </motion.button>
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -852,29 +1014,57 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {social.instagram && (
-                          <button className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[8px] font-bold" style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                          <a 
+                            href={`https://instagram.com/${social.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                          >
                             📷 Instagram
-                          </button>
+                          </a>
                         )}
                         {social.tiktok && (
-                          <button className="flex items-center gap-1 px-2 py-1 bg-black text-white text-[8px] font-bold" style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                          <a 
+                            href={`https://tiktok.com/@${social.tiktok.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 bg-black text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                          >
                             🎵 TikTok
-                          </button>
+                          </a>
                         )}
                         {social.website && (
-                          <button className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold" style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                          <a 
+                            href={social.website.startsWith('http') ? social.website : `https://${social.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                          >
                             🌐 Website
-                          </button>
+                          </a>
                         )}
                         {social.phone && (
-                          <button className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold" style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                          <a 
+                            href={`tel:${social.phone}`}
+                            className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                          >
                             📞 Call
-                          </button>
+                          </a>
                         )}
                         {social.address && (
-                          <button className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold" style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                          <a 
+                            href={`https://maps.google.com/?q=${encodeURIComponent(social.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                          >
                             📍 Directions
-                          </button>
+                          </a>
                         )}
                       </div>
                     </div>
@@ -985,6 +1175,141 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           </div>
         </div>
       </div>
+
+      {/* Floating Cart Button - for products/digital only */}
+      {(mode === "products" || mode === "digital") && cartItemCount > 0 && (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowCart(true)}
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center"
+          style={{
+            background: accentSolid,
+            color: ctaFg,
+          }}
+        >
+          <div className="relative">
+            <ShoppingBag className="w-6 h-6" />
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {cartItemCount}
+            </span>
+          </div>
+        </motion.button>
+      )}
+
+      {/* Cart Modal */}
+      <AnimatePresence>
+        {showCart && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center sm:justify-center"
+            onClick={() => setShowCart(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:w-96 sm:rounded-2xl bg-white text-gray-900 shadow-xl max-h-[90vh] overflow-hidden flex flex-col"
+              style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px" }}
+            >
+              {/* Cart Header */}
+              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b bg-white">
+                <span className="text-sm font-semibold">🛒 Your Cart ({cartItemCount} items)</span>
+                <button
+                  onClick={() => setShowCart(false)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Cart Items */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {cart.map((ci, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">{ci.item.title}</p>
+                      <p className="text-xs text-gray-600">{ci.item.price} each</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateCartQuantity(ci.item.title!, ci.quantity - 1)}
+                        className="w-6 h-6 flex items-center justify-center bg-white border rounded font-bold text-xs hover:bg-gray-100"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center font-bold text-sm">{ci.quantity}</span>
+                      <button
+                        onClick={() => updateCartQuantity(ci.item.title!, ci.quantity + 1)}
+                        className="w-6 h-6 flex items-center justify-center bg-white border rounded font-bold text-xs hover:bg-gray-100"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(ci.item.title!)}
+                      className="p-1 hover:bg-red-50 rounded text-red-500"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cart Footer */}
+              <div className="sticky bottom-0 border-t bg-white p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold">Total:</span>
+                  <span className="text-lg font-bold" style={{ color: accentSolid }}>
+                    ${cartTotal.toFixed(2)}
+                  </span>
+                </div>
+                
+                {/* Customer Info for Cart Checkout */}
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="Your email"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <button
+                  onClick={createBooking}
+                  disabled={bookingLoading || !customerName.trim() || !customerEmail.trim()}
+                  className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: !bookingLoading && customerName.trim() && customerEmail.trim() ? accentSolid : "#ccc",
+                  }}
+                >
+                  {bookingLoading ? "Processing..." : "Checkout"}
+                </button>
+                
+                <button
+                  onClick={() => setShowCart(false)}
+                  className="w-full py-2 text-sm text-gray-600 hover:text-gray-900 transition"
+                >
+                  Continue Shopping
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Booking Modal - appears when user taps Book */}
       <AnimatePresence>
@@ -1281,6 +1606,141 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                   </>
                 ) : null}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Creator Info Modal */}
+      <AnimatePresence>
+        {showCreatorInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCreatorInfo(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-pink-500 to-orange-500 p-6 relative">
+                <button
+                  onClick={() => setShowCreatorInfo(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white text-2xl font-bold">
+                    {(brandName || "C")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{brandName || "Creator"}</h3>
+                    {tagline && <p className="text-white/90 text-sm">{tagline}</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                {/* Bio */}
+                {social?.bio && (
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-2">About</h4>
+                    <p className="text-gray-700 text-sm leading-relaxed">{social.bio}</p>
+                  </div>
+                )}
+
+                {/* Contact Info */}
+                <div className="space-y-3">
+                  {social?.email && (
+                    <a
+                      href={`mailto:${social.email}`}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                    >
+                      <div className="p-2 bg-pink-100 rounded-lg group-hover:bg-pink-200 transition-colors">
+                        <Mail className="h-4 w-4 text-pink-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 font-medium">Email</p>
+                        <p className="text-sm text-gray-900 truncate">{social.email}</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {social?.phone && (
+                    <a
+                      href={`tel:${social.phone}`}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors group"
+                    >
+                      <div className="p-2 bg-pink-100 rounded-lg group-hover:bg-pink-200 transition-colors">
+                        <Phone className="h-4 w-4 text-pink-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 font-medium">Phone</p>
+                        <p className="text-sm text-gray-900">{social.phone}</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {social?.address && (
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="p-2 bg-pink-100 rounded-lg">
+                        <MapPin className="h-4 w-4 text-pink-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 font-medium">Location</p>
+                        <p className="text-sm text-gray-900">{social.address}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Social Links */}
+                {(social?.instagram || social?.tiktok || social?.website) && (
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">Connect</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      {social?.instagram && (
+                        <a
+                          href={`https://instagram.com/${social.instagram.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:shadow-lg transition-all"
+                        >
+                          Instagram
+                        </a>
+                      )}
+                      {social?.tiktok && (
+                        <a
+                          href={`https://tiktok.com/@${social.tiktok.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:shadow-lg transition-all"
+                        >
+                          TikTok
+                        </a>
+                      )}
+                      {social?.website && (
+                        <a
+                          href={social.website.startsWith('http') ? social.website : `https://${social.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:shadow-lg transition-all"
+                        >
+                          Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
