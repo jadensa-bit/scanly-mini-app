@@ -261,7 +261,7 @@ export async function POST(req: Request) {
     const applicationFee = calcFee(amountSafe);
 
     // 1) Create pending order in Supabase - store items as JSON
-    const orderItemsForDb = lineItems.map(item => ({
+    const orderItemsForDb = lineItems.map((item: any) => ({
       title: item.item_title,
       price: item.item_price,
       quantity: item.quantity,
