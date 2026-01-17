@@ -244,7 +244,8 @@ function AnimatedPhonePreview({
           <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70">
             <span className="inline-flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5" />
-              Live demo • {mode.exampleName}
+              <span className="hidden sm:inline">Demo preview • {mode.exampleName}</span>
+              <span className="sm:hidden">Demo • {mode.exampleName}</span>
             </span>
             <span className="flex items-center gap-2">
               <a
@@ -1105,7 +1106,8 @@ export default function Home() {
               href="/signup"
               className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
             >
-              Create Account to Build Your QR Store
+              <span className="hidden sm:inline">Create Your QR Store — Start Free</span>
+              <span className="sm:hidden">Start Free</span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </a>
           </motion.div>
@@ -1132,6 +1134,9 @@ export default function Home() {
                   No monthly fees
                 </div>
               </div>
+              <p className="text-sm text-white/60 mt-4 max-w-md mx-auto">
+                Go live without Stripe — connect anytime to accept payments.
+              </p>
             </section>
 
       {/* Existing Users Section - Moved after trust signals for better flow */}
@@ -1432,7 +1437,7 @@ export default function Home() {
                   ease: "linear",
                 }}
               />
-              <span className="relative z-10">Create Account to Build Your QR Store</span>
+              <span className="relative z-10">Start Building Your QR Store</span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform relative z-10" />
             </motion.a>
           </motion.div>
