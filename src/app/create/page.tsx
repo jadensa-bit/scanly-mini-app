@@ -97,10 +97,16 @@ type StaffProfile = {
   next: string[];
   photo?: string; // data URL
   availability?: {
-    start?: string; // "09:00"
-    end?: string; // "17:00"
+    start?: string; // "09:00" (legacy - overall start)
+    end?: string; // "17:00" (legacy - overall end)
     slotMinutes?: number;
   };
+  // Per-day availability (overrides general availability)
+  workingDays?: Record<WeekdayId, {
+    enabled: boolean;
+    start: string; // "09:00"
+    end: string; // "17:00"
+  }>;
 };
 
 type SocialLinks = {
@@ -120,10 +126,11 @@ type AvailabilityDay = {
 };
 
 type Availability = {
-  timezone: string; // IANA
-  slotMinutes: number; // 15..120
-  bufferMinutes: number; // 0..60
-  advanceDays: number; // 1..60
+  timezone: string; // IANA timezone
+  slotMinutes: number; // 15..120 (slot duration)
+  bufferMinutes: number; // 0..60 (buffer between slots)
+  advanceDays: number; // 1..60 (how far ahead customers can book)
+  leadTime?: number; // 0..24 (minimum hours notice required)
   days: Record<WeekdayId, AvailabilityDay>;
 };
 
@@ -450,6 +457,7 @@ export default function CreatePage() {
     slotMinutes: 60,
     bufferMinutes: 15,
     advanceDays: 30,
+    leadTime: 2, // 2 hours minimum notice
     days: {
       mon: { enabled: true, start: "09:00", end: "17:00" },
       tue: { enabled: true, start: "09:00", end: "17:00" },
@@ -502,102 +510,97 @@ export default function CreatePage() {
   }, [tagline]);
 
   // ...existing code...
-  // 🔁 Restore draft on load (CRITICAL FIX)
-  const _restoredFor = useRef<string | null>(null);
+  // 🔁 Detect edit mode and hydrate from server on mount
   useEffect(() => {
-    // read optional ?handle= from URL and prefill the handle input (use window instead of next hook)
     if (typeof window === "undefined") return;
+    if (hasHydratedRef.current) return; // Only hydrate once
+    
     try {
       const params = new URLSearchParams(window.location.search || "");
-      const param = params.get("handle") || "";
-      if (param) {
-        setHandleRaw(param);
-        setHandleInput(param);
-      }
-    } catch {}
-  }, []);
-
-
-  // On mount or handle change, reload config from server after Stripe onboarding, merge with local edits if present
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const h = slugify(handleRaw);
-    if (!h) return;
-    
-    // Check if we've already restored this handle
-    const isFirstRestore = _restoredFor.current !== h;
-    if (isFirstRestore) {
-      _restoredFor.current = h;
-    }
-
-    // Helper to merge configs (local wins for unsaved fields)
-    function mergeConfigs(server: any, local: any) {
-      if (!server) return local;
-      if (!local) return server;
-      return {
-        ...server,
-        ...local,
-        items: local.items && local.items.length ? local.items : server.items,
-        appearance: { ...server.appearance, ...local.appearance },
-        staffProfiles: local.staffProfiles && local.staffProfiles.length ? local.staffProfiles : server.staffProfiles,
-        social: { ...server.social, ...local.social },
-        availability: { ...server.availability, ...local.availability },
-        notifications: { ...server.notifications, ...local.notifications },
-      };
-    }
-
-    // If returning from Stripe, always fetch latest config from server
-    async function restoreConfig(handleVal: string) {
-      let serverConfig = null;
-      try {
-        const res = await fetch(`/api/site?handle=${encodeURIComponent(handleVal)}`, { cache: "no-store" });
-        const data = await res.json();
-        if (data?.site?.config) serverConfig = data.site.config;
-      } catch {}
-
-      let localConfig = null;
-      try {
-        const raw = localStorage.getItem(storageKey(handleVal));
-        if (raw) localConfig = JSON.parse(raw);
-      } catch {}
-
-      const merged = mergeConfigs(serverConfig, localConfig);
-      if (!merged) return;
-
-      // Set all fields from merged config
-      if (merged.mode) setMode(merged.mode);
-      if (merged.brandName) setBrandName(merged.brandName);
-      // Only update handleRaw if it's different to prevent loops
-      if (merged.handle && merged.handle !== handleVal) {
-        setHandleRaw(merged.handle);
-        setHandleInput(merged.handle);
-      }
-      if (merged.tagline) setTagline(merged.tagline);
-      if (merged.items) setItems(merged.items);
-      if (merged.appearance) setAppearance(merged.appearance);
-      if (merged.staffProfiles) setStaffProfiles(merged.staffProfiles);
-      if (merged.brandLogo) setBrandLogo(merged.brandLogo);
-      if (merged.social) setSocial(merged.social);
-      if (merged.availability) setAvailability(merged.availability);
-      if (merged.notifications) setNotifications(merged.notifications);
-      if (merged.ownerEmail) setOwnerEmail(merged.ownerEmail);
+      const handleParam = params.get("handle") || "";
+      const editParam = params.get("edit") === "true";
       
-      // Force preview update after restore
-      skipNextPreviewTickRef.current = false;
-      setPreviewTick((x) => x + 1);
+      if (editParam && handleParam) {
+        // Edit mode - fetch from server and hydrate
+        setIsEditMode(true);
+        setEditLoading(true);
+        hasHydratedRef.current = true;
+        
+        fetch(`/api/site?handle=${encodeURIComponent(handleParam)}&edit=true`, { cache: "no-store" })
+          .then(async (res) => {
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({ error: "Failed to load Piqo" }));
+              throw new Error(data.error || "Piqo not found or unauthorized");
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (!data?.site?.config) {
+              throw new Error("Piqo configuration not found");
+            }
+            
+            const config = data.site.config;
+            
+            console.log("🔄 Hydrating Piqo config:", {
+              mode: config.mode,
+              hasAvailability: !!config.availability,
+              availabilityDays: config.availability?.days,
+              enabledDays: config.availability?.days ? Object.entries(config.availability.days).filter(([_, d]: [string, any]) => d.enabled).map(([k]) => k) : [],
+              timezone: config.availability?.timezone,
+              slotMinutes: config.availability?.slotMinutes,
+              advanceDays: config.availability?.advanceDays,
+              leadTime: config.availability?.leadTime,
+              hasStaffProfiles: !!config.staffProfiles,
+              staffCount: config.staffProfiles?.length || 0,
+            });
+            
+            // Hydrate all fields from server
+            if (config.mode) {
+              setMode(config.mode);
+              console.log("✅ Set mode to:", config.mode);
+            }
+            if (config.brandName) setBrandName(config.brandName);
+            if (config.handle) {
+              setHandleRaw(config.handle);
+              setHandleInput(config.handle);
+            }
+            if (config.tagline !== undefined) setTagline(config.tagline);
+            if (config.items) setItems(config.items);
+            if (config.appearance) setAppearance(config.appearance);
+            if (config.staffProfiles) setStaffProfiles(config.staffProfiles);
+            if (config.brandLogo) setBrandLogo(config.brandLogo);
+            if (config.social) setSocial(config.social);
+            if (config.availability) {
+              console.log("✅ Hydrating availability:", config.availability);
+              setAvailability(config.availability);
+            } else {
+              console.warn("⚠️ No availability config found for Services Piqo");
+            }
+            if (config.notifications) setNotifications(config.notifications);
+            if (config.ownerEmail) setOwnerEmail(config.ownerEmail);
+            
+            setEditLoading(false);
+            setEditError(null);
+            
+            // Force preview update
+            skipNextPreviewTickRef.current = false;
+            setPreviewTick((x) => x + 1);
+          })
+          .catch((err) => {
+            console.error("Failed to load Piqo for editing:", err);
+            setEditError(err.message || "Failed to load Piqo");
+            setEditLoading(false);
+          });
+      } else if (handleParam) {
+        // Create mode with prefilled handle
+        setHandleRaw(handleParam);
+        setHandleInput(handleParam);
+        hasHydratedRef.current = true;
+      }
+    } catch (err) {
+      console.error("Failed to parse URL params:", err);
     }
-
-    // First restore - do it immediately, subsequent changes - debounce
-    if (isFirstRestore) {
-      restoreConfig(h);
-    } else {
-      const timer = setTimeout(() => {
-        restoreConfig(h);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [handleRaw]);
+  }, []);
 
 
   // ✅ Availability + notifications (new)
@@ -623,11 +626,21 @@ export default function CreatePage() {
   const [showQr, setShowQr] = useState(false);
   const [previewOn, setPreviewOn] = useState(true);
   const [previewTick, setPreviewTick] = useState(0);
+  
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Force preview update when items change
   useEffect(() => {
     setPreviewTick(prev => prev + 1);
   }, [items]);
+  
+  // Force preview update when availability changes (slot length, days, etc.)
+  useEffect(() => {
+    setPreviewTick(prev => prev + 1);
+  }, [availability]);
 
   const publicUrl = useMemo(() => buildPublicUrl(cleanHandle || "yourname"), [cleanHandle]);
   const qrUrl = useMemo(() => qrPngUrl(publicUrl, 520), [publicUrl]);
@@ -842,7 +855,22 @@ async function startStripeConnect() {
         address: (social.address || "").trim() || undefined,
       },
 
-      availability: availability || undefined,
+      availability: availability && mode === 'services' ? {
+        timezone: availability.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York',
+        slotMinutes: availability.slotMinutes || 60,
+        bufferMinutes: availability.bufferMinutes || 15,
+        advanceDays: availability.advanceDays || 30,
+        leadTime: availability.leadTime ?? 2, // Default 2 hours minimum notice
+        days: availability.days || {
+          mon: { enabled: true, start: "09:00", end: "17:00" },
+          tue: { enabled: true, start: "09:00", end: "17:00" },
+          wed: { enabled: true, start: "09:00", end: "17:00" },
+          thu: { enabled: true, start: "09:00", end: "17:00" },
+          fri: { enabled: true, start: "09:00", end: "17:00" },
+          sat: { enabled: false, start: "09:00", end: "17:00" },
+          sun: { enabled: false, start: "09:00", end: "17:00" },
+        },
+      } : undefined,
       notifications: {
         email: notifEmail,
         onOrders: notifications.onOrders !== false,
@@ -1091,6 +1119,38 @@ async function startStripeConnect() {
   const updateStaff = (idx: number, patch: Partial<StaffProfile>) =>
     setStaffProfiles((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
 
+  // Initialize working days from business hours if not set
+  const initStaffWorkingDays = (idx: number) => {
+    const staff = staffProfiles[idx];
+    if (staff.workingDays) return; // Already initialized
+    
+    const workingDays: Record<WeekdayId, { enabled: boolean; start: string; end: string }> = {} as any;
+    WEEKDAYS.forEach(day => {
+      const dayConfig = availability.days[day.id];
+      workingDays[day.id] = {
+        enabled: dayConfig?.enabled || false,
+        start: dayConfig?.start || "09:00",
+        end: dayConfig?.end || "17:00",
+      };
+    });
+    
+    updateStaff(idx, { workingDays });
+  };
+
+  const updateStaffWorkingDay = (staffIdx: number, dayId: WeekdayId, patch: Partial<{ enabled: boolean; start: string; end: string }>) => {
+    const staff = staffProfiles[staffIdx];
+    if (!staff.workingDays) initStaffWorkingDays(staffIdx);
+    
+    const currentDay = staff.workingDays?.[dayId] || { enabled: false, start: "09:00", end: "17:00" };
+    
+    updateStaff(staffIdx, {
+      workingDays: {
+        ...staff.workingDays,
+        [dayId]: { ...currentDay, ...patch },
+      } as Record<WeekdayId, { enabled: boolean; start: string; end: string }>,
+    });
+  };
+
   const onPickMode = (m: ModeId) => {
     setMode(m);
     setItems(pickDefaultItemsForMode(m));
@@ -1214,6 +1274,15 @@ async function startStripeConnect() {
 
     setSaving(true);
     try {
+      console.log(`📤 Publishing Piqo:`, {
+        handle: h,
+        mode: config.mode,
+        hasAvailability: !!config.availability,
+        availabilityConfig: config.availability,
+        hasStaffProfiles: !!config.staffProfiles,
+        staffCount: config.staffProfiles?.length || 0,
+      });
+      
       const out = await postJson("/api/site", config);
 
       if (!out.res.ok) {
@@ -1248,9 +1317,14 @@ async function startStripeConnect() {
         }
       } catch {}
 
-      // No longer open published page in a new tab
-
-      router.push(`/u/${h}?published=1`);
+      // Show publishing state, then redirect to dashboard
+      setToast("Publishing…");
+      
+      // Short delay for user feedback
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Redirect to dashboard where the new Piqo will appear
+      router.push(`/dashboard`);
       router.refresh();
     } catch (e: any) {
       setErr(e?.message || "Failed to generate. Check API route.");
@@ -1408,7 +1482,9 @@ async function startStripeConnect() {
             <motion.div
               className="inline-flex items-center gap-2 rounded-full border border-white/20 backdrop-blur-xl px-3 py-1 text-xs text-white/90 relative overflow-hidden shadow-lg shadow-cyan-500/20"
               style={{
-                background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(167,139,250,0.15))",
+                background: isEditMode 
+                  ? "linear-gradient(135deg, rgba(34,211,238,0.25), rgba(99,102,241,0.25))"
+                  : "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(167,139,250,0.15))",
               }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1436,7 +1512,7 @@ async function startStripeConnect() {
               >
                 <Wand2 className="h-3.5 w-3.5 relative z-10" />
               </motion.div>
-              <span className="relative z-10">Piqo Builder</span>
+              <span className="relative z-10">{isEditMode ? "Editing Piqo" : "Piqo Builder"}</span>
             </motion.div>
 
             <motion.h1
@@ -1484,6 +1560,37 @@ async function startStripeConnect() {
         </header>
         </div>
 
+        {/* Edit Mode Loading State */}
+        {editLoading && (
+          <div className="max-w-6xl mx-auto mt-6 rounded-2xl border border-cyan-500/35 bg-cyan-500/12 px-4 py-8 text-sm text-cyan-50">
+            <div className="flex flex-col items-center gap-3">
+              <motion.div
+                className="h-8 w-8 border-2 border-cyan-400 border-t-transparent rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+              <div className="font-semibold">Loading your Piqo...</div>
+              <div className="text-cyan-50/80">Fetching saved configuration</div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Mode Error State */}
+        {editError && (
+          <div className="max-w-6xl mx-auto mt-6 rounded-2xl border border-red-500/35 bg-red-500/12 px-4 py-3 text-sm text-red-50">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4" />
+              <div className="min-w-0">
+                <div className="font-semibold">Failed to load Piqo</div>
+                <div className="mt-1 text-red-50/90">{editError}</div>
+                <div className="mt-2 text-[11px] text-red-50/80">
+                  This Piqo may not exist or you don't have permission to edit it.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {err ? (
           <div className="max-w-6xl mx-auto mt-6 rounded-2xl border border-red-500/35 bg-red-500/12 px-4 py-3 text-sm text-red-50">
             <div className="flex items-start gap-2">
@@ -1516,6 +1623,12 @@ async function startStripeConnect() {
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            
+            // Check if Details tab needs attention for Services mode
+            const needsAttention = tab.id === "details" && 
+              mode === "services" && 
+              (!availability || !availability.days || Object.values(availability.days).every((day: any) => !day?.enabled));
+            
             return (
               <motion.button
                 key={tab.id}
@@ -1549,6 +1662,9 @@ async function startStripeConnect() {
                 )}
                 <Icon className="h-4 w-4 relative z-10" />
                 <span className="relative z-10">{tab.label}</span>
+                {needsAttention && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse z-20" title="Business hours required for booking" />
+                )}
               </motion.button>
             );
           })}
@@ -2576,11 +2692,33 @@ async function startStripeConnect() {
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                   <Zap className="h-4 w-4" />
-                  Availability
+                  Business Hours
+                  {mode === "services" && (
+                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-full">
+                      REQUIRED
+                    </span>
+                  )}
                 </div>
                 <div className="text-[11px] text-white/70">
-                  {showAvailability ? "Used for booking" : "Optional"}
+                  {showAvailability ? "For booking slots" : "Optional"}
+                  {mode === "services" && (
+                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-full">
+                      REQUIRED
+                    </span>
+                  )}
                 </div>
+
+              {mode === "services" && (!availability || !availability.days || Object.values(availability.days).every((day: any) => !day?.enabled)) && (
+                <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-300 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    ⚠️ Enable at least one day below to allow bookings
+                  </p>
+                  <p className="text-[11px] text-amber-200/80 mt-1">
+                    Without business hours, customers will see a "Contact for booking" message instead of available time slots.
+                  </p>
+                </div>
+              )}
               </div>
 
               <div className="mt-2 text-xs text-white/80">
@@ -2875,6 +3013,62 @@ async function startStripeConnect() {
                             className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/90 outline-none placeholder:text-white/40 focus:border-white/25 resize-none"
                             rows={2}
                           />
+                          
+                          {/* Per-Day Working Hours */}
+                          <details className="mt-3 rounded-xl border border-white/12 bg-black/30">
+                            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-white/85 hover:bg-white/5">
+                              📅 Working Days & Hours (optional)
+                            </summary>
+                            <div className="p-3 space-y-2">
+                              <div className="text-[11px] text-white/60 mb-2">
+                                Set specific working days for {staff.name || "this staff member"}. If not set, they work all business hours.
+                              </div>
+                              {!staff.workingDays && (
+                                <button
+                                  type="button"
+                                  onClick={() => initStaffWorkingDays(idx)}
+                                  className="w-full text-xs px-3 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
+                                >
+                                  ✨ Customize Working Schedule
+                                </button>
+                              )}
+                              {staff.workingDays && WEEKDAYS.map((day) => {
+                                const dayData = staff.workingDays![day.id];
+                                return (
+                                  <div key={day.id} className="flex items-center gap-2 rounded-lg border border-white/8 bg-black/20 px-2 py-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateStaffWorkingDay(idx, day.id, { enabled: !dayData.enabled })}
+                                      className={cn(
+                                        "text-[10px] px-2 py-1 rounded-full border transition",
+                                        dayData.enabled
+                                          ? "border-white/20 bg-white/10 text-white/85"
+                                          : "border-white/10 bg-black/20 text-white/50"
+                                      )}
+                                    >
+                                      {day.label}
+                                    </button>
+                                    <input
+                                      type="time"
+                                      value={dayData.start}
+                                      onChange={(e) => updateStaffWorkingDay(idx, day.id, { start: e.target.value })}
+                                      disabled={!dayData.enabled}
+                                      className="flex-1 rounded border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-white/80 disabled:opacity-40"
+                                    />
+                                    <span className="text-[10px] text-white/50">to</span>
+                                    <input
+                                      type="time"
+                                      value={dayData.end}
+                                      onChange={(e) => updateStaffWorkingDay(idx, day.id, { end: e.target.value })}
+                                      disabled={!dayData.enabled}
+                                      className="flex-1 rounded border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-white/80 disabled:opacity-40"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                          
                           <div className="mt-2 grid gap-2 sm:grid-cols-3">
                             <input
                               type="time"
@@ -3072,23 +3266,18 @@ async function startStripeConnect() {
                             // ensure latest draft is saved locally so preview shows current state
                             if (configDraft) localStorage.setItem(storageKey(cleanHandle), JSON.stringify(configDraft));
                           } catch {}
-                          // Open live preview
-                          const url = `${window.location.origin}/u/${cleanHandle}?preview=1`;
-                          window.open(url, "_blank");
-
-                          // Auto-download QR code
-                          const qrDownloadUrl = qrPngUrl(url, 520);
-                          const link = document.createElement("a");
-                          link.href = qrDownloadUrl;
-                          link.download = `${cleanHandle}-qr.png`;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                          setToast("QR code downloaded!");
-                          setTimeout(() => setToast(null), 3000);
                         }
                       } catch {}
-                      router.push(`/u/${cleanHandle}?published=1`);
+                      
+                      // Show publishing state, then redirect to dashboard
+                      setToast("Publishing…");
+                      
+                      // Short delay for user feedback
+                      await new Promise(resolve => setTimeout(resolve, 800));
+                      
+                      // Redirect to dashboard where the new Piqo will appear
+                      router.push(`/dashboard`);
+                      router.refresh();
                     }
                   } catch (e) {
                     setErr(typeof e === 'object' && e !== null && 'message' in e ? (e as any).message : 'Failed to publish site.');
@@ -3975,7 +4164,7 @@ async function startStripeConnect() {
                 )}
               >
                 {saving ? (
-                  <>Generating...</>
+                  <>Publishing…</>
                 ) : (
                   <>
                     <Zap className="h-4 w-4" />

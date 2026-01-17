@@ -121,10 +121,16 @@ export async function GET(req: NextRequest) {
   let totalBookingsCount = 0;
   let bookingsError = null;
   try {
-    // Fetch recent bookings for display (without join, since foreign key may not exist)
+    // Fetch recent bookings with slot and site info joined
     let bookingQuery = supabase
       .from('bookings')
-      .select('*')
+      .select(`
+        *,
+        slots:slot_id (
+          start_time,
+          end_time
+        )
+      `)
       .order('created_at', { ascending: false })
       .limit(20);
     
@@ -168,33 +174,43 @@ export async function GET(req: NextRequest) {
         }
       }
       
-      // Fetch team member info for each booking if needed
-      bookings = (bookingsData || []).map((b: any) => ({
-        ...b,
-        team_member_name: null, // Will be fetched separately if needed
-      }));
+      // Process bookings to flatten slot data and add site info
+      const siteMap = new Map(sites.map((s: any) => [s.handle, s]));
       
-      // Optionally fetch team member names for bookings that have team_member_id
-      const bookingsWithTeam = bookings.filter((b: any) => b.team_member_id);
-      if (bookingsWithTeam.length > 0) {
-        try {
-          const teamIds = bookingsWithTeam.map((b: any) => b.team_member_id);
-          const { data: teamData } = await supabase
-            .from('team_members')
-            .select('id, name')
-            .in('id', teamIds);
-          
-          if (teamData) {
-            const teamMap = new Map(teamData.map((t: any) => [t.id, t.name]));
-            bookings = bookings.map((b: any) => ({
-              ...b,
-              team_member_name: b.team_member_id ? teamMap.get(b.team_member_id) || null : null,
-            }));
-          }
-        } catch (err) {
-          console.warn("⚠️ Dashboard: Failed to fetch team member names:", err);
-        }
-      }
+      bookings = (bookingsData || []).map((b: any) => {
+        const site = siteMap.get(b.handle);
+        
+        return {
+          id: b.id,
+          handle: b.handle,
+          customer_name: b.customer_name,
+          customer_email: b.customer_email,
+          status: b.status,
+          checked_in: b.checked_in,
+          created_at: b.created_at,
+          item_title: b.item_title,
+          team_member_id: b.team_member_id,
+          team_member_name: b.team_member_name || null,
+          slot_start_time: b.slots?.start_time || null,
+          slot_end_time: b.slots?.end_time || null,
+          site_brand_name: site?.config?.brandName || null,
+        };
+      });
+      
+      // Sort bookings by scheduled time (slot start time) descending, fallback to created_at
+      bookings.sort((a: any, b: any) => {
+        const aTime = a.slot_start_time || a.created_at;
+        const bTime = b.slot_start_time || b.created_at;
+        if (!aTime || !bTime) return 0;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      });
+      
+      console.log("📋 Processed bookings sample:", bookings.slice(0, 2).map(b => ({
+        id: b.id,
+        team_member_name: b.team_member_name,
+        slot_start: b.slot_start_time,
+        site_name: b.site_brand_name
+      })));
     }
     
     // Fetch total count of bookings
@@ -235,7 +251,26 @@ export async function GET(req: NextRequest) {
         ordersError = oErr;
         console.warn("⚠️ Dashboard: Orders table not available (optional):", oErr.message);
       } else {
-        orders = ordersData || [];
+        // Add site brand names to orders
+        const siteMap = new Map(sites.map((s: any) => [s.handle, s]));
+        
+        orders = (ordersData || []).map((o: any) => {
+          const site = siteMap.get(o.handle);
+          return {
+            id: o.id,
+            handle: o.handle,
+            customer_name: o.customer_name,
+            customer_email: o.customer_email,
+            item_title: o.item_title,
+            item_price: o.item_price,
+            mode: o.mode,
+            status: o.status,
+            created_at: o.created_at,
+            site_brand_name: site?.config?.brandName || null,
+          };
+        });
+        
+        console.log("✅ Dashboard: Fetched", orders.length, "orders");
       }
     } catch (err: any) {
       console.warn("⚠️ Dashboard: Orders fetch failed (optional):", err.message);

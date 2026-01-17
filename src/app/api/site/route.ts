@@ -169,10 +169,26 @@ export async function GET(req: Request) {
 
     const handleRaw = searchParams.get("handle");
     const handle = normalizeHandle(handleRaw);
+    const editMode = searchParams.get("edit") === "true";
 
-    console.log("GET /api/site handle:", handle);
+    console.log("GET /api/site handle:", handle, "editMode:", editMode);
 
     if (!handle) return jsonError("Missing handle", 400);
+
+    // If in edit mode, verify ownership
+    let userId: string | undefined;
+    if (editMode) {
+      const supabaseAuth = await createServerClient();
+      const { data: { user }, error } = await supabaseAuth.auth.getUser();
+      
+      if (!user) {
+        console.error("GET /api/site: User not authenticated for edit mode");
+        return jsonError("Unauthorized: Please log in to edit", 401);
+      }
+      
+      userId = user.id;
+      console.log("✅ User authenticated for edit:", userId);
+    }
 
     const out = await findSiteByHandle(supabase, handle);
 
@@ -183,6 +199,12 @@ export async function GET(req: Request) {
 
     if (!out.data) {
       return jsonError("Not found", 404, { handle, triedTables: TABLE_CANDIDATES });
+    }
+
+    // Verify ownership in edit mode
+    if (editMode && userId && out.data.user_id !== userId) {
+      console.error("GET /api/site: User", userId, "attempted to edit site owned by", out.data.user_id);
+      return jsonError("Unauthorized: You don't own this Piqo", 403);
     }
 
     // ✅ Return the config cleanly (but keep site row too for stripe fields etc.)
@@ -274,7 +296,20 @@ export async function POST(req: NextRequest) {
 
     // ✅ Ensure stored config uses normalized handle + trimmed brandName
     const config = { ...(body || {}), handle, brandName };
-    console.log("POST /api/site handle:", handle, "brandName:", brandName, "staffProfiles:", body?.staffProfiles?.length || 0, "config keys:", Object.keys(config));
+    console.log("POST /api/site handle:", handle, "brandName:", brandName, "mode:", config.mode, "config keys:", Object.keys(config));
+    console.log("📋 Services config:", {
+      mode: config.mode,
+      hasAvailability: !!config.availability,
+      availability: config.availability,
+      hasStaffProfiles: !!config.staffProfiles,
+      staffCount: config.staffProfiles?.length || 0,
+    });
+    
+    // 🔍 DEBUG: Log complete availability structure being saved
+    if (config.mode === 'services' && config.availability) {
+      console.log("🔍 SAVING AVAILABILITY - Full structure:", JSON.stringify(config.availability, null, 2));
+      console.log("🔍 AVAILABILITY.DAYS:", JSON.stringify(config.availability.days, null, 2));
+    }
 
     // ✅ Always pass userId since we verified authentication above
     const out = await upsertSite(supabase, handle, config, userId);

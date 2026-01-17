@@ -36,6 +36,9 @@ type Availability = {
   days: Record<string, Day>;
   slotMinutes: number;
   advanceDays: number;
+  timezone?: string;
+  bufferMinutes?: number;
+  leadTime?: number;
 };
 type Appearance = {
   radius?: number;
@@ -88,6 +91,44 @@ function hexToRgba(hex: string = "#22D3EE", alpha: number = 0.2): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+// Convert 24-hour time to 12-hour AM/PM format
+function formatTime12Hour(time24: string): string {
+  const [hourStr, minute] = time24.split(':');
+  let hour = parseInt(hourStr, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12; // Convert 0 to 12 for midnight
+  return `${hour}:${minute} ${ampm}`;
+}
+
+// Day ordering for display (Mon-Sun)
+const DAY_ORDER: Record<string, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7 };
+const DAY_LABELS: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+
+// Check if a slot falls within a staff member's working hours
+function slotMatchesStaffSchedule(slot: any, staffMember: any): boolean {
+  if (!staffMember || !staffMember.workingDays) return true; // No custom schedule
+  
+  const slotDate = new Date(slot.start_time);
+  const dayOfWeek = slotDate.getDay(); // 0=Sun, 1=Mon, etc.
+  const dayMap: Record<number, string> = { 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat' };
+  const dayKey = dayMap[dayOfWeek];
+  
+  const staffDay = staffMember.workingDays[dayKey];
+  if (!staffDay || !staffDay.enabled) return false; // Staff doesn't work this day
+  
+  // Check if slot time is within staff's working hours for this day
+  const slotHour = slotDate.getUTCHours();
+  const slotMinute = slotDate.getUTCMinutes();
+  const slotTimeMinutes = slotHour * 60 + slotMinute;
+  
+  const [startHour, startMin] = staffDay.start.split(':').map(Number);
+  const [endHour, endMin] = staffDay.end.split(':').map(Number);
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  
+  return slotTimeMinutes >= startMinutes && slotTimeMinutes < endMinutes;
+}
+
 export default function StorefrontPreview(props: StorefrontPreviewProps) {
   // Get handle from props first (preferred), then try URL params as fallback
   const params = useParams();
@@ -97,6 +138,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [bookingStep, setBookingStep] = useState<"browse" | "confirm" | "success">("browse");
   const [slots, setSlots] = useState<any[]>([]);
+  const [slotsData, setSlotsData] = useState<any>({}); // Full slots API response with reason
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -107,6 +149,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const qrCanvasRef = useRef<HTMLImageElement>(null);
+  
+  // Track if we've already attempted slot generation to prevent infinite loops
+  const slotsGenerationAttempted = useRef<Record<string, boolean>>({});
 
   // Accept all config fields as props
   const {
@@ -124,6 +169,31 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     payments = { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" },
   } = props;
 
+  // Debug: Log mode and availability on component mount/update
+  useEffect(() => {
+    console.log("📱 StorefrontPreview mounted/updated:", { 
+      mode, 
+      handle, 
+      hasAvailability: !!availability,
+      availabilityDays: availability?.days,
+      enabledDays: availability?.days ? Object.entries(availability.days).filter(([_, day]) => day.enabled).map(([name]) => name) : [],
+      timezone: availability?.timezone,
+      slotMinutes: availability?.slotMinutes,
+      bufferMinutes: availability?.bufferMinutes,
+      advanceDays: availability?.advanceDays,
+      leadTime: availability?.leadTime,
+    });
+    
+    // Verify Services mode has availability
+    if (mode === 'services' && !availability) {
+      console.warn("⚠️ Services mode Piqo but no availability config!");
+    }
+    
+    if (mode === 'services' && availability && !Object.values(availability.days || {}).some((day: any) => day?.enabled)) {
+      console.warn("⚠️ Services mode has availability but no enabled days!");
+    }
+  }, [mode, handle, availability]);
+
   // Fetch slots and team members when modal opens for services
   useEffect(() => {
     // Only fetch if we have a handle and the booking modal is open (selectedItem is set)
@@ -134,13 +204,23 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     
     console.log(`🚀 Starting fetch for handle: ${handle}, mode: ${mode}`);
     
+    let isMounted = true;
+    const abortController = new AbortController();
+    
     const fetchData = async () => {
+      if (!isMounted) {
+        console.log("⏭️ Component unmounted, skipping fetch");
+        return;
+      }
+      
       try {
         console.log(`📋 Fetching slots and team for handle: ${handle}`);
         const [slotsRes, teamRes] = await Promise.all([
-          fetch(`/api/slots?handle=${encodeURIComponent(handle)}`),
-          fetch(`/api/team?handle=${encodeURIComponent(handle)}`),
+          fetch(`/api/slots?handle=${encodeURIComponent(handle)}`, { signal: abortController.signal }),
+          fetch(`/api/team?handle=${encodeURIComponent(handle)}`, { signal: abortController.signal }),
         ]);
+        
+        if (!isMounted) return;
         
         console.log('📊 Slots response status:', slotsRes.status);
         console.log('📊 Team response status:', teamRes.status);
@@ -148,15 +228,117 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
         const slotsData = await slotsRes.json();
         const teamData = await teamRes.json();
         
-        console.log("✅ Slots fetched:", slotsData.slots?.length || 0, "slots:", slotsData);
-        console.log("✅ Team members fetched:", teamData.team?.length || 0, "team:", teamData);
+        if (!isMounted) return;
         
-        setSlots(slotsData.slots || []);
+        console.log("✅ Slots API response:", {
+          count: slotsData.slots?.length || 0,
+          reason: slotsData.reason || 'NONE',
+          message: slotsData.message || 'N/A',
+          ok: slotsData.ok,
+        });
+        console.log("✅ Team API response:", {
+          count: teamData.team?.length || 0,
+          source: teamData.source || 'unknown',
+        });
+        
+        // 🔍 DEBUG: Log unique dates in slots
+        if (slotsData.slots && slotsData.slots.length > 0) {
+          const uniqueDates = [...new Set(slotsData.slots.map((s: any) => 
+            new Date(s.start_time).toLocaleDateString()
+          ))];
+          console.log(`🔍 Slots span ${uniqueDates.length} unique dates:`, uniqueDates.slice(0, 10));
+        }
+        
+        const fetchedSlots = slotsData.slots || [];
+        setSlotsData(slotsData); // Store full response including reason
+        setSlots(fetchedSlots);
         setTeamMembers(teamData.team || []);
-      } catch (err) {
+        
+        // Check if slots API returned a specific reason for no slots
+        if (slotsData.reason === 'MISSING_AVAILABILITY' || slotsData.reason === 'NO_ENABLED_DAYS') {
+          console.log(`⚠️ Availability not configured: ${slotsData.reason}`);
+          return; // Don't attempt auto-generation, let UI show "not configured" message
+        }
+        
+        // 🔍 DEBUG: Log auto-generation decision factors
+        const generationKey = `${handle}-${mode}`;
+        console.log("🔍 Auto-generation check:", {
+          fetchedSlotsLength: fetchedSlots.length,
+          alreadyAttempted: slotsGenerationAttempted.current[generationKey],
+          slotsDataOk: slotsData.ok,
+          willAttempt: fetchedSlots.length === 0 && !slotsGenerationAttempted.current[generationKey] && slotsData.ok !== false
+        });
+        
+        // Only attempt auto-generation once per handle to prevent infinite loops
+        // Skip if we've already tried or if triggered by realtime updates
+        if (fetchedSlots.length === 0 && 
+            !slotsGenerationAttempted.current[generationKey] &&
+            slotsData.ok !== false) { // Only auto-generate if API didn't return an error
+          console.log("🚀 No slots found, attempting auto-generation...");
+          console.log("🔍 Availability config:", availability);
+          const hasEnabledDays = Object.values(availability.days || {}).some((day: any) => day?.enabled);
+          console.log("🔍 Has enabled days:", hasEnabledDays, "days:", availability.days);
+          
+          if (hasEnabledDays) {
+            console.log("✨ Auto-generating slots for", handle, "with config:", {
+              daysInAdvance: availability.advanceDays || 30,
+              slotMinutes: availability.slotMinutes,
+              timezone: availability.timezone,
+            });
+            // Mark as attempted before making the request
+            slotsGenerationAttempted.current[generationKey] = true;
+            
+            try {
+              const generateRes = await fetch(`/api/slots/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  handle,
+                  daysInAdvance: availability.advanceDays || 30
+                }),
+                signal: abortController.signal,
+              });
+              
+              if (!isMounted) return;
+              
+              if (generateRes.ok) {
+                const generateData = await generateRes.json();
+                console.log("✅ Slots auto-generated successfully:", {
+                  count: generateData.slotsCount,
+                  firstSlot: generateData.firstSlot,
+                  lastSlot: generateData.lastSlot,
+                });
+                // Re-fetch slots after generation
+                const newSlotsRes = await fetch(`/api/slots?handle=${encodeURIComponent(handle)}`, { signal: abortController.signal });
+                if (!isMounted) return;
+                const newSlotsData = await newSlotsRes.json();
+                if (!isMounted) return;
+                setSlots(newSlotsData.slots || []);
+              } else {
+                const errData = await generateRes.json().catch(() => ({ error: 'Unknown error' }));
+                console.warn("⚠️ Failed to auto-generate slots:", errData.error);
+              }
+            } catch (genErr: any) {
+              if (genErr.name === 'AbortError') {
+                console.log("⏭️ Slot generation aborted");
+                return;
+              }
+              console.error("❌ Error auto-generating slots:", genErr);
+            }
+          } else {
+            console.log("⏭️ No enabled days in availability config, skipping auto-generation");
+          }
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.log("⏭️ Fetch aborted");
+          return;
+        }
         console.error("❌ Failed to fetch slots or team:", err);
-        setSlots([]);
-        setTeamMembers([]);
+        if (isMounted) {
+          setSlots([]);
+          setTeamMembers([]);
+        }
       }
     };
     
@@ -167,8 +349,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
       .channel(`slots-${handle}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'slots' }, (payload: any) => {
         console.log('🔄 Slot changed:', payload.eventType, payload.new);
-        // Refetch slots to show updated availability
-        fetchData();
+        // Only refetch if component is still mounted
+        if (isMounted) {
+          fetchData();
+        }
       })
       .subscribe();
     
@@ -176,8 +360,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
       .channel(`team-${handle}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `creator_handle=eq.${handle}` }, (payload: any) => {
         console.log('🔄 Team member changed:', payload.eventType, payload.new);
-        // Refetch team members to show updates
-        fetchData();
+        // Only refetch if component is still mounted
+        if (isMounted) {
+          fetchData();
+        }
       })
       .subscribe();
     
@@ -185,17 +371,21 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
       .channel(`site-${handle}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sites', filter: `handle=eq.${handle}` }, (payload: any) => {
         console.log('🔄 Site config updated:', payload.new);
-        // Refetch everything when site settings change
-        fetchData();
+        // Only refetch if component is still mounted
+        if (isMounted) {
+          fetchData();
+        }
       })
       .subscribe();
     
     return () => {
+      isMounted = false;
+      abortController.abort();
       slotSubscription.unsubscribe();
       teamSubscription.unsubscribe();
       siteSubscription.unsubscribe();
     };
-  }, [selectedItem, handle, mode]);
+  }, [selectedItem, handle, mode, availability]);
 
   // Create booking
   const createBooking = async () => {
@@ -286,13 +476,16 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
       }
 
       // No payment required for services - create booking immediately
+      const selectedMember = teamMembers.find(m => m.id === selectedTeamMember);
       const res = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           handle,
           slot_id: selectedSlot.id,
-          team_member_id: selectedTeamMember || null,
+          // Only send team_member_id if it's a real UUID (not config-based like "config-0")
+          team_member_id: (selectedTeamMember && !selectedTeamMember.startsWith('config-')) ? selectedTeamMember : null,
+          team_member_name: selectedMember?.name || null,
           customer_name: customerName.trim(),
           customer_email: customerEmail.trim(),
           item_title: selectedItem?.title,
@@ -617,7 +810,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               </span>
                             </div>
                             <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
-                              {mode === "services" ? "60 min • Book online" : item.note || "Details here"}
+                              {item.note || (mode === "services" ? "60 min • Book online" : "Details here")}
                             </p>
                             <motion.button
                               className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
@@ -693,32 +886,44 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         <span className="text-[9px] text-gray-500 font-medium">{staffProfiles.length} staff</span>
                       </div>
                       <div className="space-y-2">
-                        {staffProfiles.slice(0, 2).map((staff: StaffProfile, idx: number) => (
-                          <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 + idx * 0.1 }}
-                            className="rounded-lg border p-2 bg-white shadow-sm"
-                            style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}30` }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ background: accentSolid }}>
-                                {staff.name.charAt(0)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-bold text-gray-900 truncate">{staff.name}</span>
-                                  <span className="text-[8px] text-yellow-600">⭐ {staff.rating}</span>
+                        {staffProfiles.slice(0, 2).map((staff: any, idx: number) => {
+                          const hasCustomHours = staff.workingDays && Object.values(staff.workingDays).some((day: any) => day?.enabled);
+                          const enabledDays = hasCustomHours 
+                            ? Object.entries(staff.workingDays).filter(([_, day]) => (day as any)?.enabled)
+                            : [];
+                          
+                          return (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.6 + idx * 0.1 }}
+                              className="rounded-lg border p-2 bg-white shadow-sm"
+                              style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}30` }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ background: accentSolid }}>
+                                  {staff.name.charAt(0)}
                                 </div>
-                                <div className="text-[8px] text-gray-600 truncate">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-bold text-gray-900 truncate">{staff.name}</span>
+                                    <span className="text-[8px] text-yellow-600">⭐ {staff.rating}</span>
+                                  </div>
+                                  <div className="text-[8px] text-gray-600 truncate">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
+                                  {hasCustomHours && enabledDays.length > 0 && (
+                                    <div className="text-[7px] text-gray-500 mt-0.5">
+                                      🕐 {enabledDays.length} days • {formatTime12Hour((enabledDays[0][1] as any).start)}-{formatTime12Hour((enabledDays[0][1] as any).end)}
+                                    </div>
+                                  )}
+                                </div>
+                                <button className="px-2 py-1 text-[8px] font-bold text-white" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                                  Book
+                                </button>
                               </div>
-                              <button className="px-2 py-1 text-[8px] font-bold text-white" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
-                                Book
-                              </button>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -726,24 +931,23 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   {(appearance.showHours ?? false) && availability.days && (
                     <div className="px-3 pb-3 bg-gray-50">
                       <div className="pt-3 pb-2">
-                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">🕐 Hours</h3>
+                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">🕐 Business Hours</h3>
                       </div>
                       <div className="space-y-1">
                         {Object.entries(availability.days)
                           .filter(([_dayId, day]) => (day as Day).enabled)
-                          .slice(0, 3)
                           .length > 0 ? (
                             Object.entries(availability.days)
                               .filter(([_dayId, day]) => (day as Day).enabled)
-                              .slice(0, 3)
+                              .sort(([dayA], [dayB]) => (DAY_ORDER[dayA] || 99) - (DAY_ORDER[dayB] || 99))
                               .map(([dayId, day], idx) => {
                                 const d = day as Day;
                                 return (
                                   <div key={dayId} className="flex justify-between items-center text-[9px]">
-                                    <span className="text-gray-700 font-semibold capitalize">
-                                      {dayId === 'tue' ? 'Tue' : dayId === 'thu' ? 'Thu' : dayId.charAt(0).toUpperCase() + dayId.slice(1)}
+                                    <span className="text-gray-700 font-semibold">
+                                      {DAY_LABELS[dayId] || dayId}
                                     </span>
-                                    <span className="text-gray-600">{d.start} - {d.end}</span>
+                                    <span className="text-gray-600">{formatTime12Hour(d.start)} - {formatTime12Hour(d.end)}</span>
                                   </div>
                                 );
                               })
@@ -829,6 +1033,32 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       {/* Show booking fields ONLY for services */}
                       {mode === 'services' && (
                         <>
+                          {/* Check if availability is configured */}
+                          {!availability || !availability.days || Object.values(availability.days).every((day: any) => !day?.enabled) ? (
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                              <p className="text-sm font-semibold text-amber-900 mb-2">📅 Bookings aren't configured yet</p>
+                              <p className="text-xs text-amber-700 mb-3">
+                                The creator hasn't set up their business hours. You can still request a time:
+                              </p>
+                              <div className="space-y-2">
+                                <a
+                                  href={`mailto:${ownerEmail || social?.instagram || ''}?subject=Booking Request: ${selectedItem?.title}`}
+                                  className="block text-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg transition"
+                                >
+                                  📧 Request a time via email
+                                </a>
+                                {social?.phone && (
+                                  <a
+                                    href={`tel:${social.phone}`}
+                                    className="block text-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm font-semibold rounded-lg transition"
+                                  >
+                                    📞 Call to book
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <>
                           {/* Date Picker */}
                           <div>
                             <label className="block text-xs font-semibold mb-2">Select a date</label>
@@ -852,14 +1082,50 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
                                 Please select a date first
                               </div>
+                            ) : (slotsData?.reason === 'MISSING_AVAILABILITY' || slotsData?.reason === 'NO_ENABLED_DAYS') ? (
+                              <div className="text-xs text-amber-700 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                ⚠️ Bookings aren't configured yet. The creator hasn't set up business hours.
+                              </div>
                             ) : slots.length === 0 ? (
-                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
-                                No available slots for this date. Try another date or contact directly.
+                              <div className="space-y-2">
+                                <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                                  No available slots for this date. Try another date or contact directly.
+                                </div>
+                                {(ownerEmail || social?.phone) && (
+                                  <div className="text-xs text-gray-500 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="font-semibold text-blue-900 mb-1">💡 Alternative options:</p>
+                                    {ownerEmail && (
+                                      <a href={`mailto:${ownerEmail}`} className="text-blue-600 hover:underline block">
+                                        📧 Email to request a custom time
+                                      </a>
+                                    )}
+                                    {social?.phone && (
+                                      <a href={`tel:${social.phone}`} className="text-blue-600 hover:underline block">
+                                        📞 Call to discuss availability
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div className="grid grid-cols-3 gap-2">
                                 {slots
-                                  .filter((slot: any) => new Date(slot.start_time).toLocaleDateString() === new Date(selectedDate).toLocaleDateString())
+                                  .filter((slot: any) => {
+                                    // Filter by selected date
+                                    if (new Date(slot.start_time).toLocaleDateString() !== new Date(selectedDate).toLocaleDateString()) {
+                                      return false;
+                                    }
+                                    
+                                    // Filter by selected staff member's working hours if applicable
+                                    if (selectedTeamMember) {
+                                      const selectedStaff = staffProfiles.find(sp => sp.name === teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name);
+                                      if (selectedStaff && !slotMatchesStaffSchedule(slot, selectedStaff)) {
+                                        return false;
+                                      }
+                                    }
+                                    
+                                    return true;
+                                  })
                                   .slice(0, 9)
                                   .map((slot: any) => (
                                   <button
@@ -896,13 +1162,15 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               >
                                 <option value="">Any available</option>
                                 {teamMembers.map((member: any) => (
-                                  <option key={member.id} value={member.name}>
+                                  <option key={member.id} value={member.id}>
                                     {member.name}
                                   </option>
                                 ))}
                               </select>
                             )}
                           </div>
+                            </>
+                          )}
                         </>
                       )}
 

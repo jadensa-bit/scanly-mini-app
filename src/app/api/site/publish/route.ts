@@ -45,7 +45,9 @@ export async function POST(req: Request) {
       if (mode === 'services' || mode === 'booking') {
         console.log(`📅 Generating slots for ${mode} site: ${handle}`);
         
-        // First, delete existing future slots to regenerate fresh
+        // Delete only UNBOOKED future slots to regenerate fresh availability
+        // ✅ This preserves all bookings (stored in bookings table)
+        // ✅ This preserves all booked slots (is_booked = true)
         const { error: deleteError } = await supabase
           .from('slots')
           .delete()

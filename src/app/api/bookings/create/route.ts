@@ -3,15 +3,28 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseclient';
 
 export async function POST(req: Request) {
-  const { handle, slot_id, team_member_id, customer_name, customer_email, item_title } = await req.json();
+  const { handle, slot_id, team_member_id, team_member_name, customer_name, customer_email, item_title } = await req.json();
+  
+  console.log('📋 Booking creation request:', {
+    handle,
+    slot_id,
+    team_member_id,
+    team_member_name,
+    customer_name,
+    customer_email,
+    item_title
+  });
   
   try {
     // Create a booking for a slot
     const { data, error } = await supabase
       .from('bookings')
-      .insert([{ handle, slot_id, team_member_id, customer_name, customer_email, item_title }]);
+      .insert([{ handle, slot_id, team_member_id, team_member_name, customer_name, customer_email, item_title }]);
     
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      console.error('❌ Booking creation error:', error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     
     // Mark the slot as booked
     if (slot_id) {
