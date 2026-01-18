@@ -17,7 +17,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AuthButtons from "@/components/AuthButtons";
-import InstallPWAButton from "@/components/InstallPWAButton";
 
 type ModeId = "services" | "products" | "digital";
 
@@ -1498,9 +1497,6 @@ export default function Home() {
         © 2026 piqo Labs LLC. All rights reserved.<br />
         piqo is a brand name used for a QR-based storefront and mini-app platform.
       </footer>
-      
-      {/* Install PWA Button */}
-      <InstallPWAButton />
     </>
   );
 }
