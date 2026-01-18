@@ -345,10 +345,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             slotsData.ok !== false) { // Only auto-generate if API didn't return an error
           console.log("🚀 No slots found, attempting auto-generation...");
           console.log("🔍 Availability config:", availability);
-          const hasEnabledDays = Object.values(availability.days || {}).some((day: any) => day?.enabled);
-          console.log("🔍 Has enabled days:", hasEnabledDays, "days:", availability.days);
+          const hasEnabledDays = Object.values(availability?.days || {}).some((day: any) => day?.enabled);
+          console.log("🔍 Has enabled days:", hasEnabledDays, "days:", availability?.days);
           
-          if (hasEnabledDays) {
+          if (hasEnabledDays && availability) {
             console.log("✨ Auto-generating slots for", handle, "with config:", {
               daysInAdvance: availability.advanceDays || 30,
               slotMinutes: availability.slotMinutes,
@@ -1190,7 +1190,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                   )}
                   {/* Business Hours Section - optional for all modes */}
-                  {(appearance.showHours ?? false) && availability.days && (
+                  {(appearance.showHours ?? false) && availability?.days && (
                     <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
                       <div className="pt-4 pb-3 border-t border-gray-200">
                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
