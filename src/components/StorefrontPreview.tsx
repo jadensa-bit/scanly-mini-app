@@ -59,10 +59,12 @@ type Appearance = {
   showStaff?: boolean;
   showHours?: boolean;
   showPoweredBy?: boolean;
+  specialMessage?: string;
 };
 export type StorefrontPreviewProps = {
   brandName?: string;
   tagline?: string;
+  businessDescription?: string; // NEW: Short business description
   items?: Item[];
   appearance?: Appearance;
   staffProfiles?: StaffProfile[];
@@ -143,6 +145,30 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const params = useParams();
   const handle = props.handle || (params?.handle as string) || "";
 
+  // Destructure other props
+  const brandName = props.brandName || "My Brand";
+  const tagline = props.tagline || "Scan → Book → Done";
+  const businessDescription = props.businessDescription || "";
+  const items = props.items || [];
+  const appearance = props.appearance || {};
+  const staffProfiles = props.staffProfiles || [];
+  const ownerEmail = props.ownerEmail || "";
+  const brandLogo = props.brandLogo || "";
+  const social = props.social || {};
+  const availability = props.availability || null;
+  const mode = props.mode || "services";
+  const payments = props.payments || { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" };
+  const specialMessage = appearance.specialMessage || "";
+
+  // Debug logging
+  console.log('🎨 StorefrontPreview render:', { 
+    social, 
+    businessDescription, 
+    specialMessage,
+    headerStyle: appearance.headerStyle,
+    showSocials: appearance.showSocials 
+  });
+
   // Cart state (for products and digital)
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
@@ -150,6 +176,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   
   // Creator info modal
   const [showCreatorInfo, setShowCreatorInfo] = useState(false);
+  
+  // Image modal state
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
   
   // Booking state
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -207,22 +237,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   }, 0);
 
   const cartItemCount = cart.reduce((count, ci) => count + ci.quantity, 0);
-
-  // Accept all config fields as props
-  const {
-    brandName = "",
-    tagline = "",
-    items = [],
-    appearance = {},
-    staffProfiles = [],
-    ownerEmail = "",
-    brandLogo = "",
-    social = {},
-    availability = { days: {}, slotMinutes: 30, advanceDays: 7 },
-    notifications = {},
-    mode = "services",
-    payments = { enabled: false, depositRequired: false, depositPercentage: 50, currencyCode: "usd" },
-  } = props;
 
   // Debug: Log mode and availability on component mount/update
   useEffect(() => {
@@ -737,6 +751,19 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
               {/* Screen content - scrollable */}
               <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ fontFamily: previewFontFamily }}>
+                {/* Special Message Banner */}
+                {specialMessage && (
+                  <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="bg-gradient-to-r from-orange-500 to-pink-500 px-4 py-2.5 text-center shadow-lg relative z-20"
+                  >
+                    <p className="text-white text-sm font-black drop-shadow">
+                      {specialMessage}
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Header - conditional hero vs minimal */}
                 {headerStyle === "hero" ? (
                   <motion.div
@@ -797,34 +824,59 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       >
                         {tagline || "Your tagline here"}
                       </motion.p>
+                      {businessDescription && (
+                        <motion.p
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.4 }}
+                          className="text-white/80 text-xs mt-1 line-clamp-2 drop-shadow px-4"
+                        >
+                          {businessDescription}
+                        </motion.p>
+                      )}
                     </div>
+                    {/* About Creator button for hero header */}
+                    {(() => {
+                      const hasInfo = !!(social?.bio || social?.email || social?.phone || social?.address || social?.instagram || social?.tiktok || social?.website);
+                      return hasInfo ? (
+                        <motion.button
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.5, type: "spring" }}
+                          onClick={() => setShowCreatorInfo(true)}
+                          className="absolute top-3 right-3 p-2.5 bg-white/20 backdrop-blur-md hover:bg-white/30 rounded-full transition-all shadow-lg border border-white/30"
+                          title="About Creator"
+                        >
+                          <User className="h-5 w-5 text-white" />
+                        </motion.button>
+                      ) : null;
+                    })()}
                   </motion.div>
                 ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white"
+                    className="flex items-center gap-4 px-5 py-4 border-b border-gray-200 bg-gradient-to-b from-white to-gray-50/50"
                   >
-                    <div className={cn("h-12 w-12 border border-gray-200 bg-gray-50 grid place-items-center overflow-hidden shadow-sm", logoRound)}>
+                    <div className={cn("h-14 w-14 border-2 border-gray-300 bg-white grid place-items-center overflow-hidden shadow-md", logoRound)}>
                       {brandLogo ? (
                         <img
                           src={brandLogo}
                           alt="Logo"
-                          className={cn("h-full w-full", logoFit === "cover" ? "object-cover" : "object-contain p-1.5")}
+                          className={cn("h-full w-full", logoFit === "cover" ? "object-cover" : "object-contain p-2")}
                         />
                       ) : (
-                        <Sparkles className="h-5 w-5 text-gray-400" />
+                        <Sparkles className="h-6 w-6 text-gray-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-base font-bold text-gray-900 truncate">{brandName || "Your Brand"}</h2>
-                      <p className="text-xs text-gray-500 truncate">{tagline || "Your tagline here"}</p>
+                      <h2 className="text-lg font-black text-gray-900 truncate">{brandName || "Your Brand"}</h2>
+                      <p className="text-sm text-gray-600 truncate font-medium">{tagline || "Your tagline here"}</p>
                     </div>
-                    {/* About Creator button - only show if bio or contact info exists */}
+                    {/* About Creator button - show if bio or contact info exists */}
                     {(() => {
-                      const hasInfo = !!(social?.bio || social?.email || social?.phone || social?.address);
-                      console.log('🔍 About button check:', { hasInfo, social });
+                      const hasInfo = !!(social?.bio || social?.email || social?.phone || social?.address || social?.instagram || social?.tiktok || social?.website);
                       return hasInfo ? (
                         <button
                           onClick={() => setShowCreatorInfo(true)}
@@ -838,21 +890,28 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   </motion.div>
                 )}
                 {/* Items list */}
-                <div className="px-3 pb-4 space-y-2.5 bg-gradient-to-b from-gray-50 to-white">
+                <div className="px-4 pb-6 space-y-3 bg-gradient-to-b from-gray-50 via-white to-gray-50">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                   >
-                    <div className="flex items-center justify-between pt-3 pb-2">
-                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                    <div className="flex items-center justify-between pt-4 pb-3 border-b border-gray-200">
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                        <span className="text-lg">
+                          {mode === "services"
+                            ? "⚡"
+                            : mode === "products"
+                              ? "🔥"
+                              : "💎"}
+                        </span>
                         {mode === "services"
-                          ? "⚡ Services"
+                          ? "Services"
                           : mode === "products"
-                            ? "🔥 Items"
-                            : "💎 Digital"}
+                            ? "Items"
+                            : "Digital"}
                       </h3>
-                      <span className="text-[9px] text-gray-500 font-medium">{items.length} items</span>
+                      <span className="text-xs text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-full">{items.length}</span>
                     </div>
                     {/* Cards layout - default */}
                     {items.map((item: Item, idx: number) => (
@@ -861,22 +920,29 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + idx * 0.1 }}
-                        className="mb-2 overflow-hidden border shadow-sm hover:shadow-md transition-all group relative"
+                        className="mb-3 overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-200 group relative"
                         style={{
                           borderRadius: `${cardRadius}px`,
-                          borderColor: `${accentSolid}40`,
-                          background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                          borderColor: `${accentSolid}50`,
+                          background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.08)} 100%)`,
                         }}
+                        whileHover={{ y: -2, scale: 1.01 }}
                       >
-                        <div className="flex gap-2 p-2 relative z-10">
+                        <div className="flex gap-3 p-3 relative z-10">
                           {/* Item image or icon */}
                           <motion.div
-                            className="w-14 h-14 rounded-lg flex-shrink-0 relative overflow-hidden shadow-sm"
+                            className="w-20 h-20 rounded-xl flex-shrink-0 relative overflow-hidden shadow-md cursor-pointer border-2 border-white/50"
                             style={{
-                              background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})`,
+                              background: item.image ? "transparent" : `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.7)})`,
                             }}
-                            whileHover={{ scale: 1.05 }}
+                            whileHover={{ scale: 1.1, rotate: 2 }}
                             transition={{ duration: 0.2 }}
+                            onClick={() => {
+                              if (item.image) {
+                                setSelectedImage(item.image);
+                                setShowImageModal(true);
+                              }
+                            }}
                           >
                             {item.image ? (
                               <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
@@ -896,64 +962,66 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             )}
                           </motion.div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-0.5 gap-1">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <h4 className="font-bold text-gray-900 text-xs leading-tight truncate">
+                            <div className="flex items-start justify-between mb-1 gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <h4 className="font-black text-gray-900 text-sm leading-tight truncate">
                                   {item.title || "Item"}
                                 </h4>
                                 {item.badge && item.badge !== "none" && (
                                   <motion.span
                                     initial={{ scale: 0.8, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
-                                    className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide flex-shrink-0 shadow-lg relative overflow-hidden"
+                                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-wide flex-shrink-0 shadow-lg relative overflow-hidden"
                                     style={{
                                       background: item.badge === "popular"
                                         ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #fa8231 100%)"
                                         : "linear-gradient(135deg, #ffd32a 0%, #ff9f1a 50%, #f39c12 100%)",
                                       color: item.badge === "popular" ? "white" : "#1a1a1a",
                                       boxShadow: item.badge === "popular"
-                                        ? "0 2px 8px rgba(238, 90, 36, 0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
-                                        : "0 2px 8px rgba(255, 159, 26, 0.5), inset 0 1px 0 rgba(255,255,255,0.4)",
+                                        ? "0 2px 10px rgba(238, 90, 36, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)"
+                                        : "0 2px 10px rgba(255, 159, 26, 0.6), inset 0 1px 0 rgba(255,255,255,0.4)",
                                     }}
                                   >
-                                    <span className="relative z-10 flex items-center gap-0.5">
+                                    <span className="relative z-10 flex items-center gap-1">
                                       {item.badge === "popular" ? "🔥" : "⚡"} {item.badge === "popular" ? "Hot" : "New"}
                                     </span>
                                   </motion.span>
                                 )}
                               </div>
-                              <span className="font-bold text-xs flex-shrink-0" style={{ color: accentSolid }}>
+                              <span className="font-black text-sm flex-shrink-0" style={{ color: accentSolid }}>
                                 {item.price || "$0"}
                               </span>
                             </div>
-                            <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
+                            <p className="text-xs text-gray-700 mb-2 leading-relaxed font-medium">
                               {item.note || (mode === "services" ? "60 min • Book online" : "Details here")}
                             </p>
                             {mode === "products" || mode === "digital" ? (
-                              <div className="flex gap-1.5">
-                                <div className="flex items-center border rounded-md overflow-hidden bg-white" style={{ borderColor: `${accentSolid}40` }}>
+                              <div className="flex gap-2">
+                                <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
                                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                    className="px-2 py-1 text-xs font-bold hover:bg-gray-100 transition"
+                                    className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
+                                    style={{ color: accentSolid }}
                                   >
                                     −
                                   </button>
-                                  <span className="px-2 text-[10px] font-bold min-w-[20px] text-center">{quantity}</span>
+                                  <span className="px-3 text-sm font-black min-w-[30px] text-center text-gray-900">{quantity}</span>
                                   <button
                                     onClick={() => setQuantity(quantity + 1)}
-                                    className="px-2 py-1 text-xs font-bold hover:bg-gray-100 transition"
+                                    className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
+                                    style={{ color: accentSolid }}
                                   >
                                     +
                                   </button>
                                 </div>
                                 <motion.button
-                                  className="flex-1 py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
+                                  className="flex-1 py-2.5 text-xs font-black shadow-lg hover:shadow-xl relative overflow-hidden cursor-pointer"
                                   style={{
                                     background: ctaBg,
                                     color: ctaFg,
                                     borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
                                   }}
-                                  whileHover={{ scale: 1.05 }}
+                                  whileHover={{ scale: 1.05, y: -1 }}
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => {
                                     addToCart(item, quantity);
@@ -968,20 +1036,20 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                                     />
                                   )}
-                                  <span className="relative z-10">
-                                    🛒 Add
+                                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                                    <span className="text-sm">🛒</span> Add to Cart
                                   </span>
                                 </motion.button>
                               </div>
                             ) : (
                               <motion.button
-                                className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden cursor-pointer"
+                                className="w-full py-2.5 text-xs font-black shadow-lg hover:shadow-xl relative overflow-hidden cursor-pointer"
                                 style={{
                                   background: ctaBg,
                                   color: ctaFg,
                                   borderRadius: `${Math.min(cardRadius * 0.6, 12)}px`,
                                 }}
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.05, y: -1 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => {
                                   setSelectedItem(item);
@@ -996,8 +1064,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                                   />
                                 )}
-                                <span className="relative z-10">
-                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : "Get")}
+                                <span className="relative z-10 flex items-center justify-center gap-1.5">
+                                  <span className="text-sm">📅</span>
+                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book Now" : "Get Now")}
                                 </span>
                               </motion.button>
                             )}
@@ -1008,17 +1077,19 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   </motion.div>
                   {/* Social + Contact Buttons Section */}
                   {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address) && (
-                    <div className="px-3 pb-3 bg-gray-50">
-                      <div className="pt-3 pb-2">
-                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">📞 Get in Touch</h3>
+                    <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
+                      <div className="pt-4 pb-3 border-t border-gray-200">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                          <span className="text-lg">💬</span> Connect
+                        </h3>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {social.instagram && (
                           <a 
                             href={`https://instagram.com/${social.instagram.replace('@', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
                             style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
                           >
                             📷 Instagram
@@ -1029,7 +1100,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             href={`https://tiktok.com/@${social.tiktok.replace('@', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-black text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                            className="flex items-center gap-1.5 px-3 py-2 bg-black text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
                             style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
                           >
                             🎵 TikTok
@@ -1089,26 +1160,26 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.6 + idx * 0.1 }}
-                              className="rounded-lg border p-2 bg-white shadow-sm"
-                              style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}30` }}
+                              className="rounded-xl border-2 p-3 bg-white shadow-lg hover:shadow-xl transition-all duration-200"
+                              style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}50` }}
                             >
-                              <div className="flex items-center gap-2">
-                                <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ background: accentSolid }}>
+                              <div className="flex items-center gap-3">
+                                <div className="h-14 w-14 rounded-full flex items-center justify-center text-white font-black text-lg shadow-md" style={{ background: accentSolid }}>
                                   {staff.name.charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[10px] font-bold text-gray-900 truncate">{staff.name}</span>
-                                    <span className="text-[8px] text-yellow-600">⭐ {staff.rating}</span>
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="text-sm font-black text-gray-900 truncate">{staff.name}</span>
+                                    <span className="text-xs text-yellow-600 flex items-center gap-0.5">⭐ {staff.rating}</span>
                                   </div>
-                                  <div className="text-[8px] text-gray-600 truncate">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
+                                  <div className="text-xs text-gray-700 font-medium truncate mb-1">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
                                   {hasCustomHours && enabledDays.length > 0 && (
-                                    <div className="text-[7px] text-gray-500 mt-0.5">
+                                    <div className="text-[10px] text-gray-600 mt-1 font-medium">
                                       🕐 {enabledDays.length} days • {formatTime12Hour((enabledDays[0][1] as any).start)}-{formatTime12Hour((enabledDays[0][1] as any).end)}
                                     </div>
                                   )}
                                 </div>
-                                <button className="px-2 py-1 text-[8px] font-bold text-white" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                                <button className="px-3 py-2 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
                                   Book
                                 </button>
                               </div>
@@ -1120,11 +1191,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   )}
                   {/* Business Hours Section - optional for all modes */}
                   {(appearance.showHours ?? false) && availability.days && (
-                    <div className="px-3 pb-3 bg-gray-50">
-                      <div className="pt-3 pb-2">
-                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">🕐 Business Hours</h3>
+                    <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
+                      <div className="pt-4 pb-3 border-t border-gray-200">
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                          <span className="text-lg">🕐</span> Hours
+                        </h3>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5 bg-white border-2 border-gray-200 rounded-xl p-3 shadow-md">
                         {Object.entries(availability.days)
                           .filter(([_dayId, day]) => (day as Day).enabled)
                           .length > 0 ? (
@@ -1134,11 +1207,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               .map(([dayId, day], idx) => {
                                 const d = day as Day;
                                 return (
-                                  <div key={dayId} className="flex justify-between items-center text-[9px]">
-                                    <span className="text-gray-700 font-semibold">
+                                  <div key={dayId} className="flex justify-between items-center text-xs py-1">
+                                    <span className="text-gray-900 font-black">
                                       {DAY_LABELS[dayId] || dayId}
                                     </span>
-                                    <span className="text-gray-600">{formatTime12Hour(d.start)} - {formatTime12Hour(d.end)}</span>
+                                    <span className="text-gray-700 font-bold">{formatTime12Hour(d.start)} - {formatTime12Hour(d.end)}</span>
                                   </div>
                                 );
                               })
@@ -1148,13 +1221,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               <span className="text-gray-500">Set in Details tab</span>
                             </div>
                           )}
-                        <div className="flex justify-between items-center text-[8px] pt-1 border-t border-gray-200">
-                          <span className="text-gray-500">
+                        <div className="flex justify-between items-center text-xs pt-2 border-t-2 border-gray-200 mt-2">
+                          <span className="text-gray-700 font-bold">
                             {mode === "services"
                               ? `${availability.slotMinutes}min slots • ${availability.advanceDays} days ahead`
-                              : `Open ${availability.advanceDays} days a week`}
+                              : `Open ${availability.advanceDays} days/week`}
                           </span>
-                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 font-bold rounded" style={{ borderRadius: `${Math.min(cardRadius * 0.3, 4)}px` }}>
+                          <span className="px-2.5 py-1 bg-green-100 text-green-700 font-black text-[10px] rounded-lg shadow-sm" style={{ borderRadius: `${Math.min(cardRadius * 0.3, 4)}px` }}>
                             {mode === "services" ? "BOOKABLE" : "OPEN"}
                           </span>
                         </div>
@@ -1163,9 +1236,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   )}
                   {/* Powered by Piqo Footer */}
                   {(appearance.showPoweredBy ?? true) && (
-                    <div className="px-3 py-2 bg-gray-100 text-center">
-                      <div className="text-[8px] text-gray-500 font-medium">
-                        Powered by <span className="font-bold text-gray-700">Piqo</span>
+                    <div className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-center border-t-2 border-gray-200">
+                      <div className="text-xs text-gray-600 font-bold">
+                        Powered by <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">piqo</span>
                       </div>
                     </div>
                   )}
@@ -1181,18 +1254,18 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          whileHover={{ scale: 1.1 }}
+          whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setShowCart(true)}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center"
+          className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center border-4 border-white"
           style={{
             background: accentSolid,
             color: ctaFg,
           }}
         >
           <div className="relative">
-            <ShoppingBag className="w-6 h-6" />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            <ShoppingBag className="w-7 h-7" />
+            <span className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow-lg border-2 border-white">
               {cartItemCount}
             </span>
           </div>
@@ -1218,94 +1291,134 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px" }}
             >
               {/* Cart Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b bg-white">
-                <span className="text-sm font-semibold">🛒 Your Cart ({cartItemCount} items)</span>
+              <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b-2 bg-gradient-to-r from-gray-50 to-white shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🛒</span>
+                  <span className="text-base font-black text-gray-900">Cart</span>
+                  <span className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-black rounded-full">{cartItemCount}</span>
+                </div>
                 <button
                   onClick={() => setShowCart(false)}
-                  className="p-1 hover:bg-gray-100 rounded-lg transition"
+                  className="p-2 hover:bg-gray-200 rounded-xl transition-all duration-200 hover:rotate-90"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-white to-gray-50">
                 {cart.map((ci, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
                     <div className="flex-1">
-                      <p className="font-semibold text-sm">{ci.item.title}</p>
-                      <p className="text-xs text-gray-600">{ci.item.price} each</p>
+                      <p className="font-black text-sm text-gray-900">{ci.item.title}</p>
+                      <p className="text-xs text-gray-700 font-bold">{ci.item.price} each</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateCartQuantity(ci.item.title!, ci.quantity - 1)}
-                        className="w-6 h-6 flex items-center justify-center bg-white border rounded font-bold text-xs hover:bg-gray-100"
+                        className="w-7 h-7 flex items-center justify-center bg-white border-2 border-gray-300 rounded-lg font-black text-sm hover:bg-gray-100 transition"
                       >
                         −
                       </button>
-                      <span className="w-8 text-center font-bold text-sm">{ci.quantity}</span>
+                      <span className="w-8 text-center font-black text-sm">{ci.quantity}</span>
                       <button
                         onClick={() => updateCartQuantity(ci.item.title!, ci.quantity + 1)}
-                        className="w-6 h-6 flex items-center justify-center bg-white border rounded font-bold text-xs hover:bg-gray-100"
+                        className="w-7 h-7 flex items-center justify-center bg-white border-2 border-gray-300 rounded-lg font-black text-sm hover:bg-gray-100 transition"
                       >
                         +
                       </button>
                     </div>
                     <button
                       onClick={() => removeFromCart(ci.item.title!)}
-                      className="p-1 hover:bg-red-50 rounded text-red-500"
+                      className="p-1.5 hover:bg-red-100 rounded-lg text-red-500 transition-all duration-200 hover:scale-110"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
               </div>
 
               {/* Cart Footer */}
-              <div className="sticky bottom-0 border-t bg-white p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold">Total:</span>
-                  <span className="text-lg font-bold" style={{ color: accentSolid }}>
+              <div className="sticky bottom-0 border-t-2 bg-white p-5 space-y-3 shadow-lg">
+                <div className="flex justify-between items-center pb-3 border-b-2 border-gray-200">
+                  <span className="text-base font-black text-gray-900">Total:</span>
+                  <span className="text-2xl font-black" style={{ color: accentSolid }}>
                     ${cartTotal.toFixed(2)}
                   </span>
                 </div>
                 
                 {/* Customer Info for Cart Checkout */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <input
                     type="text"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
                   />
                   <input
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="Your email"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
                   />
                 </div>
 
                 <button
                   onClick={createBooking}
                   disabled={bookingLoading || !customerName.trim() || !customerEmail.trim()}
-                  className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 rounded-xl font-black text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-base"
                   style={{
                     background: !bookingLoading && customerName.trim() && customerEmail.trim() ? accentSolid : "#ccc",
                   }}
                 >
-                  {bookingLoading ? "Processing..." : "Checkout"}
+                  {bookingLoading ? "Processing..." : "🔒 Secure Checkout"}
                 </button>
                 
                 <button
                   onClick={() => setShowCart(false)}
-                  className="w-full py-2 text-sm text-gray-600 hover:text-gray-900 transition"
+                  className="w-full py-2.5 text-sm text-gray-700 font-bold hover:text-gray-900 transition hover:bg-gray-100 rounded-lg"
                 >
-                  Continue Shopping
+                  ← Continue Shopping
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Modal - View full-size product images */}
+      <AnimatePresence>
+        {showImageModal && selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowImageModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[90vh] w-full"
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute -top-12 right-0 p-2 bg-white/10 hover:bg-white/20 rounded-full transition"
+              >
+                <X className="h-6 w-6 text-white" />
+              </button>
+              
+              {/* Image */}
+              <img
+                src={selectedImage}
+                alt="Product"
+                className="w-full h-full object-contain rounded-lg"
+              />
             </motion.div>
           </motion.div>
         )}
@@ -1330,30 +1443,39 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               style={{ borderTopLeftRadius: bookingStep === "browse" ? "24px" : "8px", borderTopRightRadius: bookingStep === "browse" ? "24px" : "8px" }}
             >
               {/* Close button */}
-              <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b bg-white">
-                <span className="text-sm font-semibold">
-                  {bookingStep === "success" 
-                    ? "✓ Confirmed!" 
-                    : mode === 'services' 
-                      ? "Book " + selectedItem.title 
-                      : "Get product now"}
-                </span>
+              <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b-2 bg-gradient-to-r from-gray-50 to-white shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">
+                    {bookingStep === "success" 
+                      ? "✅" 
+                      : mode === 'services' 
+                        ? "📅" 
+                        : "🛒"}
+                  </span>
+                  <span className="text-base font-black text-gray-900">
+                    {bookingStep === "success" 
+                      ? "Confirmed!" 
+                      : mode === 'services' 
+                        ? "Book " + selectedItem.title 
+                        : "Get Now"}
+                  </span>
+                </div>
                 <button
                   onClick={resetBooking}
-                  className="p-1 hover:bg-gray-100 rounded-lg transition"
+                  className="p-2 hover:bg-gray-200 rounded-xl transition-all duration-200 hover:rotate-90"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="p-4 max-h-[70vh] overflow-y-auto">
+              <div className="p-5 max-h-[70vh] overflow-y-auto bg-gradient-to-b from-white to-gray-50">
                 {bookingStep === "confirm" ? (
                   <>
                     {/* Booking/Product Confirmation Form */}
                     <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-semibold mb-2">{mode === 'services' ? 'Service' : 'Item'}: {selectedItem.title}</p>
-                        <p className="text-xs text-gray-600">{selectedItem.price}</p>
+                      <div className="p-4 bg-white border-2 border-gray-200 rounded-xl shadow-md">
+                        <p className="text-sm font-black mb-1 text-gray-900">{mode === 'services' ? 'Service' : 'Item'}: {selectedItem.title}</p>
+                        <p className="text-sm text-gray-700 font-bold">{selectedItem.price}</p>
                       </div>
 
                       {/* Show booking fields ONLY for services */}
@@ -1403,9 +1525,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
                           {/* Time Slot Picker */}
                           <div>
-                            <label className="block text-xs font-semibold mb-2">Select a time slot</label>
+                            <label className="block text-sm font-black mb-2 text-gray-900">📅 Select a time slot</label>
                             {!selectedDate ? (
-                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                              <div className="text-sm text-gray-600 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 font-medium">
                                 Please select a date first
                               </div>
                             ) : (slotsData?.reason === 'MISSING_AVAILABILITY' || slotsData?.reason === 'NO_ENABLED_DAYS') ? (
@@ -1457,10 +1579,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   <button
                                     key={slot.id}
                                     onClick={() => setSelectedSlot(slot)}
-                                    className={`p-2 rounded-lg text-xs font-semibold transition ${
+                                    className={`p-2.5 rounded-xl text-xs font-black transition shadow-md hover:shadow-lg ${
                                       selectedSlot?.id === slot.id
-                                        ? "bg-cyan-500 text-white"
-                                        : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                                        ? "bg-cyan-500 text-white scale-105"
+                                        : "bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-200"
                                     }`}
                                   >
                                     {new Date(slot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -1472,19 +1594,19 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
                           {/* Team Member Selector */}
                           <div>
-                            <label className="block text-xs font-semibold mb-2">
-                              Choose your specialist 
-                              {teamMembers.length > 0 && <span className="text-gray-500">({teamMembers.length})</span>}
+                            <label className="block text-sm font-black mb-2 text-gray-900">
+                              👥 Choose your specialist 
+                              {teamMembers.length > 0 && <span className="text-gray-600 font-bold">({teamMembers.length})</span>}
                             </label>
                             {teamMembers.length === 0 ? (
-                              <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                              <div className="text-sm text-gray-600 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 font-medium">
                                 No specialists available. Booking is open to anyone.
                               </div>
                             ) : (
                               <select
                                 value={selectedTeamMember}
                                 onChange={(e) => setSelectedTeamMember(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition bg-white"
                               >
                                 <option value="">Any available</option>
                                 {teamMembers.map((member: any) => (
@@ -1502,29 +1624,29 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
                       {/* Customer Info */}
                       <div>
-                        <label className="block text-xs font-semibold mb-1">Your name</label>
+                        <label className="block text-sm font-black mb-2 text-gray-900">👤 Your name</label>
                         <input
                           type="text"
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="John Doe"
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold mb-1">Email</label>
+                        <label className="block text-sm font-black mb-2 text-gray-900">✉️ Email</label>
                         <input
                           type="email"
                           value={customerEmail}
                           onChange={(e) => setCustomerEmail(e.target.value)}
                           placeholder="john@example.com"
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
                         />
                       </div>
 
                       {bookingError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                        <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-sm text-red-700 font-medium">
                           {bookingError}
                         </div>
                       )}
@@ -1533,45 +1655,45 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       <button
                         onClick={createBooking}
                         disabled={bookingLoading || (mode === 'services' && !selectedSlot) || !customerName || !customerEmail}
-                        className="w-full py-3 rounded-lg font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3.5 rounded-xl font-black text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-base"
                         style={{
                           background: !bookingLoading && (mode !== 'services' || selectedSlot) && customerName && customerEmail ? accentSolid : "#ccc",
                         }}
                       >
                         {bookingLoading 
                           ? (mode === 'services' ? "Booking..." : "Processing...") 
-                          : (mode === 'services' ? "Confirm Booking" : "Continue to Payment")}
+                          : (mode === 'services' ? "📌 Confirm Booking" : "🔒 Continue to Payment")}
                       </button>
                       <button
                         onClick={resetBooking}
-                        className="w-full py-2 rounded-lg font-semibold border border-gray-200 hover:bg-gray-50 transition"
+                        className="w-full py-2.5 rounded-xl font-bold border-2 border-gray-200 hover:bg-gray-100 transition-all duration-200 text-gray-700"
                       >
-                        Cancel
+                        ← Cancel
                       </button>
                     </div>
                   </>
                 ) : bookingStep === "success" ? (
                   <>
                     {/* Success Screen */}
-                    <div className="text-center space-y-4 py-6">
+                    <div className="text-center space-y-5 py-8">
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 200 }}
-                        className="text-5xl mx-auto"
+                        className="text-6xl mx-auto"
                       >
-                        ✓
+                        ✅
                       </motion.div>
                       <div>
-                        <h3 className="text-lg font-bold">Booking Confirmed!</h3>
-                        <p className="text-xs text-gray-600 mt-1">We'll send a confirmation email shortly</p>
+                        <h3 className="text-xl font-black text-gray-900">Booking Confirmed!</h3>
+                        <p className="text-sm text-gray-700 mt-2 font-medium">We'll send a confirmation email shortly</p>
                       </div>
-                      <div className="p-3 bg-gray-50 rounded-lg space-y-1 text-xs text-left">
-                        <div><strong>Service:</strong> {selectedItem.title}</div>
-                        <div><strong>Customer:</strong> {customerName}</div>
-                        <div><strong>Email:</strong> {customerEmail}</div>
+                      <div className="p-4 bg-white border-2 border-gray-200 rounded-xl shadow-md space-y-2 text-sm text-left">
+                        <div className="font-black text-gray-900"><span className="text-gray-600 font-bold">Service:</span> {selectedItem.title}</div>
+                        <div className="font-black text-gray-900"><span className="text-gray-600 font-bold">Customer:</span> {customerName}</div>
+                        <div className="font-black text-gray-900"><span className="text-gray-600 font-bold">Email:</span> {customerEmail}</div>
                         {selectedSlot && (
-                          <div><strong>Time:</strong> {new Date(selectedSlot.start_time).toLocaleDateString()} {new Date(selectedSlot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                          <div className="font-black text-gray-900"><span className="text-gray-600 font-bold">Time:</span> {new Date(selectedSlot.start_time).toLocaleDateString()} {new Date(selectedSlot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
                         )}
                         {selectedTeamMember && (
                           <div><strong>Specialist:</strong> {teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name || "Selected"}</div>

@@ -243,10 +243,12 @@ export async function GET(req: NextRequest) {
             customer_email: o.customer_email,
             item_title: o.item_title,
             item_price: o.item_price,
+            amount_cents: o.amount_cents, // Total amount paid in cents
             mode: o.mode,
             status: o.status,
             created_at: o.created_at,
             site_brand_name: site?.config?.brandName || null,
+            order_items: o.order_items || null, // Include cart items with quantities
           };
         });
         

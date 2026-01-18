@@ -39,10 +39,14 @@ export async function middleware(request: NextRequest) {
     console.log('Auth check failed:', error);
   }
 
-  // Protect these routes
-  const protectedPaths = ['/dashboard', '/create', '/profile', '/u/'];
+  // Protect these routes (but NOT public storefronts)
+  const protectedPaths = ['/dashboard', '/create', '/profile'];
+  
+  // Specific protected routes under /u/[handle]
+  const protectedHandleRoutes = ['/manage-slots', '/manage-items', '/confirmed'];
 
-  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path)) ||
+    protectedHandleRoutes.some(route => request.nextUrl.pathname.includes(route));
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();

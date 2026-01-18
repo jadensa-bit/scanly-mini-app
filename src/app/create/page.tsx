@@ -83,6 +83,7 @@ type Appearance = {
   showSocials?: boolean;
   showHours?: boolean;
   ctaText?: string;
+  specialMessage?: string; // NEW: Special announcement banner
   
   // Accent gradient
   accentMode?: "solid" | "gradient";
@@ -150,6 +151,7 @@ mode: ModeId;
   brandName: string;
   handle: string;
   tagline: string;
+  businessDescription?: string; // NEW: Short business description
   items: BuildItem[];
   active: boolean;
   createdAt: number;
@@ -412,6 +414,7 @@ export default function CreatePage() {
   const [handleRaw, setHandleRaw] = useState("my-piqo");
   const [handleInput, setHandleInput] = useState("my-piqo"); // Local input state for immediate UI updates
   const [tagline, setTagline] = useState("Scan → tap → done.");
+  const [businessDescription, setBusinessDescription] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [brandLogo, setBrandLogo] = useState("");
   const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
@@ -486,6 +489,7 @@ export default function CreatePage() {
       brandName,
       handle: h,
       tagline,
+      businessDescription,
       items,
       appearance,
       staffProfiles,
@@ -500,7 +504,7 @@ export default function CreatePage() {
     try {
       localStorage.setItem(storageKey(h), JSON.stringify(draft));
     } catch {}
-  }, [mode, brandName, handleRaw, tagline, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail]);
+  }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail]);
 
   // Debounce handle input to prevent spazzing
   useEffect(() => {
@@ -572,6 +576,7 @@ export default function CreatePage() {
               setHandleInput(config.handle);
             }
             if (config.tagline !== undefined) setTagline(config.tagline);
+            if (config.businessDescription !== undefined) setBusinessDescription(config.businessDescription);
             if (config.items) setItems(config.items);
             if (config.appearance) setAppearance(config.appearance);
             if (config.staffProfiles) setStaffProfiles(config.staffProfiles);
@@ -846,6 +851,7 @@ async function startStripeConnect() {
       brandName: brandName.trim() || "My Piqo",
       handle: h,
       tagline: tagline.trim(),
+      businessDescription: businessDescription.trim() || undefined,
       items: items.filter((x) => (x.title || "").trim().length > 0),
       active: true,
       createdAt: Date.now(),
@@ -892,6 +898,7 @@ async function startStripeConnect() {
     mode,
     brandName,
     tagline,
+    businessDescription,
     items,
     appearance,
     staffProfiles,
@@ -1052,6 +1059,11 @@ async function startStripeConnect() {
     try {
       if (typeof BroadcastChannel !== "undefined") {
         const bc = new BroadcastChannel("piqo-preview");
+        console.log('📡 Broadcasting config:', { 
+          social: configDraft.social, 
+          businessDescription: configDraft.businessDescription,
+          specialMessage: configDraft.appearance?.specialMessage 
+        });
         bc.postMessage({ type: "config", handle: configDraft.handle, config: configDraft });
         bc.close();
       }
@@ -1491,11 +1503,11 @@ async function startStripeConnect() {
           <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <motion.div
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 backdrop-blur-xl px-3 py-1 text-xs text-white/90 relative overflow-hidden shadow-lg shadow-cyan-500/20"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 backdrop-blur-2xl px-4 py-1.5 text-xs font-bold text-white relative overflow-hidden shadow-2xl shadow-cyan-500/30 ring-1 ring-white/10"
               style={{
                 background: isEditMode 
-                  ? "linear-gradient(135deg, rgba(34,211,238,0.25), rgba(99,102,241,0.25))"
-                  : "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(167,139,250,0.15))",
+                  ? "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(99,102,241,0.3))"
+                  : "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(167,139,250,0.2))",
               }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1527,7 +1539,7 @@ async function startStripeConnect() {
             </motion.div>
 
             <motion.h1
-              className="mt-3 text-3xl font-semibold tracking-tight bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
+              className="mt-4 text-4xl sm:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-cyan-200 to-purple-200 bg-clip-text text-transparent"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
@@ -1535,7 +1547,7 @@ async function startStripeConnect() {
               {headerStyle === "hero" ? "Build your QR mini-app" : "Create your mini-app"}
             </motion.h1>
             <motion.p
-              className="mt-1 text-white/85"
+              className="mt-2 text-base text-white/90 font-medium"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
@@ -1691,15 +1703,15 @@ async function startStripeConnect() {
               <>
                 {/* Mode Selection - Cleaner cards */}
                 <motion.section
-              className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5 relative overflow-hidden"
+              className="rounded-3xl border border-cyan-500/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl p-6 sm:p-8 relative overflow-hidden shadow-2xl shadow-cyan-500/10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5 opacity-50"
+                className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 opacity-60"
                 animate={{
-                  opacity: [0.3, 0.5, 0.3],
+                  opacity: [0.4, 0.7, 0.4],
                 }}
                 transition={{
                   duration: 4,
@@ -1707,7 +1719,7 @@ async function startStripeConnect() {
                 }}
               />
               <div className="flex items-center justify-between gap-3 relative z-10">
-                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                <div className="flex items-center gap-3 text-base font-black text-white">
                   <motion.div
                     animate={{
                       rotate: [0, 10, -10, 0],
@@ -1734,7 +1746,7 @@ async function startStripeConnect() {
                 ) : null}
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-3 relative z-10">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3 relative z-10">
                 {MODE_CARDS.map((m) => {
                   const selected = mode === m.id;
                   return (
@@ -1743,106 +1755,146 @@ async function startStripeConnect() {
                       key={m.id}
                       onClick={() => onPickMode(m.id)}
                       className={cn(
-                        "rounded-2xl border p-4 text-left transition relative overflow-hidden",
+                        "rounded-2xl border p-5 text-left transition relative overflow-hidden shadow-lg",
                         selected
-                          ? "border-white/30 bg-white/12 shadow-lg"
-                          : "border-white/12 bg-black/30 hover:bg-white/10"
+                          ? "border-white/40 bg-white/15 shadow-2xl ring-2"
+                          : "border-white/15 bg-black/40 hover:bg-white/12 hover:border-white/25"
                       )}
-                      style={selected ? { borderColor: `${m.color}50`, boxShadow: `0 0 20px ${m.color}30` } : {}}
-                      whileHover={{ scale: 1.02 }}
+                      style={selected ? { borderColor: `${m.color}60`, boxShadow: `0 0 30px ${m.color}40` } : {}}
+                      whileHover={{ scale: 1.03, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       {selected && (
                         <motion.div
                           className="absolute inset-0"
-                          style={{ background: `linear-gradient(90deg, transparent, ${m.color}20, transparent)` }}
-                          animate={{ x: [-100, 200] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                          style={{ background: `linear-gradient(135deg, ${m.color}25, transparent)` }}
+                          animate={{ opacity: [0.5, 0.8, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
                       )}
-                      <div className="flex items-center gap-2 relative z-10">
-                        <span className="text-xl">{m.icon}</span>
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className="text-3xl w-12 h-12 flex items-center justify-center rounded-xl bg-white/10">{m.icon}</div>
                         <div>
-                          <div className="text-sm font-semibold text-white/90">{m.title}</div>
-                          <div className="text-[11px] text-white/60">{m.sub}</div>
+                          <div className="text-base font-bold text-white">{m.title}</div>
+                          <div className="text-xs text-white/70 mt-0.5">{m.sub}</div>
                         </div>
                       </div>
+                      {selected && (
+                        <motion.div
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{ background: m.color }}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", bounce: 0.5 }}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-white" />
+                        </motion.div>
+                      )}
                     </motion.button>
                   );
                 })}
               </div>
               {/* Mode-specific helper text */}
-              <div className="mt-3 text-xs text-white/60 bg-black/20 rounded-xl p-3 border border-white/8">
+              <div className="mt-5 text-sm text-white/80 bg-gradient-to-r from-black/40 to-black/30 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
                 {mode === "services" && (
-                  <p>📅 <strong className="text-white/80">Services</strong> let customers book appointments. Add services, set availability & staff below.</p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-xl">📅</span>
+                    <span><strong className="text-white font-bold">Services</strong> let customers book appointments. Add services, set availability & staff below.</span>
+                  </p>
                 )}
                 {mode === "products" && (
-                  <p>🛍️ <strong className="text-white/80">Products</strong> are for physical items. Add products, upload images, set prices below.</p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-xl">🛍️</span>
+                    <span><strong className="text-white font-bold">Products</strong> are for physical items. Add products, upload images, set prices below.</span>
+                  </p>
                 )}
                 {mode === "digital" && (
-                  <p>⚡ <strong className="text-white/80">Digital</strong> items deliver instantly. Add files/links, customers get them after checkout.</p>
+                  <p className="flex items-start gap-2">
+                    <span className="text-xl">⚡</span>
+                    <span><strong className="text-white font-bold">Digital</strong> items deliver instantly. Add files/links, customers get them after checkout.</span>
+                  </p>
                 )}
               </div>
             </motion.section>
 
             {/* Brand Basics */}
             <motion.section
-              className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5"
+              className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl shadow-purple-500/10"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <div className="flex items-center gap-2 text-sm font-semibold text-white/90 mb-4">
-                <Type className="h-4 w-4 text-cyan-400" />
+              <div className="flex items-center gap-3 text-base font-black text-white mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                  <Type className="h-5 w-5 text-white" />
+                </div>
                 Brand basics
               </div>
 
-              <div className="grid gap-3">
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Brand name</span>
+              <div className="grid gap-4">
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white">Brand name</span>
                   <input
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
-                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                    className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25"
                     placeholder="Ex: Fresh Cutz"
                   />
-                  <span className="text-[10px] text-white/60">Your brand's name</span>
+                  <span className="text-xs text-white/60">Your brand's name</span>
                 </label>
 
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Your unique handle</span>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white">Your unique handle</span>
                   <input
                     value={handleInput}
                     onChange={(e) => setHandleInput(e.target.value)}
-                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                    className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25"
                     placeholder="Ex: freshcutz"
                   />
-                  <div className="text-[11px] text-white/70">
-                    Your link: <span className="text-cyan-300/70 font-semibold">/u/{cleanHandle || "handle"}</span>
+                  <div className="text-xs text-white/70 bg-black/30 rounded-lg px-3 py-2 border border-white/10">
+                    Your link: <span className="text-cyan-300 font-bold">/u/{cleanHandle || "handle"}</span>
                   </div>
                 </label>
 
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Tagline</span>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white">Tagline</span>
                   <input
                     value={tagline}
                     onChange={(e) => setTagline(e.target.value)}
-                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                    className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25"
                     placeholder="Ex: Tap, pay, confirmed."
                   />
-                  <span className="text-[10px] text-white/60">Tagline shown on your storefront</span>
+                  <span className="text-xs text-white/60">Tagline shown on your storefront</span>
                 </label>
 
-                <div className="grid gap-1 sm:col-span-2">
-                  <span className="text-xs text-white/80">Logo (optional)</span>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white">Business Description <span className="text-white/50 font-normal">(optional)</span></span>
+                  <textarea
+                    value={businessDescription}
+                    onChange={(e) => setBusinessDescription(e.target.value)}
+                    rows={3}
+                    className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25 resize-none"
+                    placeholder="Ex: Premium barbershop in downtown. Walk-ins welcome!"
+                    maxLength={150}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/60">Appears in hero section under brand name</span>
+                    <span className="text-[10px] text-white/50">{(businessDescription || "").length}/150</span>
+                  </div>
+                </label>
 
-                {/* Header Color Picker */}
-                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/85 hover:bg-white/10 transition cursor-pointer">
+                <div className="grid gap-2 sm:col-span-2">
+                  <span className="text-sm font-bold text-white">Logo (optional)</span>
+
+                {/* Logo Upload */}
+                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-gradient-to-r from-black/50 to-black/40 px-4 py-3.5 text-sm text-white hover:bg-black/60 hover:border-white/25 transition cursor-pointer group/upload">
                     <span className="inline-flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4" />
-                      {brandLogo ? "Change logo" : "Upload logo"}
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center group-hover/upload:scale-110 transition-transform">
+                        <ImageIcon className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="font-semibold">{brandLogo ? "Change logo" : "Upload logo"}</span>
                     </span>
-                    <span className="text-[11px] text-white/65">PNG/JPG/SVG</span>
+                    <span className="text-xs text-white/60 bg-white/5 px-2.5 py-1 rounded-lg">PNG/JPG/SVG</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -1917,16 +1969,30 @@ async function startStripeConnect() {
                   <Layers className="h-4 w-4 text-orange-400" />
                   {mode === "services" ? "Services" : mode === "products" ? "Products" : "Digital Items"} ({items.length})
                 </div>
-                <motion.button
-                  type="button"
-                  onClick={addItem}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/20 transition shadow-lg shadow-green-500/10"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}
-                </motion.button>
+                <div className="flex items-center gap-2">
+                  {items.length === 0 && (
+                    <motion.button
+                      type="button"
+                      onClick={() => setItems(pickDefaultItemsForMode(mode))}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 transition shadow-lg shadow-purple-500/10"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Wand2 className="h-4 w-4" />
+                      Quick Fill
+                    </motion.button>
+                  )}
+                  <motion.button
+                    type="button"
+                    onClick={addItem}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/20 transition shadow-lg shadow-green-500/10"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}
+                  </motion.button>
+                </div>
               </div>
 
               {items.length === 0 ? (
@@ -1969,7 +2035,7 @@ async function startStripeConnect() {
                                 prev.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x))
                               )
                             }
-                            className="flex-1 rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm font-semibold text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            className="flex-1 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-semibold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25"
                             placeholder={mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook"}
                           />
                           <input
@@ -1979,7 +2045,7 @@ async function startStripeConnect() {
                                 prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
                               )
                             }
-                            className="w-24 rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm font-semibold text-white/90 outline-none placeholder:text-white/40 focus:border-white/25 text-center"
+                            className="w-24 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
                             placeholder="$25"
                           />
                         </div>
@@ -2034,8 +2100,8 @@ async function startStripeConnect() {
 
                       {/* Details row */}
                       <div className="grid gap-2 sm:grid-cols-2 pl-10">
-                        <label className="grid gap-1">
-                          <span className="text-xs text-white/60">Description</span>
+                        <label className="grid gap-1.5">
+                          <span className="text-xs font-semibold text-white/70">Description</span>
                           <input
                             value={it.note || ""}
                             onChange={(e) =>
@@ -2043,13 +2109,13 @@ async function startStripeConnect() {
                                 prev.map((x, i) => (i === idx ? { ...x, note: e.target.value } : x))
                               )
                             }
-                            className="rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            className="rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25"
                             placeholder={mode === "services" ? "e.g. 30 min • Includes styling" : "Short description"}
                           />
                         </label>
 
-                        <label className="grid gap-1">
-                          <span className="text-xs text-white/60">Badge</span>
+                        <label className="grid gap-1.5">
+                          <span className="text-xs font-semibold text-white/70">Badge</span>
                           <select
                             value={it.badge || "none"}
                             onChange={(e) =>
@@ -2057,7 +2123,7 @@ async function startStripeConnect() {
                                 prev.map((x, i) => (i === idx ? { ...x, badge: e.target.value as ItemBadge } : x))
                               )
                             }
-                            className="w-full appearance-none rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-sm text-white/90 outline-none focus:border-white/25 cursor-pointer"
+                            className="w-full appearance-none rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 cursor-pointer"
                           >
                             <option value="none">No badge</option>
                             <option value="popular">🔥 Popular</option>
@@ -2137,24 +2203,25 @@ async function startStripeConnect() {
                 </div>
               )}
 
-              <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-                <div className="text-xs text-blue-200/90">
-                  💡 <span className="font-medium">Tip:</span> Add 2-5 items for best results. Customers see the first 3 on your storefront preview.
+              <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/30 shadow-lg shadow-blue-500/10">
+                <div className="text-sm text-blue-100 flex items-start gap-2">
+                  <span className="text-lg">💡</span>
+                  <p><span className="font-bold">Tip:</span> Add 2-5 items for best results. Customers see the first 3 on your storefront preview.</p>
                 </div>
               </div>
 
               {/* Next Button */}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-8 flex justify-end">
                 <motion.button
                   type="button"
                   onClick={() => setActiveTab("design")}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/20 px-6 py-3 text-sm font-semibold text-white transition-all shadow-lg shadow-cyan-500/25 hover:bg-cyan-500/30"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 px-8 py-4 text-base font-bold text-white transition-all shadow-2xl shadow-cyan-500/30 hover:shadow-cyan-500/50"
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Next: Style your store
                   <motion.div
-                    animate={{ x: [0, 3, 0] }}
+                    animate={{ x: [0, 4, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   >
                     →
@@ -2169,10 +2236,12 @@ async function startStripeConnect() {
             {activeTab === "design" && (
               <>
             {/* App Style - Complete Design Controls (same controls, clearer flow) */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <Layers className="h-4 w-4 text-purple-400" />
+            <section className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl shadow-purple-500/10">
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="inline-flex items-center gap-3 text-base font-black text-white">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                    <Layers className="h-5 w-5 text-white" />
+                  </div>
                   Structure
                 </div>
                 <div className="text-[11px] text-white/70">Font + layout + header</div>
@@ -2552,12 +2621,30 @@ async function startStripeConnect() {
                 })}
               </div>
 
-              {/* Mini preview swatch */}
               <div className="mt-4 rounded-2xl border border-white/12 bg-black/30 p-3">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="text-[11px] text-white/65">Live style preview</div>
                   <div className="text-[11px] text-white/55">Logo/name from Setup</div>
                 </div>
+
+                {/* Special Message Banner */}
+                <label className="grid gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">Special Message <span className="text-white/50 font-normal">(optional)</span></span>
+                    <span className="text-[10px] px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-full font-bold">NEW</span>
+                  </div>
+                  <input
+                    value={appearance.specialMessage || ""}
+                    onChange={(e) => applyAppearancePatchInstant({ specialMessage: e.target.value })}
+                    className="rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                    placeholder="Ex: 🎉 Grand opening this weekend! • ⚡ Free shipping on all orders"
+                    maxLength={100}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-white/65">Displays as a banner at the top of your piqo</span>
+                    <span className="text-[10px] text-white/50">{(appearance.specialMessage || "").length}/100</span>
+                  </div>
+                </label>
 
                 <div className="rounded-2xl border border-white/12 p-4" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
                   <div className="flex items-center gap-2">
@@ -4163,75 +4250,102 @@ async function startStripeConnect() {
             </section>
 
             {/* Quick Style Presets - Compact */}
-            <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-4">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
-                  <Palette className="h-4 w-4 text-purple-400" />
+            <section className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl shadow-purple-500/10">
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="inline-flex items-center gap-3 text-base font-black text-white">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                    <Palette className="h-5 w-5 text-white" />
+                  </div>
                   Quick styles
                 </div>
                 <button
                   type="button"
                   onClick={randomizeTheme}
-                  className="text-[10px] text-cyan-300 hover:text-cyan-200 transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-xs font-bold text-cyan-200 hover:from-cyan-500/30 hover:to-purple-500/30 transition-all"
                 >
-                  🎲 Random
+                  <span className="text-base">🎲</span> Random
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {PRESETS.map((p) => {
                   const selected = appearance.preset === p.id;
                   return (
-                    <button
+                    <motion.button
                       type="button"
                       key={p.id}
                       onClick={() => applyPreset(p.id)}
                       className={cn(
-                        "rounded-xl border p-2 text-center transition",
-                        selected ? "border-white/35 bg-white/12" : "border-white/10 bg-black/30 hover:bg-white/8"
+                        "rounded-2xl border p-4 text-center transition-all relative overflow-hidden shadow-lg",
+                        selected ? "border-white/40 bg-white/15 shadow-2xl ring-2 ring-white/20" : "border-white/15 bg-black/40 hover:bg-white/12 hover:border-white/25"
                       )}
-                      title={p.name}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      title={p.desc}
                     >
-                      <div className="h-4 w-4 mx-auto rounded-full border border-white/20" style={{ background: p.accent }} />
-                      <div className="mt-1 text-[9px] text-white/70 truncate">{p.name.split(" ")[0]}</div>
-                    </button>
+                      {selected && (
+                        <motion.div
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", bounce: 0.5 }}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-white" />
+                        </motion.div>
+                      )}
+                      <div className="h-10 w-10 mx-auto rounded-xl border-2 border-white/30 shadow-lg" style={{ background: p.accent }} />
+                      <div className="mt-3 text-sm font-bold text-white truncate">{p.name.split(" ")[0]}</div>
+                      <div className="text-xs text-white/60 truncate">{p.name.split(" ").slice(1).join(" ")}</div>
+                    </motion.button>
                   );
                 })}
               </div>
             </section>
 
             {/* Generate Button - Always visible */}
-            <section className="rounded-3xl border border-white/12 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl p-4">
+            <section className="rounded-3xl border border-green-500/30 bg-gradient-to-br from-green-500/15 via-cyan-500/10 to-green-500/15 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl shadow-green-500/20 relative overflow-hidden">
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent"
+                animate={{ x: [-200, 400] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
               <button
                 type="button"
                 onClick={onGenerate}
                 disabled={saving || !cleanHandle}
                 className={cn(
-                  "inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99]",
+                  "relative inline-flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-5 text-lg font-black transition-all active:scale-[0.98] shadow-2xl",
                   saving || !cleanHandle
-                    ? "bg-white/50 text-black/50 cursor-not-allowed"
-                    : "bg-white text-black hover:bg-white/90 shadow-lg shadow-white/20"
+                    ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-green-500/50 hover:shadow-green-500/70"
                 )}
               >
                 {saving ? (
-                  <>Publishing…</>
+                  <>
+                    <motion.div
+                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    Publishing…
+                  </>
                 ) : (
                   <>
-                    <Zap className="h-4 w-4" />
+                    <Zap className="h-6 w-6" />
                     Go live
                   </>
                 )}
               </button>
-              <div className="mt-2 text-center text-[10px] text-white/50">
+              <div className="mt-3 text-center text-sm font-semibold text-white/80 relative z-10">
                 {cleanHandle ? (
-                  <>Publish to <span className="text-white/70">/u/{cleanHandle}</span></>
+                  <>Publish to <span className="text-green-300 font-bold">/u/{cleanHandle}</span></>
                 ) : (
-                  "Add a handle to publish"
+                  <span className="text-amber-300">Add a handle to publish</span>
                 )}
               </div>
               {/* Stripe optional hint */}
-              <div className="mt-3 text-center text-[11px] text-white/60 bg-white/5 rounded-xl p-2.5 border border-white/10">
-                💳 You can publish without Stripe. Connect Stripe anytime to accept payments.
+              <div className="mt-4 text-center text-sm text-white/70 bg-white/10 rounded-2xl p-4 border border-white/15 backdrop-blur-sm relative z-10">
+                <span className="text-lg">💳</span> You can publish without Stripe. Connect Stripe anytime to accept payments.
               </div>
             </section>
             </div>

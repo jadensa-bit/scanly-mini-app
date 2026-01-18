@@ -1,0 +1,1060 @@
+
+> qrshop@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.0.1.244:3000
+- Environments: .env.local
+
+✓ Starting...
+○ Compiling middleware ...
+✓ Ready in 17.5s
+○ Compiling / ...
+ GET / 200 in 21.8s (compile: 21.5s, render: 353ms)
+○ Compiling /login ...
+ GET /login 200 in 4.1s (compile: 3.9s, render: 208ms)
+ GET /dashboard 200 in 1926ms (compile: 1408ms, render: 519ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: 'afb0bbf2-4448-4eb1-abf0-201eb31a66cf', error: undefined }
+✅ Dashboard: Using cookie auth, user: afb0bbf2-4448-4eb1-abf0-201eb31a66cf
+✅ Dashboard: User authenticated, fetching data for: afb0bbf2-4448-4eb1-abf0-201eb31a66cf
+⏭️ Dashboard: No sites found by user_id in sites, trying owner_email
+✅ Dashboard: Found 0 sites in table 'sites'
+✅ Dashboard: Fetched 0 sites
+🔍 Dashboard: Site handles: []
+🔍 Dashboard: Sites details: []
+⚠️ Dashboard: No sites found, will show 0 bookings
+✅ Dashboard: Fetched 6 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 30, handle: 'jadens', customer: 'Jaden' },
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: null
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: null
+  }
+]
+✅ Dashboard: Total bookings count: 6
+✅ Dashboard: Returning data - sites: 0 bookings: 6 total count: 6 orders: 0
+ GET /api/dashboard 200 in 1172ms (compile: 365ms, render: 807ms)
+ GET / 200 in 81ms (compile: 7ms, render: 75ms)
+ GET /dashboard 200 in 62ms (compile: 4ms, render: 58ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: 'afb0bbf2-4448-4eb1-abf0-201eb31a66cf', error: undefined }
+✅ Dashboard: Using cookie auth, user: afb0bbf2-4448-4eb1-abf0-201eb31a66cf
+✅ Dashboard: User authenticated, fetching data for: afb0bbf2-4448-4eb1-abf0-201eb31a66cf
+⏭️ Dashboard: No sites found by user_id in sites, trying owner_email
+✅ Dashboard: Found 0 sites in table 'sites'
+✅ Dashboard: Fetched 0 sites
+🔍 Dashboard: Site handles: []
+🔍 Dashboard: Sites details: []
+⚠️ Dashboard: No sites found, will show 0 bookings
+✅ Dashboard: Fetched 6 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 30, handle: 'jadens', customer: 'Jaden' },
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: null
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: null
+  }
+]
+✅ Dashboard: Total bookings count: 6
+✅ Dashboard: Returning data - sites: 0 bookings: 6 total count: 6 orders: 0
+ GET /api/dashboard 200 in 790ms (compile: 1853µs, render: 788ms)
+ GET /dashboard 200 in 36ms (compile: 7ms, render: 29ms)
+ GET / 200 in 18ms (compile: 4ms, render: 14ms)
+ GET / 200 in 38ms (compile: 5ms, render: 33ms)
+ GET /signup 200 in 2.9s (compile: 2.8s, render: 112ms)
+ POST /api/auth/signup 201 in 535ms (compile: 74ms, render: 461ms)
+ GET /dashboard 200 in 20ms (compile: 3ms, render: 16ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '7dc601fc-2f46-4bde-bda4-11057f01feea', error: undefined }
+✅ Dashboard: Using cookie auth, user: 7dc601fc-2f46-4bde-bda4-11057f01feea
+✅ Dashboard: User authenticated, fetching data for: 7dc601fc-2f46-4bde-bda4-11057f01feea
+🔍 Dashboard: Checked sites for user 7dc601fc-2f46-4bde-bda4-11057f01feea, found 0 sites
+⏭️ Dashboard: No sites found by user_id in sites, trying owner_email
+✅ Dashboard: Found 0 sites in table 'sites'
+✅ Dashboard: Fetched 0 sites
+🔍 Dashboard: Site handles: []
+🔍 Dashboard: Sites details: []
+⚠️ Dashboard: User has no sites, returning empty bookings
+✅ Dashboard: Returning data - sites: 0 bookings: 0 total count: 0 orders: 0
+ GET /api/dashboard 200 in 385ms (compile: 179ms, render: 207ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '7dc601fc-2f46-4bde-bda4-11057f01feea', error: undefined }
+✅ Dashboard: Using cookie auth, user: 7dc601fc-2f46-4bde-bda4-11057f01feea
+✅ Dashboard: User authenticated, fetching data for: 7dc601fc-2f46-4bde-bda4-11057f01feea
+🔍 Dashboard: Checked sites for user 7dc601fc-2f46-4bde-bda4-11057f01feea, found 0 sites
+⏭️ Dashboard: No sites found by user_id in sites, trying owner_email
+✅ Dashboard: Found 0 sites in table 'sites'
+✅ Dashboard: Fetched 0 sites
+🔍 Dashboard: Site handles: []
+🔍 Dashboard: Sites details: []
+⚠️ Dashboard: User has no sites, returning empty bookings
+✅ Dashboard: Returning data - sites: 0 bookings: 0 total count: 0 orders: 0
+ GET /api/dashboard 200 in 142ms (compile: 2ms, render: 140ms)
+ GET / 200 in 24ms (compile: 4ms, render: 20ms)
+ GET / 200 in 33ms (compile: 5ms, render: 28ms)
+ GET /login 200 in 50ms (compile: 8ms, render: 42ms)
+ GET /dashboard 200 in 53ms (compile: 4ms, render: 49ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 6 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 6
+ GET /api/dashboard 200 in 4.9s (compile: 1906µs, render: 4.9s)
+ GET /u/xxx 200 in 2.0s (compile: 1985ms, render: 32ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 2.8s (compile: 145ms, render: 2.6s)
+ GET /api/site?handle=xxx 200 in 1907ms (compile: 3ms, render: 1904ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 6 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 6
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 6 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 6
+ GET /api/dashboard 200 in 5.0s (compile: 5ms, render: 5.0s)
+ GET /api/dashboard 200 in 5.1s (compile: 11ms, render: 5.1s)
+✓ Compiled in 962ms
+ GET /u/xxx 200 in 105ms (compile: 59ms, render: 46ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 2.2s (compile: 3ms, render: 2.2s)
+ GET /api/site?handle=xxx 200 in 1725ms (compile: 3ms, render: 1722ms)
+⚠️ No Stripe account for handle: xxx - creating order without payment
+ POST /api/checkout 200 in 771ms (compile: 489ms, render: 282ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 7 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 7
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+ GET /api/dashboard 200 in 3.4s (compile: 3ms, render: 3.4s)
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 7 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 7
+ GET /api/dashboard 200 in 3.5s (compile: 3ms, render: 3.5s)
+ GET /u/xxx 200 in 100ms (compile: 57ms, render: 43ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 1650ms (compile: 2ms, render: 1648ms)
+ GET /api/site?handle=xxx 200 in 2.2s (compile: 2ms, render: 2.2s)
+⚠️ No Stripe account for handle: xxx - creating order without payment
+ POST /api/checkout 200 in 267ms (compile: 5ms, render: 262ms)
+ GET /dashboard 200 in 321ms (compile: 290ms, render: 32ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 9 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 9
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+ GET /api/dashboard 200 in 3.1s (compile: 3ms, render: 3.1s)
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 9 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 9
+ GET /api/dashboard 200 in 4.0s (compile: 3ms, render: 4.0s)
+✓ Compiled in 310ms
+ GET /dashboard 200 in 571ms (compile: 62ms, render: 509ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 9 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 9
+ GET /api/dashboard 200 in 3.8s (compile: 3ms, render: 3.8s)
+ GET /u/xxx 200 in 161ms (compile: 91ms, render: 70ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 2.8s (compile: 4ms, render: 2.8s)
+ GET /api/site?handle=xxx 200 in 2.6s (compile: 6ms, render: 2.6s)
+⚠️ No Stripe account for handle: xxx - creating order without payment
+ POST /api/checkout 200 in 774ms (compile: 6ms, render: 769ms)
+ GET /dashboard 200 in 24ms (compile: 4ms, render: 20ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 10 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 10
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 10 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 10
+ GET /api/dashboard 200 in 6.9s (compile: 2ms, render: 6.9s)
+ GET /api/dashboard 200 in 4.8s (compile: 3ms, render: 4.8s)
+✓ Compiled in 279ms
+ GET /u/capssss-y 200 in 101ms (compile: 56ms, render: 45ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: capssss-y editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: capssss-y editMode: false
+ GET /api/site?handle=capssss-y 200 in 2.2s (compile: 2ms, render: 2.2s)
+ GET /api/site?handle=capssss-y 200 in 1876ms (compile: 5ms, render: 1871ms)
+⚠️ No Stripe account for handle: capssss-y - creating order without payment
+ POST /api/checkout 200 in 422ms (compile: 22ms, render: 401ms)
+ GET /dashboard 200 in 87ms (compile: 60ms, render: 27ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 11 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 11
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 11 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 11
+ GET /api/dashboard 200 in 4.4s (compile: 4ms, render: 4.4s)
+ GET /api/dashboard 200 in 4.2s (compile: 5ms, render: 4.2s)
+✓ Compiled in 160ms
+ GET /u/handle 200 in 89ms (compile: 49ms, render: 40ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: handle editMode: false
+ GET /api/site?handle=handle 200 in 300ms (compile: 2ms, render: 298ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: handle editMode: false
+ GET /api/site?handle=handle 200 in 110ms (compile: 2ms, render: 108ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 11 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 11
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+ GET /api/dashboard 200 in 4.9s (compile: 144ms, render: 4.8s)
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 11 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 11
+ GET /api/dashboard 200 in 6.2s (compile: 6ms, render: 6.2s)
+ GET /u/xxx 200 in 97ms (compile: 55ms, render: 42ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 2.0s (compile: 2ms, render: 2.0s)
+ GET /api/site?handle=xxx 200 in 1826ms (compile: 4ms, render: 1822ms)
+⚠️ No Stripe account for handle: xxx - creating order without payment
+ POST /api/checkout 200 in 330ms (compile: 4ms, render: 327ms)
+ GET /dashboard 200 in 25ms (compile: 4ms, render: 21ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 12 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 12
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+ GET /api/dashboard 200 in 3.6s (compile: 1791µs, render: 3.6s)
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 12 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 12
+ GET /api/dashboard 200 in 4.6s (compile: 3ms, render: 4.6s)
+✓ Compiled in 613ms
+ GET /u/xxx 200 in 97ms (compile: 49ms, render: 49ms)
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+Environment check - SUPABASE_URL: present
+Environment check - SUPABASE_SERVICE_ROLE_KEY: present
+✅ /api/site using SUPABASE project ref: djghvdbpbjzyxahusnri
+GET /api/site handle: xxx editMode: false
+ GET /api/site?handle=xxx 200 in 2.6s (compile: 6ms, render: 2.6s)
+ GET /api/site?handle=xxx 200 in 1491ms (compile: 5ms, render: 1486ms)
+⚠️ No Stripe account for handle: xxx - creating order without payment
+ POST /api/checkout 200 in 251ms (compile: 2ms, render: 249ms)
+ GET /dashboard 200 in 140ms (compile: 103ms, render: 38ms)
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 13 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 13
+🍪 Available cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🍪 getAll() returning cookies: sb-access-token, sb-refresh-token, __next_hmr_refresh_hash__, sb-djghvdbpbjzyxahusnri-auth-token
+🔐 Dashboard: Cookie auth result { userId: '304ffadb-db71-4cba-a622-1300beb80782', error: undefined }
+✅ Dashboard: Using cookie auth, user: 304ffadb-db71-4cba-a622-1300beb80782
+✅ Dashboard: User authenticated, fetching data for: 304ffadb-db71-4cba-a622-1300beb80782
+🔍 Dashboard: Checked sites for user 304ffadb-db71-4cba-a622-1300beb80782, found 6 sites
+✅ Dashboard: Found 6 sites in table 'sites'
+✅ Dashboard: Fetched 6 sites
+🔍 Dashboard: Site handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+🔍 Dashboard: Sites details: [
+  { handle: 'handle', brandName: 'Your shop name' },
+  { handle: 'xxx', brandName: 'xx' },
+  { handle: 'xxxbooking', brandName: 'xxx booking' },
+  { handle: 'capssss-y', brandName: 'pro' },
+  { handle: 'gracie', brandName: 'grace' },
+  { handle: 'digital', brandName: 'digital' }
+]
+📋 Dashboard: Filtering bookings for handles: [ 'handle', 'xxx', 'xxxbooking', 'capssss-y', 'gracie', 'digital' ]
+✅ Dashboard: Fetched 5 bookings from query
+🔍 Dashboard: First 3 booking handles: [
+  { id: 29, handle: 'xxxbooking', customer: 'josiah' },
+  { id: 28, handle: 'gracie', customer: 'jasmin' },
+  { id: 27, handle: 'xxxbooking', customer: 'karen' }
+]
+📋 Processed bookings sample: [
+  {
+    id: 26,
+    team_member_name: 'S 2',
+    slot_start: '2026-01-27T13:00:00+00:00',
+    site_name: 'xxx booking'
+  },
+  {
+    id: 24,
+    team_member_name: 'Staff 1',
+    slot_start: '2026-01-22T09:00:00+00:00',
+    site_name: 'grace'
+  }
+]
+✅ Dashboard: Total bookings count: 5
+✅ Dashboard: Fetched 13 orders
+✅ Dashboard: Returning data - sites: 6 bookings: 5 total count: 5 orders: 13
+ GET /api/dashboard 200 in 6.0s (compile: 82ms, render: 5.9s)
+ GET /api/dashboard 200 in 5.1s (compile: 3ms, render: 5.1s)
+ GET /dashboard 200 in 3.7s (compile: 1666ms, render: 2.0s)
+[?25h

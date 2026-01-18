@@ -47,6 +47,26 @@ export default function HandlePage() {
 	const [loading, setLoading] = useState(true);
 	const [err, setErr] = useState<string | null>(null);
 
+	// Listen for live preview updates from the create page via BroadcastChannel
+	useEffect(() => {
+		const isPreview = sp?.get("preview") === "1";
+		if (!isPreview) return;
+
+		if (typeof BroadcastChannel === "undefined") return;
+
+		const bc = new BroadcastChannel("piqo-preview");
+		bc.onmessage = (e) => {
+			if (e.data?.type === "config" && e.data?.config) {
+				console.log("[Preview] Received live config update:", e.data.config);
+				setCfg(e.data.config);
+				setLoading(false);
+				setErr(null);
+			}
+		};
+
+		return () => bc.close();
+	}, [sp]);
+
 	useEffect(() => {
 		let cancelled = false;
 		let retries = 0;
@@ -100,6 +120,7 @@ export default function HandlePage() {
 			mode={cfg.mode}
 			brandName={cfg.brandName}
 			tagline={cfg.tagline}
+			businessDescription={cfg.businessDescription}
 			items={cfg.items}
 			appearance={cfg.appearance}
 			staffProfiles={cfg.staffProfiles}

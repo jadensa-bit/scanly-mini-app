@@ -34,6 +34,13 @@ type Order = {
   status?: string;
   created_at?: string;
   site_brand_name?: string;
+  order_items?: Array<{
+    title?: string;
+    price?: string;
+    quantity?: number;
+    note?: string;
+  }>;
+  amount_cents?: number;
 };
 
 type Site = {
@@ -77,6 +84,10 @@ export default function DashboardPage() {
   // Week selection state
   const [selectedWeek, setSelectedWeek] = useState<'this' | 'last' | 'next'>('this');
   const [selectedOrderWeek, setSelectedOrderWeek] = useState<'this' | 'last' | 'next'>('this');
+  
+  // Completed orders state
+  const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
+  const [showCompletedOrders, setShowCompletedOrders] = useState(true);
 
   // Helper functions for week calculations
   const getWeekBounds = (weekOffset: number) => {
@@ -89,6 +100,19 @@ export default function DashboardPage() {
     endOfWeek.setDate(startOfWeek.getDate() + 7);
     endOfWeek.setHours(23, 59, 59, 999);
     return { startOfWeek, endOfWeek };
+  };
+  
+  // Toggle order completion status
+  const toggleOrderComplete = (orderId: string) => {
+    setCompletedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
 
   const getWeekLabel = (week: 'this' | 'last' | 'next') => {
@@ -140,7 +164,11 @@ export default function DashboardPage() {
   const filteredOrders = orders.filter(o => {
     const orderDate = o.created_at ? new Date(o.created_at) : null;
     if (!orderDate) return false;
-    return orderDate >= orderWeekStart && orderDate < orderWeekEnd;
+    const inWeek = orderDate >= orderWeekStart && orderDate < orderWeekEnd;
+    // Filter by completion status
+    const isCompleted = completedOrders.has(String(o.id));
+    if (!showCompletedOrders && isCompleted) return false;
+    return inWeek;
   });
   const groupedOrders = groupByDate(filteredOrders, 'created_at');
 
@@ -532,26 +560,31 @@ export default function DashboardPage() {
         </section>
 
         {/* Sites Section */}
-        <section className="mb-10 sm:mb-14">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-5 sm:mb-8">
-            <div>
-              <div className="flex items-center gap-2.5 sm:gap-4 mb-1 sm:mb-2">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-cyan-500 rounded-lg sm:rounded-xl blur-md opacity-50"></div>
-                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg">
-                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+        <section className="mb-12 sm:mb-16">
+          <div className="bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0">
+              <div>
+                <div className="flex items-center gap-3 sm:gap-4 mb-2">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl blur-lg opacity-60"></div>
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
+                      <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">Your Piqos</h2>
+                    <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">Manage your published storefronts</p>
                   </div>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Your Piqos</h2>
               </div>
-              <p className="text-gray-400 text-xs sm:text-sm ml-11 sm:ml-14 font-medium">View and manage all your published stores</p>
+              <Link
+                href="/create"
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 active:scale-95 text-white font-bold rounded-xl sm:rounded-2xl transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 text-sm sm:text-base shadow-lg min-h-[44px] sm:min-h-0"
+              >
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>Create New Piqo</span>
+              </Link>
             </div>
-            <Link
-              href="/create"
-              className="px-4 sm:px-5 py-2.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/50 text-cyan-400 font-semibold rounded-lg sm:rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/30 text-sm text-center min-h-[44px] sm:min-h-0 flex items-center justify-center"
-            >
-              Create New
-            </Link>
           </div>
           {sites.length === 0 ? (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8 text-center">
@@ -561,13 +594,34 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {sites.map((site) => {
-                const color = site.config?.appearance?.accent || '#06b6d4';
-                const hasStripeAccount = !!site.stripe_account_id;
-                const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
-                const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
-                const mode = site.config?.mode || 'unknown';
+            <>
+              {/* Group sites by mode */}
+              {(() => {
+                const servicesSites = sites.filter(s => s.config?.mode === 'services');
+                const productsSites = sites.filter(s => s.config?.mode === 'products');
+                const digitalSites = sites.filter(s => s.config?.mode === 'digital');
+                const bookingSites = sites.filter(s => s.config?.mode === 'booking');
+                const otherSites = sites.filter(s => !['services', 'products', 'digital', 'booking'].includes(s.config?.mode || ''));
+                
+                return (
+                  <>
+                    {/* Services Section */}
+                    {servicesSites.length > 0 && (
+                      <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-blue-500/20">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <span className="text-lg">🔧</span>
+                            <span className="text-sm font-bold text-blue-300 uppercase tracking-wider">Services</span>
+                          </div>
+                          <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs font-bold rounded-full">{servicesSites.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                          {servicesSites.map((site) => {
+                            const color = site.config?.appearance?.accent || '#06b6d4';
+                            const hasStripeAccount = !!site.stripe_account_id;
+                            const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
+                            const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
+                            const mode = site.config?.mode || 'unknown';
                 
                 return (
                   <div key={site.handle} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300 p-3 sm:p-4 flex flex-col gap-3 group active:scale-[0.98]">
@@ -681,40 +735,458 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Products Section */}
+                    {productsSites.length > 0 && (
+                      <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-orange-500/20">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                            <span className="text-lg">🛍️</span>
+                            <span className="text-sm font-bold text-orange-300 uppercase tracking-wider">Products</span>
+                          </div>
+                          <span className="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs font-bold rounded-full">{productsSites.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                          {productsSites.map((site) => {
+                            const color = site.config?.appearance?.accent || '#06b6d4';
+                            const hasStripeAccount = !!site.stripe_account_id;
+                            const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
+                            const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
+                            const mode = site.config?.mode || 'unknown';
+                            
+                            return (
+                              <div key={site.handle} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300 p-3 sm:p-4 flex flex-col gap-3 group active:scale-[0.98]">
+                                {/* Header: Logo + Brand name + handle + mode badge */}
+                                <div className="flex items-start gap-2.5 sm:gap-3">
+                                  {/* Brand Logo */}
+                                  {site.config?.brandLogo ? (
+                                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/10">
+                                      <img 
+                                        src={site.config.brandLogo} 
+                                        alt={site.config?.brandName || site.handle}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shrink-0 ring-2 ring-white/10">
+                                      {(site.config?.brandName || site.handle)[0].toUpperCase()}
+                                    </div>
+                                  )}
+                                  {/* Brand info and mode badge */}
+                                  <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5" title={site.config?.brandName || site.handle}>
+                                        {site.config?.brandName || site.handle}
+                                      </h3>
+                                      <p className="text-[11px] sm:text-xs text-gray-400 truncate">@{site.handle}</p>
+                                    </div>
+                                    {/* Mode badge */}
+                                    <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider shrink-0 ${
+                                      mode === 'services' ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30' :
+                                      mode === 'products' ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30' :
+                                      mode === 'digital' ? 'bg-pink-500/20 text-pink-300 ring-1 ring-pink-500/30' :
+                                      mode === 'booking' ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30' :
+                                      'bg-gray-500/20 text-gray-300 ring-1 ring-gray-500/30'
+                                    }`}>
+                                      <span className="hidden sm:inline">{mode === 'services' ? '🔧' : mode === 'products' ? '🛍️' : mode === 'digital' ? '⚡' : mode === 'booking' ? '📅' : '📦'} </span>{mode}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Metadata: Stripe status + published date */}
+                                <div className="flex items-center justify-between gap-2 pt-2 sm:pt-2.5 border-t border-white/5">
+                                  <div className="flex items-center gap-1 sm:gap-1.5">
+                                    <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-[10px] sm:text-xs text-gray-500">
+                                      {site.updated_at ? new Date(site.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                                    </span>
+                                  </div>
+                                  {stripeFullyEnabled ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 text-[10px] sm:text-xs font-semibold ring-1 ring-green-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                                      <span className="hidden xs:inline">Stripe</span>
+                                    </span>
+                                  ) : stripeIncomplete ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[10px] sm:text-xs font-semibold ring-1 ring-yellow-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                                      <span className="hidden xs:inline">Stripe</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 text-[10px] sm:text-xs font-semibold ring-1 ring-gray-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                      <span className="hidden xs:inline">No Stripe</span>
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Primary actions: Edit + View */}
+                                <div className="flex gap-1.5 sm:gap-2">
+                                  <button 
+                                    onClick={() => openEditPreview(site.handle, site.config)}
+                                    className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-blue-600/80 to-cyan-600/80 hover:from-blue-600 hover:to-cyan-600 active:scale-95 border border-blue-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 min-h-[44px] sm:min-h-0">
+                                    <Edit className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <Link 
+                                    href={`/u/${site.handle}`}
+                                    className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-600 hover:to-emerald-600 active:scale-95 border border-green-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 min-h-[44px] sm:min-h-0">
+                                    <Eye className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                                    <span>View</span>
+                                  </Link>
+                                </div>
+
+                                {/* Secondary actions: Stripe + QR + Delete */}
+                                <div className="flex gap-1.5 pt-2 border-t border-white/5">
+                                  <Link
+                                    href={`/connect?handle=${site.handle}`}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-purple-600/20 hover:bg-purple-600/30 active:scale-95 border border-purple-500/40 text-purple-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title={stripeFullyEnabled ? 'Manage Stripe' : stripeIncomplete ? 'Finish Stripe setup' : 'Connect Stripe'}
+                                  >
+                                    <Settings className="h-3 w-3" />
+                                    <span>{stripeFullyEnabled ? 'Manage' : stripeIncomplete ? 'Setup' : 'Stripe'}</span>
+                                  </Link>
+                                  <button 
+                                    onClick={() => downloadQR(site.handle)}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/40 text-cyan-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title="Download QR Code"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    <span>QR</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => deleteSite(site.handle)}
+                                    disabled={deletingHandle === site.handle}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-red-600/20 hover:bg-red-600/30 active:scale-95 border border-red-500/40 text-red-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 disabled:opacity-50 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title="Delete Piqo"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    <span>{deletingHandle === site.handle ? '...' : 'Delete'}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Digital Section */}
+                    {digitalSites.length > 0 && (
+                      <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-pink-500/20">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                            <span className="text-lg">⚡</span>
+                            <span className="text-sm font-bold text-pink-300 uppercase tracking-wider">Digital</span>
+                          </div>
+                          <span className="px-2 py-1 bg-pink-500/20 text-pink-300 text-xs font-bold rounded-full">{digitalSites.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                          {digitalSites.map((site) => {
+                            const color = site.config?.appearance?.accent || '#06b6d4';
+                            const hasStripeAccount = !!site.stripe_account_id;
+                            const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
+                            const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
+                            const mode = site.config?.mode || 'unknown';
+                            
+                            return (
+                              <div key={site.handle} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300 p-3 sm:p-4 flex flex-col gap-3 group active:scale-[0.98]">
+                                {/* Header: Logo + Brand name + handle + mode badge */}
+                                <div className="flex items-start gap-2.5 sm:gap-3">
+                                  {/* Brand Logo */}
+                                  {site.config?.brandLogo ? (
+                                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/10">
+                                      <img 
+                                        src={site.config.brandLogo} 
+                                        alt={site.config?.brandName || site.handle}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shrink-0 ring-2 ring-white/10">
+                                      {(site.config?.brandName || site.handle)[0].toUpperCase()}
+                                    </div>
+                                  )}
+                                  {/* Brand info and mode badge */}
+                                  <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5" title={site.config?.brandName || site.handle}>
+                                        {site.config?.brandName || site.handle}
+                                      </h3>
+                                      <p className="text-[11px] sm:text-xs text-gray-400 truncate">@{site.handle}</p>
+                                    </div>
+                                    {/* Mode badge */}
+                                    <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider shrink-0 ${
+                                      mode === 'services' ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30' :
+                                      mode === 'products' ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30' :
+                                      mode === 'digital' ? 'bg-pink-500/20 text-pink-300 ring-1 ring-pink-500/30' :
+                                      mode === 'booking' ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30' :
+                                      'bg-gray-500/20 text-gray-300 ring-1 ring-gray-500/30'
+                                    }`}>
+                                      <span className="hidden sm:inline">{mode === 'services' ? '🔧' : mode === 'products' ? '🛍️' : mode === 'digital' ? '⚡' : mode === 'booking' ? '📅' : '📦'} </span>{mode}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Metadata: Stripe status + published date */}
+                                <div className="flex items-center justify-between gap-2 pt-2 sm:pt-2.5 border-t border-white/5">
+                                  <div className="flex items-center gap-1 sm:gap-1.5">
+                                    <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-[10px] sm:text-xs text-gray-500">
+                                      {site.updated_at ? new Date(site.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                                    </span>
+                                  </div>
+                                  {stripeFullyEnabled ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 text-[10px] sm:text-xs font-semibold ring-1 ring-green-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                                      <span className="hidden xs:inline">Stripe</span>
+                                    </span>
+                                  ) : stripeIncomplete ? (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[10px] sm:text-xs font-semibold ring-1 ring-yellow-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                                      <span className="hidden xs:inline">Stripe</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 text-[10px] sm:text-xs font-semibold ring-1 ring-gray-500/30">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                      <span className="hidden xs:inline">No Stripe</span>
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Primary actions: Edit + View */}
+                                <div className="flex gap-1.5 sm:gap-2">
+                                  <button 
+                                    onClick={() => openEditPreview(site.handle, site.config)}
+                                    className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-blue-600/80 to-cyan-600/80 hover:from-blue-600 hover:to-cyan-600 active:scale-95 border border-blue-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 min-h-[44px] sm:min-h-0">
+                                    <Edit className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <Link 
+                                    href={`/u/${site.handle}`}
+                                    className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-600 hover:to-emerald-600 active:scale-95 border border-green-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 min-h-[44px] sm:min-h-0">
+                                    <Eye className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                                    <span>View</span>
+                                  </Link>
+                                </div>
+
+                                {/* Secondary actions: Stripe + QR + Delete */}
+                                <div className="flex gap-1.5 pt-2 border-t border-white/5">
+                                  <Link
+                                    href={`/connect?handle=${site.handle}`}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-purple-600/20 hover:bg-purple-600/30 active:scale-95 border border-purple-500/40 text-purple-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title={stripeFullyEnabled ? 'Manage Stripe' : stripeIncomplete ? 'Finish Stripe setup' : 'Connect Stripe'}
+                                  >
+                                    <Settings className="h-3 w-3" />
+                                    <span>{stripeFullyEnabled ? 'Manage' : stripeIncomplete ? 'Setup' : 'Stripe'}</span>
+                                  </Link>
+                                  <button 
+                                    onClick={() => downloadQR(site.handle)}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/40 text-cyan-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title="Download QR Code"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    <span>QR</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => deleteSite(site.handle)}
+                                    disabled={deletingHandle === site.handle}
+                                    className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-red-600/20 hover:bg-red-600/30 active:scale-95 border border-red-500/40 text-red-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 disabled:opacity-50 hover:scale-105 min-h-[44px] sm:min-h-0"
+                                    title="Delete Piqo"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    <span>{deletingHandle === site.handle ? '...' : 'Delete'}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Other/Unknown modes */}
+                    {(bookingSites.length > 0 || otherSites.length > 0) && (
+                      <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-500/20">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-500/10 rounded-lg border border-gray-500/30">
+                            <span className="text-lg">📦</span>
+                            <span className="text-sm font-bold text-gray-300 uppercase tracking-wider">Other</span>
+                          </div>
+                          <span className="px-2 py-1 bg-gray-500/20 text-gray-300 text-xs font-bold rounded-full">{bookingSites.length + otherSites.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                          {[...bookingSites, ...otherSites].map((site) => {
+                            const color = site.config?.appearance?.accent || '#06b6d4';
+                            const hasStripeAccount = !!site.stripe_account_id;
+                            const stripeFullyEnabled = hasStripeAccount && site.stripe_charges_enabled && site.stripe_payouts_enabled;
+                            const stripeIncomplete = hasStripeAccount && !stripeFullyEnabled;
+                            const mode = site.config?.mode || 'unknown';
+                            
+                            return (
+                  <div key={site.handle} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300 p-3 sm:p-4 flex flex-col gap-3 group active:scale-[0.98]">
+                    {/* Header: Logo + Brand name + handle + mode badge */}
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      {/* Brand Logo */}
+                      {site.config?.brandLogo ? (
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/10">
+                          <img 
+                            src={site.config.brandLogo} 
+                            alt={site.config?.brandName || site.handle}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shrink-0 ring-2 ring-white/10">
+                          {(site.config?.brandName || site.handle)[0].toUpperCase()}
+                        </div>
+                      )}
+                      {/* Brand info and mode badge */}
+                      <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-white truncate mb-0.5" title={site.config?.brandName || site.handle}>
+                            {site.config?.brandName || site.handle}
+                          </h3>
+                          <p className="text-[11px] sm:text-xs text-gray-400 truncate">@{site.handle}</p>
+                        </div>
+                        {/* Mode badge */}
+                        <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider shrink-0 ${
+                          mode === 'services' ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30' :
+                          mode === 'products' ? 'bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/30' :
+                          mode === 'digital' ? 'bg-pink-500/20 text-pink-300 ring-1 ring-pink-500/30' :
+                          mode === 'booking' ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30' :
+                          'bg-gray-500/20 text-gray-300 ring-1 ring-gray-500/30'
+                        }`}>
+                          <span className="hidden sm:inline">{mode === 'services' ? '🔧' : mode === 'products' ? '🛍️' : mode === 'digital' ? '⚡' : mode === 'booking' ? '📅' : '📦'} </span>{mode}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Metadata: Stripe status + published date */}
+                    <div className="flex items-center justify-between gap-2 pt-2 sm:pt-2.5 border-t border-white/5">
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-[10px] sm:text-xs text-gray-500">
+                          {site.updated_at ? new Date(site.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                        </span>
+                      </div>
+                      {stripeFullyEnabled ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 text-[10px] sm:text-xs font-semibold ring-1 ring-green-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                          <span className="hidden xs:inline">Stripe</span>
+                        </span>
+                      ) : stripeIncomplete ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 text-[10px] sm:text-xs font-semibold ring-1 ring-yellow-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                          <span className="hidden xs:inline">Stripe</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-400 text-[10px] sm:text-xs font-semibold ring-1 ring-gray-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                          <span className="hidden xs:inline">No Stripe</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Primary actions: Edit + View */}
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <button 
+                        onClick={() => openEditPreview(site.handle, site.config)}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-blue-600/80 to-cyan-600/80 hover:from-blue-600 hover:to-cyan-600 active:scale-95 border border-blue-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 min-h-[44px] sm:min-h-0">
+                        <Edit className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <Link 
+                        href={`/u/${site.handle}`}
+                        className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-2.5 sm:py-2 bg-gradient-to-r from-green-600/80 to-emerald-600/80 hover:from-green-600 hover:to-emerald-600 active:scale-95 border border-green-500/50 text-white rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 min-h-[44px] sm:min-h-0">
+                        <Eye className="h-3.5 w-3.5 sm:h-3.5 sm:w-3.5" />
+                        <span>View</span>
+                      </Link>
+                    </div>
+
+                    {/* Secondary actions: Stripe + QR + Delete */}
+                    <div className="flex gap-1.5 pt-2 border-t border-white/5">
+                      <Link
+                        href={`/connect?handle=${site.handle}`}
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-purple-600/20 hover:bg-purple-600/30 active:scale-95 border border-purple-500/40 text-purple-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title={stripeFullyEnabled ? 'Manage Stripe' : stripeIncomplete ? 'Finish Stripe setup' : 'Connect Stripe'}
+                      >
+                        <Settings className="h-3 w-3" />
+                        <span>{stripeFullyEnabled ? 'Manage' : stripeIncomplete ? 'Setup' : 'Stripe'}</span>
+                      </Link>
+                      <button 
+                        onClick={() => downloadQR(site.handle)}
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 active:scale-95 border border-cyan-500/40 text-cyan-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title="Download QR Code"
+                      >
+                        <Download className="h-3 w-3" />
+                        <span>QR</span>
+                      </button>
+                      <button 
+                        onClick={() => deleteSite(site.handle)}
+                        disabled={deletingHandle === site.handle}
+                        className="flex-1 flex items-center justify-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 sm:py-1.5 bg-red-600/20 hover:bg-red-600/30 active:scale-95 border border-red-500/40 text-red-300 rounded-lg font-medium text-[10px] sm:text-xs transition-all duration-200 disabled:opacity-50 hover:scale-105 min-h-[44px] sm:min-h-0"
+                        title="Delete Piqo"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>{deletingHandle === site.handle ? '...' : 'Delete'}</span>
+                      </button>
+                    </div>
+                  </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 );
-              })}
-            </div>
+              })()}
+            </>
           )}
         </section>
 
         {/* Bookings Section */}
-        <section className="mb-14">
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-purple-500 rounded-xl blur-md opacity-50"></div>
-                    <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
+        <section className="mb-16">
+          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur-lg opacity-60"></div>
+                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
+                    <Calendar className="h-7 w-7 text-white" />
                   </div>
-                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Recent Bookings</h2>
                 </div>
-                <p className="text-gray-400 text-sm ml-14 font-medium">Live updates from your booking pages</p>
+                <div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Recent Bookings</h2>
+                  <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">Live updates from your storefronts</p>
+                </div>
               </div>
-              <div className="text-right bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-3">
-                <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-purple-500">{bookings.length}</p>
-                <p className="text-xs text-purple-400 uppercase tracking-widest font-bold mt-1">Total</p>
+              <div className="flex items-center gap-4">
+                <div className="text-center bg-purple-500/20 border border-purple-500/40 rounded-xl px-6 py-3 shadow-lg">
+                  <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-purple-500">{bookings.length}</p>
+                  <p className="text-xs text-purple-400 uppercase tracking-widest font-bold mt-1">Total</p>
+                </div>
               </div>
             </div>
+          </div>
+          <div className="mb-6">
             {/* Week Switcher */}
-            <div className="ml-14 flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedWeek('last')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedWeek === 'last'
-                    ? 'bg-purple-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-purple-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
@@ -722,9 +1194,9 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setSelectedWeek('this')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedWeek === 'this'
-                    ? 'bg-purple-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-purple-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
@@ -732,15 +1204,15 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setSelectedWeek('next')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedWeek === 'next'
-                    ? 'bg-purple-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-purple-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
                 Next Week
               </button>
-              <span className="ml-2 text-xs text-gray-500 font-medium">{getWeekLabel(selectedWeek)}</span>
+              <span className="ml-2 text-xs text-gray-400 font-medium px-3 py-1.5 bg-white/5 rounded-lg">{getWeekLabel(selectedWeek)}</span>
             </div>
           </div>
           {loading ? (
@@ -907,24 +1379,53 @@ export default function DashboardPage() {
 
         {/* Orders Section */}
         <section>
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-pink-500 rounded-xl blur-md opacity-50"></div>
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow-lg">
-                  <ShoppingCart className="h-5 w-5 text-white" />
+          <div className="bg-gradient-to-r from-pink-500/10 to-orange-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 rounded-xl blur-lg opacity-60"></div>
+                  <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center shadow-2xl">
+                    <ShoppingCart className="h-7 w-7 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400">Recent Orders</h2>
+                  <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">Track purchases from your storefronts</p>
                 </div>
               </div>
-              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-400">Recent Orders</h2>
+              <div className="text-center bg-pink-500/20 border border-pink-500/40 rounded-xl px-6 py-3 shadow-lg">
+                <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-pink-300 to-pink-500">{orders.length}</p>
+                <p className="text-xs text-pink-400 uppercase tracking-widest font-bold mt-1">Total</p>
+              </div>
             </div>
-            <p className="text-gray-400 text-sm ml-14 mb-4 font-medium">Track all purchases from your stores</p>
+          </div>
+          <div className="mb-6 space-y-3">
+            {/* Show/Hide Completed Toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowCompletedOrders(!showCompletedOrders)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
+                  showCompletedOrders
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-500/50'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
+                }`}
+              >
+                <Check className="h-4 w-4" />
+                {showCompletedOrders ? 'Hide' : 'Show'} Completed Orders
+              </button>
+              {completedOrders.size > 0 && (
+                <span className="text-xs text-gray-400 px-3 py-1.5 bg-white/5 rounded-lg">
+                  {completedOrders.size} completed
+                </span>
+              )}
+            </div>
             {/* Week Switcher for Orders */}
-            <div className="ml-14 flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedOrderWeek('last')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedOrderWeek === 'last'
-                    ? 'bg-pink-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-pink-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
@@ -932,9 +1433,9 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setSelectedOrderWeek('this')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedOrderWeek === 'this'
-                    ? 'bg-pink-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-pink-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
@@ -942,15 +1443,15 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setSelectedOrderWeek('next')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md ${
                   selectedOrderWeek === 'next'
-                    ? 'bg-pink-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-pink-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300'
                 }`}
               >
                 Next Week
               </button>
-              <span className="ml-2 text-xs text-gray-500 font-medium">{getWeekLabel(selectedOrderWeek)}</span>
+              <span className="ml-2 text-xs text-gray-400 font-medium px-3 py-1.5 bg-white/5 rounded-lg">{getWeekLabel(selectedOrderWeek)}</span>
             </div>
           </div>
           {loading ? (
@@ -1005,8 +1506,12 @@ export default function DashboardPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                        {(dateOrders as Order[]).map((o: Order, index: number) => (
-                    <tr key={String(o.id) || `order-${index}`} className="hover:bg-white/5 transition-all duration-200 group">
+                        {(dateOrders as Order[]).map((o: Order, index: number) => {
+                          const isCompleted = completedOrders.has(String(o.id));
+                          return (
+                    <tr key={String(o.id) || `order-${index}`} className={`hover:bg-white/5 transition-all duration-200 group ${
+                      isCompleted ? 'opacity-60 bg-green-500/5' : ''
+                    }`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 text-white flex items-center justify-center text-sm font-bold shadow-lg">
@@ -1018,7 +1523,21 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-white">{o.item_title || '—'}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-white">
+                        <div>
+                          {o.order_items && Array.isArray(o.order_items) && o.order_items.length > 0 ? (
+                            <>
+                              {o.order_items.map((item: any, idx: number) => (
+                                <p key={idx} className={`font-semibold ${idx > 0 ? 'mt-1 text-gray-300' : ''}`}>
+                                  {item.quantity && item.quantity > 1 ? `${item.quantity}x ` : ''}{item.title || 'Item'}
+                                </p>
+                              ))}
+                            </>
+                          ) : (
+                            <p className="font-semibold">{o.item_title || '—'}</p>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
                           <p className="font-semibold text-white">{o.site_brand_name || o.handle || '—'}</p>
@@ -1040,7 +1559,9 @@ export default function DashboardPage() {
                           <span className="text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm font-bold text-white">{o.item_price || '—'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-white">
+                        {o.amount_cents ? `$${(o.amount_cents / 100).toFixed(2)}` : (o.item_price || '—')}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-300">
                         {o.created_at ? (
                           <p className="font-semibold whitespace-nowrap">
@@ -1051,19 +1572,39 @@ export default function DashboardPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(o);
-                            setOrderDetailOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/50 text-pink-300 font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
+                              <Check className="h-3 w-3" />
+                              Complete
+                            </span>
+                          )}
+                          <button
+                            onClick={() => toggleOrderComplete(String(o.id))}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                              isCompleted
+                                ? 'bg-gray-600/20 hover:bg-gray-600/30 border-gray-500/50 text-gray-300'
+                                : 'bg-green-600/20 hover:bg-green-600/30 border-green-500/50 text-green-300'
+                            }`}
+                            title={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            {isCompleted ? 'Undo' : 'Complete'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(o);
+                              setOrderDetailOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/50 text-pink-300 font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            View
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                         </tbody>
                       </table>
                     </div>
@@ -1222,27 +1763,58 @@ export default function DashboardPage() {
                 {/* Order Items */}
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Items</p>
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{selectedOrder.item_title || 'Unnamed Item'}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {selectedOrder.mode && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                selectedOrder.mode === 'products' ? 'bg-orange-100 text-orange-800' :
-                                selectedOrder.mode === 'digital' ? 'bg-pink-100 text-pink-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {selectedOrder.mode === 'products' ? '🛍️ Products' : selectedOrder.mode === 'digital' ? '⚡ Digital' : selectedOrder.mode}
-                              </span>
-                            )}
-                            <span className="text-xs text-gray-500">Qty: 1</span>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-200">
+                    {/* Check if order has multiple items in order_items array */}
+                    {selectedOrder.order_items && Array.isArray(selectedOrder.order_items) && selectedOrder.order_items.length > 0 ? (
+                      // Display all items from the cart
+                      selectedOrder.order_items.map((orderItem: any, idx: number) => (
+                        <div key={idx} className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{orderItem.title || 'Unnamed Item'}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {idx === 0 && selectedOrder.mode && (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    selectedOrder.mode === 'products' ? 'bg-orange-100 text-orange-800' :
+                                    selectedOrder.mode === 'digital' ? 'bg-pink-100 text-pink-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {selectedOrder.mode === 'products' ? '🛍️ Products' : selectedOrder.mode === 'digital' ? '⚡ Digital' : selectedOrder.mode}
+                                  </span>
+                                )}
+                                <span className="text-xs text-gray-500">Qty: {orderItem.quantity || 1}</span>
+                                {orderItem.note && (
+                                  <span className="text-xs text-gray-400">• {orderItem.note}</span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="font-bold text-gray-900">{orderItem.price || '—'}</p>
                           </div>
                         </div>
-                        <p className="font-bold text-gray-900">{selectedOrder.item_price || '—'}</p>
+                      ))
+                    ) : (
+                      // Fallback to single item display (legacy orders)
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{selectedOrder.item_title || 'Unnamed Item'}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {selectedOrder.mode && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  selectedOrder.mode === 'products' ? 'bg-orange-100 text-orange-800' :
+                                  selectedOrder.mode === 'digital' ? 'bg-pink-100 text-pink-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {selectedOrder.mode === 'products' ? '🛍️ Products' : selectedOrder.mode === 'digital' ? '⚡ Digital' : selectedOrder.mode}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-500">Qty: 1</span>
+                            </div>
+                          </div>
+                          <p className="font-bold text-gray-900">{selectedOrder.item_price || '—'}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
