@@ -25,6 +25,7 @@ import AuthButtons from "@/components/AuthButtons";
 function InstallBanner() {
   const [showBanner, setShowBanner] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     // Check if already installed
@@ -57,17 +58,26 @@ function InstallBanner() {
     };
   }, [deferredPrompt]);
 
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowBanner(false);
+  const handleInstall = () => {
+    // Immediate UI feedback
+    setIsInstalling(true);
+    
+    // Defer heavy async work
+    setTimeout(() => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult: any) => {
+          if (choiceResult.outcome === 'accepted') {
+            setShowBanner(false);
+          }
+          setIsInstalling(false);
+        });
+      } else {
+        // For Safari - show instructions
+        alert('To install:\niOS: Tap Share → Add to Home Screen\nAndroid: Tap Menu (⋮) → Install app');
+        setIsInstalling(false);
       }
-    } else {
-      // For Safari - show instructions
-      alert('To install:\niOS: Tap Share → Add to Home Screen\nAndroid: Tap Menu (⋮) → Install app');
-    }
+    }, 0);
   };
 
   if (!showBanner) return null;
@@ -90,9 +100,10 @@ function InstallBanner() {
           </div>
           <button
             onClick={handleInstall}
-            className="flex-shrink-0 px-4 sm:px-6 py-2.5 bg-white text-purple-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-lg active:scale-95"
+            disabled={isInstalling}
+            className="flex-shrink-0 px-4 sm:px-6 py-2.5 bg-white text-purple-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Download
+            {isInstalling ? 'Installing...' : 'Download'}
           </button>
           <button
             onClick={() => setShowBanner(false)}

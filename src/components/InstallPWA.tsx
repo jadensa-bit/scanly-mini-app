@@ -11,6 +11,7 @@ export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -28,19 +29,27 @@ export default function InstallPWA() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      // Chrome/Edge - use native prompt
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
+  const handleInstall = () => {
+    // Immediate UI feedback
+    setIsInstalling(true);
+    
+    // Defer async work to next tick
+    setTimeout(() => {
+      if (deferredPrompt) {
+        // Chrome/Edge - use native prompt
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(({ outcome }) => {
+          if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+          }
+          setIsInstalling(false);
+        });
+      } else {
+        // Show instructions for Safari/other browsers
+        setShowInstructions(true);
+        setIsInstalling(false);
       }
-    } else {
-      // Show instructions for Safari/other browsers
-      setShowInstructions(true);
-    }
+    }, 0);
   };
 
   // Don't show if already installed as standalone app
@@ -50,7 +59,8 @@ export default function InstallPWA() {
     <>
       <button
         onClick={handleInstall}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-cyan-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl active:scale-95 animate-pulse hover:animate-none"
+        disabled={isInstalling}
+        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-cyan-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl active:scale-95 animate-pulse hover:animate-none disabled:opacity-75 disabled:cursor-wait"
         title="Download piqo-builder to your device"
       >
         <svg 
@@ -66,8 +76,8 @@ export default function InstallPWA() {
             d="M12 4v16m0 0l-4-4m4 4l4-4"
           />
         </svg>
-        <span className="hidden sm:inline">Download App</span>
-        <span className="sm:hidden">Download</span>
+        <span className="hidden sm:inline">{isInstalling ? 'Installing...' : 'Download App'}</span>
+        <span className="sm:hidden">{isInstalling ? '...' : 'Download'}</span>
       </button>
 
       {showInstructions && (
