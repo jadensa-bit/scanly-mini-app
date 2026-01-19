@@ -1075,15 +1075,18 @@ async function startStripeConnect() {
 }, [configDraft, saveDraftDebounced]);
 
 // ✅ Auto-save edits to server as draft_config so changes persist
+// ⚠️ ONLY auto-save for EDIT MODE - don't create piqos until user clicks "Generate Live"
 useEffect(() => {
   if (!configDraft) return;
   // Prevent saving during initial restore
   if (!hasHydratedRef.current) return;
+  // ✅ ONLY save to server if we're editing an existing piqo
+  if (!isEditMode) return; // Skip server save for new piqos
   // only attempt server save when we have a valid handle
   try {
     saveDraftServerDebounced(configDraft);
   } catch {}
-}, [configDraft, saveDraftServerDebounced]);
+}, [configDraft, saveDraftServerDebounced, isEditMode]);
 
   // Broadcast live preview updates to any open preview window/tab
   useEffect(() => {
