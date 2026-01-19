@@ -7,7 +7,12 @@ export default function ConditionalHeader() {
   const pathname = usePathname();
   
   // Hide header on published piqo pages (/u/handle)
-  const isPublicPiqo = pathname?.startsWith('/u/');
+  // Check for null/undefined pathname to avoid issues during SSR/hydration
+  if (!pathname) {
+    return <Header />;
+  }
+  
+  const isPublicPiqo = pathname.startsWith('/u/');
   
   if (isPublicPiqo) {
     return null;

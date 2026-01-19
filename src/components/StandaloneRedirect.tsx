@@ -9,6 +9,9 @@ export default function StandaloneRedirect() {
   const router = useRouter();
 
   useEffect(() => {
+    // Don't run if pathname is not available yet
+    if (!pathname) return;
+    
     // Check if app is running in standalone mode (installed PWA)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone ||
