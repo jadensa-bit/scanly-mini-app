@@ -518,7 +518,7 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Section */}
-        <section className="mb-8 sm:mb-12 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        <section className="mb-8 sm:mb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
             <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-cyan-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300">
@@ -571,23 +571,23 @@ export default function DashboardPage() {
 
         {/* Sites Section */}
         <section className="mb-12 sm:mb-16">
-          <div className="bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0">
-              <div>
-                <div className="flex items-center gap-3 sm:gap-4 mb-2">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl blur-lg opacity-60"></div>
-                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
-                      <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+          <div className="bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 border border-white/10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 sm:gap-4 mb-2">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-lg sm:rounded-xl blur-lg opacity-60"></div>
+                    <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
+                      <ShoppingCart className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                     </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">Your Piqos</h2>
-                    <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">
-                      Manage your published storefronts
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 truncate">Your Piqos</h2>
+                    <p className="text-gray-400 text-[11px] sm:text-sm font-medium mt-0.5 truncate">
+                      Manage your storefronts
                       {!loading && sites.length > 0 && (
-                        <span className="ml-2 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full text-xs font-bold">
-                          {sites.length} {sites.length === 1 ? 'piqo' : 'piqos'}
+                        <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full text-[10px] sm:text-xs font-bold">
+                          {sites.length}
                         </span>
                       )}
                     </p>
@@ -596,7 +596,7 @@ export default function DashboardPage() {
               </div>
               <Link
                 href="/create"
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 active:scale-95 text-white font-bold rounded-xl sm:rounded-2xl transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 text-sm sm:text-base shadow-lg min-h-[44px] sm:min-h-0"
+                className="flex items-center justify-center gap-2 px-5 sm:px-8 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 active:scale-95 text-white font-bold rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 text-sm sm:text-base shadow-lg min-h-[44px] w-full sm:w-auto"
               >
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Create New Piqo</span>
