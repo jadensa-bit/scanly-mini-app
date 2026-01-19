@@ -8,7 +8,7 @@ import {
   DM_Sans,
 } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
+import ConditionalHeader from "@/components/ConditionalHeader";
 import StandaloneRedirect from "@/components/StandaloneRedirect";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -106,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <StandaloneRedirect />
-        <Header />
+        <ConditionalHeader />
         {children}
       </body>
     </html>
