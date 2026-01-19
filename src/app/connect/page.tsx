@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function ConnectStripePage() {
+function ConnectStripeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const handle = searchParams?.get("handle") || "";
@@ -223,4 +223,19 @@ export default function ConnectStripePage() {
   }
 
   return null;
+}
+
+export default function ConnectStripePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 text-center">
+          <Loader2 className="h-16 w-16 text-cyan-400 mx-auto mb-4 animate-spin" />
+          <h1 className="text-2xl font-bold text-white mb-2">Loading...</h1>
+        </div>
+      </div>
+    }>
+      <ConnectStripeContent />
+    </Suspense>
+  );
 }
