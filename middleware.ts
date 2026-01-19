@@ -2,6 +2,31 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  const hostname = request.headers.get('host') || '';
+  const url = request.nextUrl;
+  
+  // Extract base domain from environment or default to current host
+  const baseDomain = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'piqo.app';
+  
+  // Check if this is a subdomain request (e.g., coffeeshop.piqo.app)
+  // Exclude www and the main domain itself
+  const isSubdomain = hostname.endsWith(`.${baseDomain}`) && 
+                      !hostname.startsWith('www.') && 
+                      hostname !== baseDomain;
+  
+  if (isSubdomain) {
+    // Extract handle from subdomain (e.g., "coffeeshop" from "coffeeshop.piqo.app")
+    const handle = hostname.replace(`.${baseDomain}`, '');
+    
+    // Rewrite to /u/[handle] path
+    const rewriteUrl = url.clone();
+    rewriteUrl.pathname = `/u/${handle}${url.pathname === '/' ? '' : url.pathname}`;
+    
+    console.log(`Subdomain routing: ${hostname} -> ${rewriteUrl.pathname}`);
+    
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

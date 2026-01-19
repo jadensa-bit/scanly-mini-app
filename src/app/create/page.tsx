@@ -173,6 +173,8 @@ mode: ModeId;
   notifications?: Notifications;
 };
 
+import { buildStorefrontUrl } from "@/lib/storefrontUrls";
+
 function cn(...c: (string | false | undefined | null)[]) {
   return c.filter(Boolean).join(" ");
 }
@@ -194,10 +196,8 @@ function storageKey(handle: string) {
   return `piqo:site:${handle}`;
 }
 
-function buildPublicUrl(handle: string) {
-  if (typeof window === "undefined") return `https://piqo.app/u/${handle}`;
-  return `${window.location.origin}/u/${handle}`;
-}
+// Use the centralized utility for URL generation
+// Removed local buildPublicUrl - now imported from @/lib/storefrontUrls
 
 function qrPngUrl(dataUrl: string, size = 520) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
@@ -672,7 +672,7 @@ export default function CreatePage() {
     setPreviewTick(prev => prev + 1);
   }, [availability]);
 
-  const publicUrl = useMemo(() => buildPublicUrl(cleanHandle || "yourname"), [cleanHandle]);
+  const publicUrl = useMemo(() => buildStorefrontUrl(cleanHandle || "yourname"), [cleanHandle]);
   const qrUrl = useMemo(() => qrPngUrl(publicUrl, 520), [publicUrl]);
 
   // -------- Stripe connect UI state --------
