@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseclient";
 import AuthButtons from "@/components/AuthButtons";
 
 type ModeId = "services" | "products" | "digital";
@@ -1003,6 +1005,7 @@ function AnimatedPhonePreview({
 }
 
 export default function Home() {
+  const router = useRouter();
   const [activeId, setActiveId] = useState<ModeId>("services");
   const active = useMemo(
     () => MODES.find((m) => m.id === activeId)!,
@@ -1010,6 +1013,25 @@ export default function Home() {
   );
 
   const [origin, setOrigin] = useState("");
+  
+  // Redirect if app is installed (standalone mode)
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone ||
+      document.referrer.includes('android-app://');
+    
+    if (isStandalone) {
+      // Check if user is logged in
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          router.push('/dashboard');
+        } else {
+          router.push('/create');
+        }
+      });
+    }
+  }, [router]);
+  
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
@@ -1020,66 +1042,13 @@ export default function Home() {
 
   return (
     <>
-      {/* Navigation links removed - Login available in header */}
-
-      {/* Header */}
-      <motion.header
-        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 backdrop-blur-2xl bg-gradient-to-r from-black/60 via-gray-900/60 to-black/60 shadow-2xl"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="container mx-auto px-6 py-5 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-4">
-            <motion.div
-              className="relative h-14 w-14"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full blur opacity-40 group-hover:opacity-60 transition duration-200" />
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black rounded-full border border-white/20 flex items-center justify-center"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              >
-                <Image
-                  src="/piqo-logo.svg"
-                  alt="piqo"
-                  fill
-                  className="object-contain p-2"
-                />
-              </motion.div>
-            </motion.div>
-            <div>
-              <motion.div
-                className="text-3xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-                style={{
-                  backgroundSize: "200% auto",
-                }}
-              >
-                piqo
-              </motion.div>
-              <div className="text-xs text-gray-400 font-semibold tracking-wide">Scan. Shop. Done.</div>
-            </div>
-          </div>
-
-          <a
-            href="/login"
-            className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-full font-bold text-sm transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105"
-          >
-            Login
-          </a>
-        </div>
-      </motion.header>
-
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-28 pb-20 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pb-20 pt-20 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
         {/* Animated Background Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 -left-4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-0 -left-4 w-72 h-72 sm:w-96 sm:h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 sm:w-96 sm:h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 sm:w-96 sm:h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
         </div>
         
         <div className="relative z-10 max-w-5xl mx-auto text-center">
@@ -1087,7 +1056,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight"
+            className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight px-4"
           >
             Turn scans into sales — instantly.
           </motion.h1>
@@ -1096,7 +1065,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto font-medium leading-relaxed"
+            className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-10 max-w-3xl mx-auto font-medium leading-relaxed px-4"
           >
             No website. No app. Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
           </motion.p>
@@ -1105,17 +1074,17 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col items-center"
+            className="flex flex-col items-center px-4"
           >
             <a
               href="/signup"
-              className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
+              className="inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-lg sm:text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group active:scale-95 w-full sm:w-auto max-w-md"
             >
               <span className="hidden sm:inline">Create Your QR Store — Start Free</span>
               <span className="sm:hidden">Start Free</span>
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
             </a>
-            <p className="text-xs text-gray-400 mt-3">No credit card required</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-3">No credit card required</p>
           </motion.div>
         </div>
       </section>

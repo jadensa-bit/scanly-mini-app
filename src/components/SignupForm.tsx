@@ -141,53 +141,55 @@ export default function SignupForm() {
   };
 
   return (
-    <div className="w-full max-w-md px-3 sm:px-4">
+    <div className="w-full max-w-md px-3 sm:px-4 mx-auto">
       <style>{`
         #name:-webkit-autofill,
         #email:-webkit-autofill,
         #password:-webkit-autofill {
-          -webkit-box-shadow: 0 0 0 1000px white inset !important;
-          -webkit-text-fill-color: #111827 !important;
+          -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+          -webkit-text-fill-color: #ffffff !important;
         }
         #name:-webkit-autofill:focus,
         #email:-webkit-autofill:focus,
         #password:-webkit-autofill:focus {
-          -webkit-box-shadow: 0 0 0 1000px white inset !important;
-          -webkit-text-fill-color: #111827 !important;
+          -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset !important;
+          -webkit-text-fill-color: #ffffff !important;
         }
       `}</style>
       
       {/* Optimistic Success State */}
       {isOptimistic && (
-        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 space-y-6">
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center animate-pulse">
+            <div className="w-16 h-16 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-cyan-500/50">
               <Check className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Welcome to piqo!</h2>
-            <p className="text-gray-600 text-center">Setting up your account...</p>
+            <h2 className="text-2xl font-bold text-white">Welcome to piqo!</h2>
+            <p className="text-gray-400 text-center">Setting up your account...</p>
           </div>
         </div>
       )}
 
       {/* Signup Form */}
       {!isOptimistic && (
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5 sm:space-y-6">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5 sm:space-y-6">
           {/* Logo */}
           <div className="flex justify-center mb-2 sm:mb-4">
-            <PiqoLogoFull />
+            <div className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl">
+              <span className="text-white font-black text-2xl">piqo</span>
+            </div>
           </div>
           
           <div className="text-center space-y-1 sm:space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent">Create your piqo</h1>
-            <p className="text-gray-600 text-xs sm:text-sm">Build your free storefront, bookings, or digital shop in minutes</p>
+            <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Create your piqo</h1>
+            <p className="text-gray-400 text-xs sm:text-sm">Build your free storefront, bookings, or digital shop in minutes</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start gap-3">
-              <X className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-red-600 font-semibold text-xs sm:text-sm flex-1">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4 flex items-start gap-3">
+              <X className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="text-red-400 font-semibold text-xs sm:text-sm flex-1">
                 {error}
               </div>
             </div>
@@ -197,11 +199,11 @@ export default function SignupForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+              <label htmlFor="name" className="block text-sm font-bold text-white mb-1.5 sm:mb-2">
                 Full Name
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                <User className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                 <input
                   id="name"
                   type="text"
@@ -210,29 +212,30 @@ export default function SignupForm() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   onBlur={() => setTouched({ ...touched, name: true })}
-                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 transition placeholder:text-gray-400 ${
+                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-3 text-sm sm:text-base bg-white/5 border rounded-xl focus:outline-none focus:ring-2 transition placeholder:text-gray-600 text-white ${
                     touched.name && !validations.name.isValid
-                      ? 'border-red-300 focus:ring-red-500 focus:border-transparent'
+                      ? 'border-red-500/50 focus:ring-red-500 focus:border-transparent'
                       : validations.name.isValid
-                      ? 'border-green-300 focus:ring-cyan-500 focus:border-transparent'
-                      : 'border-gray-300 focus:ring-cyan-500 focus:border-transparent'
+                      ? 'border-green-500/50 focus:ring-cyan-500 focus:border-transparent'
+                      : 'border-white/10 focus:ring-cyan-500 focus:border-transparent'
                   }`}
-                  style={{ color: '#111827' }}
                 />
                 {/* Validation Icon */}
                 {touched.name && (
                   <div className="absolute right-3 top-3 sm:top-3.5">
                     {validations.name.isValid ? (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     ) : (
-                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
                     )}
                   </div>
                 )}
               </div>
               {/* Validation Message */}
               {touched.name && validations.name.message && (
-                <p className={`text-xs mt-1 ${validations.name.isValid ? 'text-gray-500' : 'text-red-600'}`}>
+                <p className={`text-xs mt-1 ${
+                  validations.name.isValid ? 'text-gray-400' : 'text-red-400'
+                }`}>
                   {validations.name.message}
                 </p>
               )}
@@ -240,11 +243,11 @@ export default function SignupForm() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+              <label htmlFor="email" className="block text-sm font-bold text-white mb-1.5 sm:mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                 <input
                   id="email"
                   type="email"
@@ -253,29 +256,30 @@ export default function SignupForm() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   onBlur={() => setTouched({ ...touched, email: true })}
-                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 transition placeholder:text-gray-400 ${
+                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-3 text-sm sm:text-base bg-white/5 border rounded-xl focus:outline-none focus:ring-2 transition placeholder:text-gray-600 text-white ${
                     touched.email && !validations.email.isValid
-                      ? 'border-red-300 focus:ring-red-500 focus:border-transparent'
+                      ? 'border-red-500/50 focus:ring-red-500 focus:border-transparent'
                       : validations.email.isValid
-                      ? 'border-green-300 focus:ring-cyan-500 focus:border-transparent'
-                      : 'border-gray-300 focus:ring-cyan-500 focus:border-transparent'
+                      ? 'border-green-500/50 focus:ring-cyan-500 focus:border-transparent'
+                      : 'border-white/10 focus:ring-cyan-500 focus:border-transparent'
                   }`}
-                  style={{ color: '#111827' }}
                 />
                 {/* Validation Icon */}
                 {touched.email && (
                   <div className="absolute right-3 top-3 sm:top-3.5">
                     {validations.email.isValid ? (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     ) : (
-                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
                     )}
                   </div>
                 )}
               </div>
               {/* Validation Message */}
               {touched.email && validations.email.message && (
-                <p className={`text-xs mt-1 ${validations.email.isValid ? 'text-gray-500' : 'text-red-600'}`}>
+                <p className={`text-xs mt-1 ${
+                  validations.email.isValid ? 'text-gray-400' : 'text-red-400'
+                }`}>
                   {validations.email.message}
                 </p>
               )}
@@ -283,11 +287,11 @@ export default function SignupForm() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+              <label htmlFor="password" className="block text-sm font-bold text-white mb-1.5 sm:mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-3 sm:top-3.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                 <input
                   id="password"
                   type="password"
@@ -296,29 +300,30 @@ export default function SignupForm() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   onBlur={() => setTouched({ ...touched, password: true })}
-                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 transition placeholder:text-gray-400 ${
+                  className={`w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-3 text-sm sm:text-base bg-white/5 border rounded-xl focus:outline-none focus:ring-2 transition placeholder:text-gray-600 text-white ${
                     touched.password && !validations.password.isValid
-                      ? 'border-red-300 focus:ring-red-500 focus:border-transparent'
+                      ? 'border-red-500/50 focus:ring-red-500 focus:border-transparent'
                       : validations.password.isValid
-                      ? 'border-green-300 focus:ring-cyan-500 focus:border-transparent'
-                      : 'border-gray-300 focus:ring-cyan-500 focus:border-transparent'
+                      ? 'border-green-500/50 focus:ring-cyan-500 focus:border-transparent'
+                      : 'border-white/10 focus:ring-cyan-500 focus:border-transparent'
                   }`}
-                  style={{ color: '#111827' }}
                 />
                 {/* Validation Icon */}
                 {touched.password && (
                   <div className="absolute right-3 top-3 sm:top-3.5">
                     {validations.password.isValid ? (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     ) : (
-                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
                     )}
                   </div>
                 )}
               </div>
               {/* Validation Message */}
               {touched.password && validations.password.message && (
-                <p className={`text-xs mt-1 ${validations.password.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-xs mt-1 ${
+                  validations.password.isValid ? 'text-green-400' : 'text-red-400'
+                }`}>
                   {validations.password.message}
                 </p>
               )}
@@ -328,7 +333,7 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading || !isFormValid}
-              className="w-full mt-4 sm:mt-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white font-semibold py-3 sm:py-3.5 text-sm sm:text-base rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              className="w-full mt-4 sm:mt-6 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-bold py-3.5 sm:py-3.5 text-sm sm:text-base rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-2xl hover:shadow-cyan-500/50 flex items-center justify-center gap-2 active:scale-95"
             >
               {loading ? (
                 <>
@@ -336,18 +341,18 @@ export default function SignupForm() {
                   <span>Creating your account...</span>
                 </>
               ) : (
-                'Create Account'
+                'Create Account →'
               )}
             </button>
           </form>
 
           {/* Login Link - Simplified */}
           <div className="text-center pt-2">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-400">
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="font-semibold text-cyan-600 hover:text-cyan-700 transition"
+                className="font-bold text-cyan-400 hover:text-cyan-300 transition"
               >
                 Log In
               </Link>
