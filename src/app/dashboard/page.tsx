@@ -293,9 +293,17 @@ export default function DashboardPage() {
       if (res.ok) {
         // Remove from local state
         setSites(sites.filter(s => s.handle !== handle));
+        console.log(`✅ Piqo "${handle}" deleted successfully`);
       } else {
-        const data = await res.json();
-        alert(data.error || "Failed to delete piqo");
+        // Try to parse JSON error, but handle case where response is empty
+        let errorMessage = "Failed to delete piqo";
+        try {
+          const data = await res.json();
+          errorMessage = data.error || errorMessage;
+        } catch (jsonErr) {
+          console.error("Failed to parse error response:", jsonErr);
+        }
+        alert(errorMessage);
       }
     } catch (err) {
       console.error("Delete failed:", err);
@@ -325,6 +333,8 @@ export default function DashboardPage() {
       const res = await fetch('/api/dashboard', { headers, credentials: 'include' });
       const data = await res.json();
       console.log("📊 Dashboard API response:", data);
+      console.log("📋 Sites loaded:", data.sites?.length || 0);
+      console.log("📋 Site handles:", data.sites?.map((s: any) => s.handle) || []);
       const { bookings, totalBookingsCount, sites, orders, _debug } = data;
       if (_debug) {
         console.log("🔍 Debug info:", _debug);
@@ -573,7 +583,14 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">Your Piqos</h2>
-                    <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">Manage your published storefronts</p>
+                    <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">
+                      Manage your published storefronts
+                      {!loading && sites.length > 0 && (
+                        <span className="ml-2 px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full text-xs font-bold">
+                          {sites.length} {sites.length === 1 ? 'piqo' : 'piqos'}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

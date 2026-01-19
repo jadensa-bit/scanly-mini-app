@@ -82,7 +82,11 @@ export default function HandlePage() {
 						setLoading(false);
 						return;
 					}
-					const res = await fetch(`/api/site?handle=${encodeURIComponent(handle)}`);
+					// Add cache-busting to ensure fresh data
+					const res = await fetch(`/api/site?handle=${encodeURIComponent(handle)}&t=${Date.now()}`, {
+						cache: 'no-store',
+						headers: { 'Cache-Control': 'no-cache' }
+					});
 					const data = await res.json();
 					if (typeof window !== "undefined") {
 						// Debug: log what we got from the API
@@ -104,7 +108,31 @@ export default function HandlePage() {
 			setLoading(false);
 		}
 		fetchConfig();
-		return () => { cancelled = true; };
+		
+		// Poll for updates every 3 seconds to catch published changes
+		const pollInterval = setInterval(() => {
+			if (!cancelled) {
+				const handle = (params?.handle || "").toString();
+				if (handle) {
+					fetch(`/api/site?handle=${encodeURIComponent(handle)}&t=${Date.now()}`, {
+						cache: 'no-store',
+						headers: { 'Cache-Control': 'no-cache' }
+					})
+						.then(res => res.json())
+						.then(data => {
+							if (data?.config) {
+								setCfg(data.config);
+							}
+						})
+						.catch(() => {});
+				}
+			}
+		}, 3000);
+		
+		return () => { 
+			cancelled = true;
+			clearInterval(pollInterval);
+		};
 	}, [params]);
 
 	if (loading) return <div style={{padding:40, textAlign:'center'}}>Loading your live creation...</div>;
@@ -126,6 +154,7 @@ export default function HandlePage() {
 			staffProfiles={cfg.staffProfiles}
 			ownerEmail={cfg.ownerEmail}
 			brandLogo={cfg.brandLogo}
+			profilePic={cfg.profilePic}
 			social={cfg.social}
 			availability={cfg.availability}
 			notifications={cfg.notifications}

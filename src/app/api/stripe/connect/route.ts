@@ -234,6 +234,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, url: link.url, accountId });
   } catch (e: any) {
     console.error("[stripe-connect] route error:", e);
+    
+    // Handle specific Stripe errors with helpful messages
+    if (e?.type === 'StripeInvalidRequestError') {
+      const message = e?.message || '';
+      
+      // Platform profile not configured
+      if (message.includes('review the responsibilities of managing losses') || 
+          message.includes('platform-profile')) {
+        return jsonError(
+          "Stripe Platform Not Configured", 
+          400, 
+          { 
+            detail: "Please configure your Stripe Platform settings first. Visit: https://dashboard.stripe.com/settings/connect/platform-profile",
+            userMessage: "Stripe setup required: Please complete your platform profile in the Stripe Dashboard.",
+            setupUrl: "https://dashboard.stripe.com/settings/connect/platform-profile"
+          }
+        );
+      }
+      
+      // Missing required fields
+      if (message.includes('required') || message.includes('missing')) {
+        return jsonError(
+          "Missing Required Information", 
+          400, 
+          { 
+            detail: e.message,
+            userMessage: "Some required information is missing. Please check your Stripe account settings."
+          }
+        );
+      }
+    }
+    
     return jsonError("Connect failed", 500, { detail: e?.message || String(e) });
   }
 }

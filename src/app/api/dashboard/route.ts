@@ -57,11 +57,10 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch user's sites - try all table candidates like the POST endpoint does
-  const TABLE_CANDIDATES = ["sites", "scanly_sites", "site"];
-  let sites: any[] = [];
+  // ✅ Fetch user's sites from ALL tables and combine results
+  const TABLE_CANDIDATES = ["scanly_sites", "sites", "site"]; // Check scanly_sites first since new piqos go there
+  let allSites: any[] = [];
   let sitesError: any = null;
-  let successTable = null;
 
   for (const table of TABLE_CANDIDATES) {
     // ✅ CRITICAL: Always filter by user_id first
@@ -71,6 +70,12 @@ export async function GET(req: NextRequest) {
       .eq('user_id', userId);
 
     console.log(`🔍 Dashboard: Checked ${table} for user ${userId}, found ${data?.length || 0} sites`);
+    
+    // Log first few handles for debugging
+    if (data && data.length > 0) {
+      const handles = data.slice(0, 5).map(s => s.handle);
+      console.log(`📋 Dashboard: Sample handles from ${table}:`, handles);
+    }
 
     // If no sites found by user_id, try filtering by owner_email as fallback
     if ((!error && (!data || data.length === 0)) || (error && String(error.message).includes('column "user_id" does not exist'))) {
@@ -98,20 +103,26 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error(`❌ Dashboard: Error querying ${table}:`, error.message);
       sitesError = error;
-    } else {
-      sites = data || [];
-      successTable = table;
-      console.log(`✅ Dashboard: Found ${sites.length} sites in table '${table}'`);
-      break; // Success, don't try other tables
+      continue; // Try next table instead of stopping
+    }
+
+    // ✅ Add sites from this table to our collection (avoiding duplicates by handle)
+    if (data && data.length > 0) {
+      const existingHandles = new Set(allSites.map(s => s.handle));
+      const newSites = data.filter((s: any) => !existingHandles.has(s.handle));
+      allSites.push(...newSites);
+      console.log(`✅ Dashboard: Added ${newSites.length} new sites from ${table}, total now: ${allSites.length}`);
     }
   }
 
-  if (!successTable && sitesError) {
+  const sites = allSites;
+
+  if (sites.length === 0 && sitesError) {
     console.error("❌ Dashboard: Could not fetch sites from any table");
     return NextResponse.json({ error: sitesError.message }, { status: 500 });
   }
 
-  console.log("✅ Dashboard: Fetched", sites?.length || 0, "sites");
+  console.log("✅ Dashboard: Fetched", sites?.length || 0, "total sites from all tables");
 
   // Get site handles for filtering bookings and orders
   const siteHandles = (sites || []).map((s: any) => s.handle);

@@ -30,13 +30,16 @@ import {
   Instagram,
   Globe,
   Mail,
+  User,
 } from "lucide-react";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
 type ItemBadge = "popular" | "limited" | "none";
+type ItemType = "product" | "section";
 
 type BuildItem = {
+  type?: ItemType; // "product" (default) or "section"
   title: string;
   price: string;
   note?: string;
@@ -160,6 +163,7 @@ mode: ModeId;
   ownerEmail?: string; // legacy (keep)
 
   brandLogo?: string; // data URL
+  profilePic?: string; // data URL - creator's profile picture
   social?: SocialLinks;
 
   // ✅ new
@@ -417,6 +421,7 @@ export default function CreatePage() {
   const [businessDescription, setBusinessDescription] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [brandLogo, setBrandLogo] = useState("");
+  const [profilePic, setProfilePic] = useState("");
   const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
   const [appearance, setAppearance] = useState<Appearance>({
     preset: "neon",
@@ -510,6 +515,16 @@ export default function CreatePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setHandleRaw(handleInput);
+      
+      // Update URL with handle for bookmarking/sharing (optional, doesn't reload page)
+      if (typeof window !== "undefined" && handleInput.trim()) {
+        const cleanH = slugify(handleInput);
+        if (cleanH) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('handle', cleanH);
+          window.history.replaceState({}, '', url.toString());
+        }
+      }
     }, 300); // Update handleRaw 300ms after user stops typing
 
     return () => clearTimeout(timer);
@@ -537,7 +552,7 @@ export default function CreatePage() {
         setEditLoading(true);
         hasHydratedRef.current = true;
         
-        fetch(`/api/site?handle=${encodeURIComponent(handleParam)}&edit=true`, { cache: "no-store" })
+        fetch(`/api/site?handle=${encodeURIComponent(handleParam)}&edit=true`, { cache: "no-store", credentials: 'include' })
           .then(async (res) => {
             if (!res.ok) {
               const data = await res.json().catch(() => ({ error: "Failed to load Piqo" }));
@@ -581,6 +596,7 @@ export default function CreatePage() {
             if (config.appearance) setAppearance(config.appearance);
             if (config.staffProfiles) setStaffProfiles(config.staffProfiles);
             if (config.brandLogo) setBrandLogo(config.brandLogo);
+            if (config.profilePic) setProfilePic(config.profilePic);
             if (config.social) setSocial(config.social);
             if (config.availability) {
               console.log("✅ Hydrating availability:", config.availability);
@@ -670,7 +686,7 @@ export default function CreatePage() {
     }
     setStripeLoading(true);
     try {
-      const res = await fetch(`/api/stripe/status?handle=${encodeURIComponent(h)}`, { cache: "no-store" });
+      const res = await fetch(`/api/stripe/status?handle=${encodeURIComponent(h)}`, { cache: "no-store", credentials: 'include' });
       const data = (await res.json().catch(() => ({}))) as StripeStatus;
       if (!res.ok) {
         setStripeStatus(null);
@@ -723,6 +739,7 @@ async function startStripeConnect() {
     const res = await fetch("/api/stripe/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: 'include',
       body: JSON.stringify({ 
         handle: h,
         email: notifications.email || ownerEmail || "" 
@@ -789,6 +806,27 @@ async function startStripeConnect() {
     setAppearance((p) => ({ ...p, bgMode: "image", bgImage: url }));
   }
 
+  async function onPickProfilePic(file?: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    const url = await fileToDataUrl(file);
+    setProfilePic(url);
+    // write instant preview draft so the preview updates immediately
+    try {
+      const h = cleanHandle;
+      if (typeof window !== "undefined" && h) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: url, createdAt: Date.now() }));
+          } catch {}
+          skipNextPreviewTickRef.current = true;
+          setPreviewTick((x) => x + 1);
+        }
+      }
+    } catch {}
+  }
+
   async function onPickStaffPhoto(file: File | null, idx: number) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
@@ -815,7 +853,7 @@ async function startStripeConnect() {
     try {
       const fd = new FormData();
       fd.append("file", file, file.name || "upload.jpg");
-      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data?.url) {
         updateStaff(idx, { photo: data.url });
@@ -860,6 +898,7 @@ async function startStripeConnect() {
       ownerEmail: ownerEmail.trim() || undefined, // legacy
 
       brandLogo: brandLogo || undefined,
+      profilePic: profilePic || undefined,
       social: {
         instagram: (social.instagram || "").trim() || undefined,
         tiktok: (social.tiktok || "").trim() || undefined,
@@ -870,7 +909,7 @@ async function startStripeConnect() {
         bio: (social.bio || "").trim() || undefined,
       },
 
-      availability: availability && mode === 'services' ? {
+      availability: availability ? {
         timezone: availability.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York',
         slotMinutes: availability.slotMinutes || 60,
         bufferMinutes: availability.bufferMinutes || 15,
@@ -949,44 +988,39 @@ async function startStripeConnect() {
 
           console.log("Draft save response:", res);
 
-          // If POST succeeded and site not published yet, auto-publish once
+          // ✅ Auto-publish ALL edits immediately so changes go live
           try {
             const raw = res?.data || {};
             const ok = res?.res?.ok && raw?.ok !== false;
-            const hasPublished = (cfg as any).publishedAt || raw?.site?.config?.publishedAt || raw?.config?.publishedAt;
 
-            if (ok && !hasPublished) {
-              console.log("Auto-publishing site for handle:", cfg.handle);
-              // track auto-publish per handle using local flag to avoid repeats
-              try {
-                const key = `${storageKey(cfg.handle)}|autopub`;
-                const seen = localStorage.getItem(key);
-                if (!seen) {
-                  const pub = await postJson("/api/site/publish", { handle: cfg.handle }).catch((error) => {
-                    console.error("Failed to auto-publish:", error);
-                    return null;
-                  });
-                  if (pub?.res?.ok && pub?.data?.ok) {
-                    const publishedAt = pub.data.publishedAt || new Date().toISOString();
-                    console.log("Auto-published successfully, publishedAt:", publishedAt);
-                    // persist publishedAt into local draft so we won't re-publish
-                    try {
-                      const storedRaw = localStorage.getItem(storageKey(cfg.handle));
-                      const stored = storedRaw ? JSON.parse(storedRaw) : cfg;
-                      stored.publishedAt = publishedAt;
-                      stored.active = true;
-                      localStorage.setItem(storageKey(cfg.handle), JSON.stringify(stored));
-                      localStorage.setItem(key, "1");
-                    } catch (error) {
-                      console.error("Failed to update local storage after publish:", error);
-                    }
-                  } else {
-                    console.warn("Auto-publish failed:", pub);
-                  }
+            if (ok) {
+              console.log("Auto-publishing edits for handle:", cfg.handle);
+              const pub = await postJson("/api/site/publish", { handle: cfg.handle }).catch((error) => {
+                console.error("Failed to auto-publish:", error);
+                return null;
+              });
+              if (pub?.res?.ok && pub?.data?.ok) {
+                const publishedAt = pub.data.publishedAt || new Date().toISOString();
+                console.log("✅ Auto-published successfully, changes are LIVE at u/" + cfg.handle, "publishedAt:", publishedAt);
+                
+                // Force preview refresh to show published changes
+                setPreviewTick((x) => x + 1);
+                
+                // Update local storage with published state
+                try {
+                  const storedRaw = localStorage.getItem(storageKey(cfg.handle));
+                  const stored = storedRaw ? JSON.parse(storedRaw) : cfg;
+                  stored.publishedAt = publishedAt;
+                  stored.active = true;
+                  localStorage.setItem(storageKey(cfg.handle), JSON.stringify(stored));
+                } catch (error) {
+                  console.error("Failed to update local storage after publish:", error);
                 }
-              } catch (error) {
-                console.error("Auto-publish error:", error);
+              } else {
+                console.warn("⚠️ Auto-publish failed:", pub?.data?.error || "Unknown error");
               }
+            } else {
+              console.warn("⚠️ Draft save failed, skipping auto-publish");
             }
           } catch (error) {
             console.error("Error in auto-publish logic:", error);
@@ -1040,16 +1074,16 @@ async function startStripeConnect() {
   saveDraftDebounced(configDraft);
 }, [configDraft, saveDraftDebounced]);
 
-// Removed auto-save to server - only save when user clicks "Go live"
-// useEffect(() => {
-//   if (!configDraft) return;
-//   // Prevent saving during initial restore
-//   if (!hasHydratedRef.current) return;
-//   // only attempt server save when we have a valid handle
-//   try {
-//     saveDraftServerDebounced(configDraft);
-//   } catch {}
-// }, [configDraft, saveDraftServerDebounced]);
+// ✅ Auto-save edits to server as draft_config so changes persist
+useEffect(() => {
+  if (!configDraft) return;
+  // Prevent saving during initial restore
+  if (!hasHydratedRef.current) return;
+  // only attempt server save when we have a valid handle
+  try {
+    saveDraftServerDebounced(configDraft);
+  } catch {}
+}, [configDraft, saveDraftServerDebounced]);
 
   // Broadcast live preview updates to any open preview window/tab
   useEffect(() => {
@@ -1074,7 +1108,43 @@ async function startStripeConnect() {
   // actions
   const addItem = () => {
     setItems((prev) => {
-      const next = [...prev, { title: "New item", price: "$0", note: "", badge: "none" } as BuildItem];
+      const next = [...prev, { type: "product", title: "New item", price: "$0", note: "", badge: "none" } as BuildItem];
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+
+  const addSectionHeader = () => {
+    setItems((prev) => {
+      const next = [...prev, { type: "section", title: "New Section", price: "", note: "", badge: "none" } as BuildItem];
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+
+  const addSubsection = () => {
+    setItems((prev) => {
+      const next = [...prev, { type: "subsection", title: "New Subsection", price: "", note: "", badge: "none" } as BuildItem];
       // Instant preview update
       if (typeof window !== "undefined" && cleanHandle) {
         const base = configDraft;
@@ -1233,6 +1303,7 @@ async function startStripeConnect() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: 'include', // ✅ Send cookies for authentication
       body: JSON.stringify(body),
     });
 
@@ -1272,6 +1343,7 @@ async function startStripeConnect() {
 
       ownerEmail: ownerEmail.trim() || undefined, // legacy keep
       brandLogo: brandLogo || undefined,
+      profilePic: profilePic || undefined,
       social: {
         instagram: (social.instagram || "").trim() || undefined,
         tiktok: (social.tiktok || "").trim() || undefined,
@@ -1299,39 +1371,70 @@ async function startStripeConnect() {
     try {
       console.log(`📤 Publishing Piqo:`, {
         handle: h,
+        brandName: config.brandName,
         mode: config.mode,
+        itemCount: config.items?.length || 0,
         hasAvailability: !!config.availability,
-        availabilityConfig: config.availability,
         hasStaffProfiles: !!config.staffProfiles,
         staffCount: config.staffProfiles?.length || 0,
       });
       
+      console.log('🔐 Attempting to save piqo to server...');
       const out = await postJson("/api/site", config);
+      
+      console.log('📊 Save response:', {
+        status: out.res.status,
+        ok: out.res.ok,
+        data: out.data
+      });
 
       if (!out.res.ok) {
         const detail = String(out?.data?.detail || out?.data?.error || "").trim();
         const missingSupabaseEnv =
           detail.includes("Missing SUPABASE_URL") || detail.includes("Missing SUPABASE_SERVICE_ROLE_KEY");
+        
+        // Check if user is not authenticated
+        const isUnauthorized = out.res.status === 401 || detail.toLowerCase().includes("unauthorized") || detail.toLowerCase().includes("not authenticated");
 
         const msg =
           out.res.status === 404
             ? "Missing API route /api/site. Check: src/app/api/site/route.ts"
             : missingSupabaseEnv
               ? "Server is missing Supabase env vars (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY). Your draft is saved locally, but server publish is unavailable until env is set."
-              : detail || `Failed to save site (server error ${out.res.status}).`;
+              : isUnauthorized
+                ? "You must be logged in to create a piqo. Please sign up or log in first."
+                : detail || `Failed to save site (server error ${out.res.status}).`;
+        
+        if (isUnauthorized) {
+          // Redirect to login if not authenticated
+          console.error("User not authenticated, redirecting to login");
+          router.push('/login?redirect=/create');
+          return;
+        }
+        
         throw new Error(msg);
       }
 
-      // No longer open preview in a new tab
-      // navigate locally to the create page's published state
-      // attempt to mark published on the server so the handle is live
+      // Publish the piqo to make it live
+      console.log('🚀 Publishing piqo to make it live at u/' + h);
       try {
-        await fetch("/api/site/publish", {
+        const publishRes = await fetch("/api/site/publish", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: 'include',
           body: JSON.stringify({ handle: h }),
-        }).catch(() => null);
-      } catch {}
+        });
+        
+        const publishData = await publishRes.json().catch(() => ({}));
+        
+        if (publishRes.ok) {
+          console.log('✅ Piqo published successfully');
+        } else {
+          console.error('❌ Publish failed:', publishData);
+        }
+      } catch (err) {
+        console.error('❌ Publish error:', err);
+      }
 
       try {
         // ensure latest draft is saved
@@ -1340,15 +1443,22 @@ async function startStripeConnect() {
         }
       } catch {}
 
-      // Show publishing state, then redirect to dashboard
-      setToast("Publishing…");
+      // Show success message
+      console.log('🎉 Piqo created successfully! Redirecting to dashboard...');
+      setToast("✅ Piqo published! Redirecting...");
       
-      // Short delay for user feedback
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait for publish to complete and databases to sync
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Redirect to dashboard where the new Piqo will appear
-      router.push(`/dashboard`);
-      router.refresh();
+      console.log('📍 Redirecting to dashboard');
+      if (typeof window !== 'undefined') {
+        // Force full page reload to ensure fresh data from database
+        window.location.href = '/dashboard';
+      } else {
+        router.push(`/dashboard`);
+        router.refresh();
+      }
     } catch (e: any) {
       setErr(e?.message || "Failed to generate. Check API route.");
     } finally {
@@ -1943,6 +2053,56 @@ async function startStripeConnect() {
                   )}
                 </div>
 
+                <div className="grid gap-2 sm:col-span-2">
+                  <span className="text-sm font-bold text-white">Profile Picture (optional)</span>
+
+                {/* Profile Picture Upload */}
+                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-gradient-to-r from-black/50 to-black/40 px-4 py-3.5 text-sm text-white hover:bg-black/60 hover:border-white/25 transition cursor-pointer group/upload">
+                    <span className="inline-flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center group-hover/upload:scale-110 transition-transform overflow-hidden">
+                        {profilePic ? (
+                          <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                      <span className="font-semibold">{profilePic ? "Change photo" : "Upload photo"}</span>
+                    </span>
+                    <span className="text-xs text-white/60 bg-white/5 px-2.5 py-1 rounded-lg">PNG/JPG</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => onPickProfilePic(e.target.files?.[0])}
+                    />
+                  </label>
+
+                  <div className="text-[11px] text-white/70">Your photo will appear in the top corner of your live piqo</div>
+
+                  {profilePic && (
+                    <div className="flex items-center gap-3 mt-2">
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="h-14 w-14 rounded-full border-2 border-white/20 bg-black/40 overflow-hidden flex-shrink-0"
+                      >
+                        <img
+                          src={profilePic}
+                          alt="Profile preview"
+                          className="h-full w-full object-cover"
+                        />
+                      </motion.div>
+                      <button
+                        type="button"
+                        onClick={() => setProfilePic("")}
+                        className="inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/5 px-3 py-1.5 text-xs text-white/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <label className="grid gap-1 sm:col-span-2">
                   <span className="text-xs text-white/80">Email for alerts</span>
                   <input
@@ -1982,6 +2142,30 @@ async function startStripeConnect() {
                       Quick Fill
                     </motion.button>
                   )}
+                  {mode === "products" && (
+                    <>
+                      <motion.button
+                        type="button"
+                        onClick={addSectionHeader}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition shadow-lg shadow-blue-500/10"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Type className="h-4 w-4" />
+                        Add Section
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={addSubsection}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition shadow-lg shadow-indigo-500/10"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Type className="h-3.5 w-3.5" />
+                        Add Subsection
+                      </motion.button>
+                    </>
+                  )}
                   <motion.button
                     type="button"
                     onClick={addItem}
@@ -2011,10 +2195,20 @@ async function startStripeConnect() {
                 </motion.div>
               ) : (
                 <div className="grid gap-3">
-                  {items.map((it, idx) => (
+                  {items.map((it, idx) => {
+                    const isSection = it.type === "section";
+                    const isSubsection = it.type === "subsection";
+                    
+                    return (
                     <motion.div 
                       key={idx} 
-                      className="rounded-2xl border border-white/12 bg-black/30 p-4 hover:border-white/20 hover:bg-black/35 transition group"
+                      className={`rounded-2xl border p-4 transition group ${
+                        isSection 
+                          ? 'border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:border-blue-500/40' 
+                          : isSubsection
+                          ? 'border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 hover:border-indigo-500/40 ml-4'
+                          : 'border-white/12 bg-black/30 hover:border-white/20 hover:bg-black/35'
+                      }`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       layout
@@ -2022,11 +2216,17 @@ async function startStripeConnect() {
                       {/* Header row */}
                       <div className="flex items-center gap-3 mb-3">
                         {/* Item number badge */}
-                        <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-white/5 border border-white/10 grid place-items-center text-xs font-bold text-white/50">
-                          {idx + 1}
+                        <div className={`flex-shrink-0 w-7 h-7 rounded-lg border grid place-items-center text-xs font-bold ${
+                          isSection 
+                            ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' 
+                            : isSubsection
+                            ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
+                            : 'bg-white/5 border-white/10 text-white/50'
+                        }`}>
+                          {isSection ? <Type className="h-3.5 w-3.5" /> : isSubsection ? <Type className="h-3 w-3" /> : idx + 1}
                         </div>
 
-                        {/* Title & Price inputs */}
+                        {/* Title input (and Price for non-section items) */}
                         <div className="flex-1 flex items-center gap-2">
                           <input
                             value={it.title}
@@ -2035,19 +2235,27 @@ async function startStripeConnect() {
                                 prev.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x))
                               )
                             }
-                            className="flex-1 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-semibold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25"
-                            placeholder={mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook"}
+                            className={`flex-1 rounded-xl border bg-black/50 px-3 py-2.5 text-sm font-semibold text-white placeholder:text-white/40 outline-none focus:ring-2 transition-all duration-200 ${
+                              isSection
+                                ? 'border-blue-500/30 focus:border-blue-500/50 focus:ring-blue-500/20 hover:border-blue-500/40'
+                                : isSubsection
+                                ? 'border-indigo-500/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 hover:border-indigo-500/40'
+                                : 'border-white/15 focus:border-orange-500/50 focus:ring-orange-500/20 hover:border-white/25'
+                            }`}
+                            placeholder={isSection ? "e.g. Breakfast" : isSubsection ? "e.g. Hot Drinks" : (mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook")}
                           />
-                          <input
-                            value={it.price}
-                            onChange={(e) =>
-                              setItems((prev) =>
-                                prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
-                              )
-                            }
-                            className="w-24 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
-                            placeholder="$25"
-                          />
+                          {!isSection && !isSubsection && (
+                            <input
+                              value={it.price}
+                              onChange={(e) =>
+                                setItems((prev) =>
+                                  prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
+                                )
+                              }
+                              className="w-24 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
+                              placeholder="$25"
+                            />
+                          )}
                         </div>
 
                         {/* Action buttons */}
@@ -2098,6 +2306,8 @@ async function startStripeConnect() {
                         </div>
                       </div>
 
+                      {!isSection && !isSubsection && (
+                      <>
                       {/* Details row */}
                       <div className="grid gap-2 sm:grid-cols-2 pl-10">
                         <label className="grid gap-1.5">
@@ -2164,7 +2374,7 @@ async function startStripeConnect() {
                                   try {
                                     const fd = new FormData();
                                     fd.append("file", file, file.name || "upload.jpg");
-                                    const res = await fetch("/api/uploads", { method: "POST", body: fd });
+                                    const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
                                     const data = await res.json().catch(() => ({}));
                                     if (res.ok && data?.url) {
                                       imageUrl = data.url;
@@ -2198,8 +2408,23 @@ async function startStripeConnect() {
                         </div>
                         <div className="text-[10px] text-white/40 mt-1.5">Optional: Add a photo for this item</div>
                       </div>
+                      </>
+                      )}
+
+                      {isSection && (
+                        <div className="pl-10 text-xs text-blue-300/70 flex items-center gap-2">
+                          <Type className="h-3 w-3" />
+                          Section header • Groups menu items visually
+                        </div>
+                      )}
+                      {isSubsection && (
+                        <div className="pl-10 text-xs text-indigo-300/70 flex items-center gap-2">
+                          <Type className="h-3 w-3" />
+                          Subsection • Organizes items within a section
+                        </div>
+                      )}
                     </motion.div>
-                  ))}
+                  )})}
                 </div>
               )}
 
@@ -3390,6 +3615,7 @@ async function startStripeConnect() {
                     const res = await fetch('/api/site/publish', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
                       body: JSON.stringify({ handle: cleanHandle })
                     });
                     const data = await res.json();
@@ -3409,12 +3635,17 @@ async function startStripeConnect() {
                       // Show publishing state, then redirect to dashboard
                       setToast("Publishing…");
                       
-                      // Short delay for user feedback
-                      await new Promise(resolve => setTimeout(resolve, 800));
+                      // Ensure publish completes before redirecting
+                      await new Promise(resolve => setTimeout(resolve, 1200));
                       
                       // Redirect to dashboard where the new Piqo will appear
-                      router.push(`/dashboard`);
-                      router.refresh();
+                      // Force a full page reload to ensure fresh data
+                      if (typeof window !== 'undefined') {
+                        window.location.href = '/dashboard';
+                      } else {
+                        router.push(`/dashboard`);
+                        router.refresh();
+                      }
                     }
                   } catch (e) {
                     setErr(typeof e === 'object' && e !== null && 'message' in e ? (e as any).message : 'Failed to publish site.');
@@ -3430,15 +3661,9 @@ async function startStripeConnect() {
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  ✨
-                </motion.div>
-                All done! Ready to go live
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                >
                   🚀
                 </motion.div>
+                Go live
               </motion.button>
             </div>
               </>
@@ -3745,7 +3970,38 @@ async function startStripeConnect() {
                                     {/* Tiles layout - 2 column grid */}
                                     {(appearance.layout || "cards") === "tiles" ? (
                                       <div className="grid grid-cols-2 gap-2">
-                                        {items.map((item, idx) => (
+                                        {items.map((item, idx) => {
+                                          // Section header for tiles layout
+                                          if (item.type === "section") {
+                                            return (
+                                              <div key={idx} className="col-span-2 my-3 first:mt-1">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[2px] w-8" style={{ background: accentSolid }} />
+                                                  <h3 className="text-[11px] font-black uppercase tracking-wider" style={{ color: accentSolid }}>
+                                                    {item.title || "SECTION"}
+                                                  </h3>
+                                                  <div className="h-[2px] flex-1" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          // Subsection for tiles layout
+                                          if (item.type === "subsection") {
+                                            return (
+                                              <div key={idx} className="col-span-2 my-2 first:mt-1 ml-2">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[1.5px] w-6" style={{ background: `${accentSolid}80` }} />
+                                                  <h4 className="text-[10px] font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
+                                                    {item.title || "Subsection"}
+                                                  </h4>
+                                                  <div className="h-[1.5px] flex-1" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
                                           <motion.div
                                             key={idx}
                                             initial={{ opacity: 0, scale: 0.9 }}
@@ -3813,6 +4069,9 @@ async function startStripeConnect() {
 
                                             <div className="p-2">
                                               <div className="text-[10px] font-bold text-gray-900 truncate mb-1">{item.title || "Item"}</div>
+                                              {item.note && (
+                                                <div className="text-[8px] text-gray-600 truncate mb-1 leading-tight">{item.note}</div>
+                                              )}
                                               <div className="text-[9px] font-bold mb-1.5" style={{ color: accentSolid }}>{item.price || "$0"}</div>
                                               <button
                                                 className="w-full py-1 text-[8px] font-bold relative overflow-hidden"
@@ -3838,12 +4097,43 @@ async function startStripeConnect() {
                                               </button>
                                             </div>
                                           </motion.div>
-                                        ))}
+                                        )})}
                                       </div>
                                     ) : (appearance.layout || "cards") === "menu" ? (
                                       /* Menu layout - compact rows */
                                       <div className="space-y-1.5">
-                                        {items.map((item, idx) => (
+                                        {items.map((item, idx) => {
+                                          // Section header for menu layout
+                                          if (item.type === "section") {
+                                            return (
+                                              <div key={idx} className="my-3 first:mt-1">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[2px] w-8" style={{ background: accentSolid }} />
+                                                  <h3 className="text-[11px] font-black uppercase tracking-wider" style={{ color: accentSolid }}>
+                                                    {item.title || "SECTION"}
+                                                  </h3>
+                                                  <div className="h-[2px] flex-1" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          // Subsection for menu layout
+                                          if (item.type === "subsection") {
+                                            return (
+                                              <div key={idx} className="my-2 first:mt-1 ml-2">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[1.5px] w-6" style={{ background: `${accentSolid}80` }} />
+                                                  <h4 className="text-[10px] font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
+                                                    {item.title || "Subsection"}
+                                                  </h4>
+                                                  <div className="h-[1.5px] flex-1" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
                                           <motion.div
                                             key={idx}
                                             initial={{ opacity: 0, x: -10 }}
@@ -3886,12 +4176,43 @@ async function startStripeConnect() {
                                               </button>
                                             </div>
                                           </motion.div>
-                                        ))}
+                                        )})}
                                       </div>
                                     ) : (
                                       /* Cards layout - default */
                                       <>
-                                        {items.map((item, idx) => (
+                                        {items.map((item, idx) => {
+                                          // Section header for cards layout
+                                          if (item.type === "section") {
+                                            return (
+                                              <div key={idx} className="my-3 first:mt-1">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[2px] w-8" style={{ background: accentSolid }} />
+                                                  <h3 className="text-[11px] font-black uppercase tracking-wider" style={{ color: accentSolid }}>
+                                                    {item.title || "SECTION"}
+                                                  </h3>
+                                                  <div className="h-[2px] flex-1" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          // Subsection for cards layout
+                                          if (item.type === "subsection") {
+                                            return (
+                                              <div key={idx} className="my-2 first:mt-1 ml-2">
+                                                <div className="flex items-center gap-2 px-1">
+                                                  <div className="h-[1.5px] w-6" style={{ background: `${accentSolid}80` }} />
+                                                  <h4 className="text-[10px] font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
+                                                    {item.title || "Subsection"}
+                                                  </h4>
+                                                  <div className="h-[1.5px] flex-1" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          }
+                                          
+                                          return (
                                       <motion.div
                                         key={idx}
                                         initial={{ opacity: 0, x: -10 }}
@@ -3975,9 +4296,11 @@ async function startStripeConnect() {
                                                 {item.price || "$0"}
                                               </span>
                                             </div>
-                                            <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
-                                              {mode === "services" ? "60 min • Book online" : item.note || "Details here"}
-                                            </p>
+                                            {item.note && (
+                                              <p className="text-[9px] text-gray-600 mb-1.5 leading-relaxed font-semibold">
+                                                {item.note}
+                                              </p>
+                                            )}
                                             <motion.button
                                               className="w-full py-1.5 text-[10px] font-black shadow-md relative overflow-hidden"
                                               style={{
@@ -4011,7 +4334,8 @@ async function startStripeConnect() {
                                           </div>
                                         </div>
                                       </motion.div>
-                                    ))}</>
+                                    )})}
+                                      </>
                                     )}
                                   </motion.div>
 
@@ -4123,7 +4447,7 @@ async function startStripeConnect() {
                                   )}
 
                                   {/* Business Hours Section - optional for all modes */}
-                                  {(appearance.showHours ?? false) && (
+                                  {(appearance.showHours ?? false) && availability?.days && (
                                     <div className="px-3 pb-3 bg-gray-50">
                                       <div className="pt-3 pb-2">
                                         <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">

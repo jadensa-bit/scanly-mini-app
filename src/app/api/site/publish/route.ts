@@ -9,6 +9,21 @@ function getSupabase() {
   return createClient(url, serviceKey, { auth: { persistSession: false } });
 }
 
+const TABLE_CANDIDATES = ["scanly_sites", "sites", "site"];
+
+async function findSiteByHandle(supabase: any, handle: string) {
+  for (const table of TABLE_CANDIDATES) {
+    const { data, error } = await supabase.from(table).select("*").eq("handle", handle).maybeSingle();
+    const msg = String(error?.message || "").toLowerCase();
+    if (error && (msg.includes("does not exist") || msg.includes("relation") || msg.includes("schema cache"))) {
+      continue;
+    }
+    if (error) return { table, data: null, error };
+    if (data) return { table, data, error: null };
+  }
+  return { table: null, data: null, error: null };
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = getSupabase();
@@ -18,9 +33,36 @@ export async function POST(req: Request) {
     
     if (!handle) return NextResponse.json({ ok: false, error: "Missing handle" }, { status: 400 });
 
+    // Find the site in any table
+    const siteResult = await findSiteByHandle(supabase, handle);
+    
+    if (!siteResult.data || !siteResult.table) {
+      console.error(`❌ Site not found for ${handle}`);
+      return NextResponse.json({ ok: false, error: "Site not found" }, { status: 404 });
+    }
+
+    const site = siteResult.data;
+    const tableName = siteResult.table;
+    
+    console.log(`📋 Found site in table: ${tableName}`);
+
+    // If there's a draft_config, copy it to config (publish the draft)
+    // If there's no draft, just mark as published
+    const updateData: any = { 
+      published_at: new Date().toISOString() 
+    };
+    
+    if (site.draft_config) {
+      console.log(`📋 Publishing draft changes for ${handle}`);
+      updateData.config = site.draft_config;
+      updateData.draft_config = null; // Clear draft after publishing
+    } else {
+      console.log(`📋 No draft found, just marking ${handle} as published`);
+    }
+
     const { error } = await supabase
-      .from("sites")
-      .update({ published: true, published_at: new Date().toISOString() })
+      .from(tableName)
+      .update(updateData)
       .eq("handle", handle);
 
     if (error) {
@@ -28,18 +70,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
     
-    console.log(`✅ Site ${handle} marked as published`);
+    console.log(`✅ Site ${handle} ${site.draft_config ? 'published with draft changes' : 'marked as published'}`);
 
     // Auto-generate slots for services/booking modes
     try {
-      // Get the site config to check if it's a services site
-      const { data: site } = await supabase
-        .from("sites")
+      // Use the updated config (after publish) to check if it's a services site
+      const { data: updatedSite } = await supabase
+        .from(tableName)
         .select("config")
         .eq("handle", handle)
         .single();
       
-      const mode = site?.config?.mode;
+      const mode = updatedSite?.config?.mode;
       console.log(`📋 Site mode for ${handle}: ${mode}`);
       
       if (mode === 'services' || mode === 'booking') {
@@ -67,7 +109,7 @@ export async function POST(req: Request) {
         const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + daysInAdvance);
 
-        const availability = site?.config?.availability || {
+        const availability = updatedSite?.config?.availability || {
           slotMinutes: 60,
           days: {
             mon: { enabled: true, start: "09:00", end: "17:00" },

@@ -65,7 +65,7 @@ function getSupabase() {
  * - stripe_account_id (text, nullable) ✅ optional
  * - updated_at (timestamptz)
  */
-const TABLE_CANDIDATES = ["sites", "scanly_sites", "site"];
+const TABLE_CANDIDATES = ["scanly_sites", "sites", "site"];
 
 async function findSiteByHandle(supabase: any, handle: string) {
   for (const table of TABLE_CANDIDATES) {
@@ -95,37 +95,78 @@ function extractOwnerEmail(config: any) {
   return a || b || c || null;
 }
 
-async function upsertSite(supabase: any, handle: string, config: any, userId?: string) {
+async function upsertSite(supabase: any, handle: string, config: any, userId?: string, saveAsDraft = false, isExisting = false) {
   const owner_email = extractOwnerEmail(config);
 
-  // store full config JSON under config column
-  const payload = {
+  // For editing existing sites with draft mode, we only update draft_config, not config
+  // For new sites, we set config directly
+  const payload: any = {
     handle,
-    config,
+    ...(saveAsDraft ? { draft_config: config } : { config }),
     ...(owner_email ? { owner_email } : {}),
     ...(userId ? { user_id: userId } : {}),
     updated_at: new Date().toISOString(),
   };
 
-  console.log("📝 upsertSite - payload user_id:", payload.user_id || "NOT SET", "handle:", handle);
+  console.log("📝 upsertSite - payload user_id:", payload.user_id || "NOT SET", "handle:", handle, "saveAsDraft:", saveAsDraft, "isExisting:", isExisting);
 
   for (const table of TABLE_CANDIDATES) {
     console.log(`🔄 Trying table: ${table}`);
+    
     // preserve existing stripe_account_id if present on the existing row
     try {
       const { data: existing, error: selErr } = await supabase.from(table).select("stripe_account_id").eq("handle", handle).maybeSingle();
       if (!selErr && existing && existing.stripe_account_id) {
-        // attach existing stripe_account_id so upsert won't wipe it
-        // @ts-ignore
         payload.stripe_account_id = existing.stripe_account_id;
         console.log(`✅ Preserved stripe_account_id from ${table}`);
       }
     } catch {}
-    const { data, error } = await supabase
-      .from(table)
-      .upsert(payload, { onConflict: "handle" })
-      .select("handle")
-      .maybeSingle();
+    
+    let data, error;
+    
+    // Use UPDATE for existing sites in draft mode to avoid overwriting config
+    if (isExisting && saveAsDraft) {
+      console.log(`🔄 Using UPDATE for existing site (draft mode)`);
+      const updatePayload: any = {
+        draft_config: config,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Ensure user_id is set even on updates (in case it was missing before)
+      if (userId) {
+        updatePayload.user_id = userId;
+      }
+      
+      const updateResult = await supabase
+        .from(table)
+        .update(updatePayload)
+        .eq("handle", handle)
+        .select("handle")
+        .maybeSingle();
+      data = updateResult.data;
+      error = updateResult.error;
+    } else {
+      // Use UPSERT for new sites or when publishing
+      console.log(`🔄 Using UPSERT for ${isExisting ? 'existing site (publish mode)' : 'new site'}`);
+      console.log(`📋 UPSERT payload for ${handle}:`, { 
+        has_user_id: !!payload.user_id, 
+        user_id: payload.user_id,
+        has_config: !!payload.config,
+        has_draft_config: !!payload.draft_config 
+      });
+      
+      const upsertResult = await supabase
+        .from(table)
+        .upsert(payload, { onConflict: "handle" })
+        .select("handle, user_id")
+        .maybeSingle();
+      data = upsertResult.data;
+      error = upsertResult.error;
+      
+      if (data) {
+        console.log(`📊 UPSERT result for ${handle}:`, { handle: data.handle, user_id: data.user_id });
+      }
+    }
 
     const msg = String(error?.message || "").toLowerCase();
     console.log(`📊 Table ${table} response:`, { success: !error, error: error?.message, handle: data?.handle });
@@ -207,11 +248,24 @@ export async function GET(req: Request) {
       return jsonError("Unauthorized: You don't own this Piqo", 403);
     }
 
+    // ✅ In edit mode, return draft_config if it exists, otherwise fallback to config
+    // ✅ In view mode, always return the published config only
+    const configToReturn = editMode 
+      ? (out.data.draft_config ?? out.data.config)  // Edit mode: prefer draft
+      : out.data.config;  // View mode: use published config only
+    
+    console.log("GET /api/site returning config:", { 
+      editMode, 
+      hasDraft: !!out.data.draft_config, 
+      returningDraft: editMode && !!out.data.draft_config 
+    });
+
     // ✅ Return the config cleanly (but keep site row too for stripe fields etc.)
     return noStoreJson({
       ok: true,
       site: out.data,
-      config: out.data.config ?? null,
+      config: configToReturn ?? null,
+      hasDraft: !!out.data.draft_config,  // Let client know if there's a draft
       table: out.table,
     });
   } catch (e: any) {
@@ -311,8 +365,19 @@ export async function POST(req: NextRequest) {
       console.log("🔍 AVAILABILITY.DAYS:", JSON.stringify(config.availability.days, null, 2));
     }
 
-    // ✅ Always pass userId since we verified authentication above
-    const out = await upsertSite(supabase, handle, config, userId);
+    // Check if site already exists to determine if this is an edit (save as draft) or new creation (save as live)
+    const existingSite = await findSiteByHandle(supabase, handle);
+    const isEditing = !!existingSite.data;
+    const saveAsDraft = isEditing; // Save as draft only when editing existing site
+    
+    console.log("📝 POST /api/site mode:", isEditing ? "EDITING (save as draft)" : "CREATING (save as live)", "handle:", handle);
+    console.log("📊 Existing site found:", !!existingSite.data, "table:", existingSite.table);
+    if (existingSite.data) {
+      console.log("📊 Existing site has draft:", !!existingSite.data.draft_config);
+    }
+
+    // ✅ Pass both saveAsDraft and isEditing flags
+    const out = await upsertSite(supabase, handle, config, userId, saveAsDraft, isEditing);
 
     if (out.error) {
       console.error("POST /api/site supabase error:", out.error);

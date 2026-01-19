@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseclient";
 
 // Type definitions
 type Item = {
+  type?: "product" | "section" | "subsection";
   title?: string;
   price?: string;
   note?: string;
@@ -60,6 +61,7 @@ type Appearance = {
   showHours?: boolean;
   showPoweredBy?: boolean;
   specialMessage?: string;
+  layout?: "cards" | "tiles" | "menu";
 };
 export type StorefrontPreviewProps = {
   brandName?: string;
@@ -70,6 +72,7 @@ export type StorefrontPreviewProps = {
   staffProfiles?: StaffProfile[];
   ownerEmail?: string;
   brandLogo?: string;
+  profilePic?: string;
   social?: Social;
   availability?: Availability;
   notifications?: any;
@@ -154,6 +157,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const staffProfiles = props.staffProfiles || [];
   const ownerEmail = props.ownerEmail || "";
   const brandLogo = props.brandLogo || "";
+  const profilePic = props.profilePic || "";
   const social = props.social || {};
   const availability = props.availability || null;
   const mode = props.mode || "services";
@@ -202,6 +206,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
   // Cart helper functions
   const addToCart = (item: Item, qty: number = 1) => {
+    // Don't add section headers or subsections to cart
+    if (item.type === "section" || item.type === "subsection") return;
+    
     setCart(prev => {
       const existing = prev.find(ci => ci.item.title === item.title);
       if (existing) {
@@ -751,6 +758,24 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
               {/* Screen content - scrollable */}
               <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ fontFamily: previewFontFamily }}>
+                {/* Profile Picture in Corner */}
+                {profilePic && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                    className="absolute top-3 right-3 z-30"
+                  >
+                    <div className="h-12 w-12 rounded-full border-2 border-white/40 shadow-lg overflow-hidden bg-white/10 backdrop-blur-sm">
+                      <img 
+                        src={profilePic} 
+                        alt="Creator" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Special Message Banner */}
                 {specialMessage && (
                   <motion.div
@@ -911,10 +936,346 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             ? "Items"
                             : "Digital"}
                       </h3>
-                      <span className="text-xs text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-full">{items.length}</span>
+                      <span className="text-xs text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-full">{items.filter(it => it.type !== "section" && it.type !== "subsection").length}</span>
                     </div>
-                    {/* Cards layout - default */}
-                    {items.map((item: Item, idx: number) => (
+                    {/* Layout support: cards (default), tiles, menu */}
+                    {(appearance.layout || "cards") === "tiles" ? (
+                      /* TILES LAYOUT - 2 column grid */
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        {items.map((item: Item, idx: number) => {
+                          // Section header
+                          if (item.type === "section") {
+                            return (
+                              <div key={idx} className="col-span-2 my-4 first:mt-1">
+                                <div className="flex items-center gap-2 px-1">
+                                  <div className="h-[2px] w-10 rounded-full" style={{ background: accentSolid }} />
+                                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: accentSolid }}>
+                                    {item.title || "SECTION"}
+                                  </h3>
+                                  <div className="h-[2px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
+                                </div>
+                                {item.note && (
+                                  <p className="text-xs text-gray-600 font-medium px-1 mt-1 italic">{item.note}</p>
+                                )}
+                              </div>
+                            );
+                          }
+                          
+                          // Subsection
+                          if (item.type === "subsection") {
+                            return (
+                              <div key={idx} className="col-span-2 my-3 first:mt-1 ml-3">
+                                <div className="flex items-center gap-2 px-1">
+                                  <div className="h-[1.5px] w-7 rounded-full" style={{ background: `${accentSolid}80` }} />
+                                  <h4 className="text-xs font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
+                                    {item.title || "Subsection"}
+                                  </h4>
+                                  <div className="h-[1.5px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
+                                </div>
+                                {item.note && (
+                                  <p className="text-xs text-gray-500 font-medium px-1 mt-1 italic">{item.note}</p>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Regular product/service tile
+                          return (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.5 + idx * 0.05 }}
+                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group"
+                              style={{
+                                borderRadius: `${cardRadius}px`,
+                                borderColor: `${accentSolid}40`,
+                                background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                              }}
+                              whileHover={{ y: -2 }}
+                            >
+                              {/* Image/Icon */}
+                              <div 
+                                className="relative h-24 overflow-hidden cursor-pointer group/image"
+                                onClick={() => {
+                                  if (item.image) {
+                                    setSelectedImage(item.image);
+                                    setShowImageModal(true);
+                                  }
+                                }}
+                              >
+                                {item.image ? (
+                                  <>
+                                    <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover transition-transform group-hover/image:scale-110" />
+                                    {/* Zoom indicator overlay */}
+                                    <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-all flex items-center justify-center">
+                                      <div className="opacity-0 group-hover/image:opacity-100 transition-opacity bg-white/90 rounded-full p-1.5 shadow-lg">
+                                        <svg className="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div 
+                                    className="w-full h-full flex items-center justify-center text-2xl relative overflow-hidden"
+                                    style={{ background: `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}
+                                  >
+                                    <motion.div
+                                      className="absolute inset-0"
+                                      style={{ background: `linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)` }}
+                                      animate={{ x: ["-100%", "200%"] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    />
+                                    <span className="relative z-10">
+                                      {mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}
+                                    </span>
+                                  </div>
+                                )}
+                                {item.badge && item.badge !== "none" && (
+                                  <motion.span
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="absolute top-1.5 right-1.5 rounded-lg px-2 py-0.5 text-[8px] font-black uppercase shadow-lg"
+                                    style={{
+                                      background: item.badge === "popular" 
+                                        ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)"
+                                        : "linear-gradient(135deg, #ffd32a 0%, #f39c12 100%)",
+                                      color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                    }}
+                                  >
+                                    {item.badge === "popular" ? "🔥" : "⚡"}
+                                  </motion.span>
+                                )}
+                              </div>
+                              {/* Content */}
+                              <div className="p-2.5">
+                                <h4 className="text-xs font-black text-gray-900 mb-1 line-clamp-2">{item.title || "Item"}</h4>
+                                {item.note && (
+                                  <p className="text-[10px] text-gray-600 mb-2 line-clamp-2 leading-snug">{item.note}</p>
+                                )}
+                                <div className="text-xs font-black mb-2" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                <motion.button
+                                  className="w-full py-2 text-[10px] font-black relative overflow-hidden"
+                                  style={{
+                                    background: ctaBg,
+                                    color: ctaFg,
+                                    borderRadius: `${Math.min(cardRadius * 0.6, 10)}px`,
+                                  }}
+                                  whileHover={{ scale: 1.03 }}
+                                  whileTap={{ scale: 0.97 }}
+                                  onClick={() => {
+                                    if (mode === "products" || mode === "digital") {
+                                      addToCart(item, quantity);
+                                    } else {
+                                      setSelectedItem(item);
+                                      setBookingStep("confirm");
+                                    }
+                                  }}
+                                >
+                                  {shine && (
+                                    <motion.div
+                                      className="absolute inset-0"
+                                      style={{ background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)` }}
+                                      animate={{ x: ["-100%", "200%"] }}
+                                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    />
+                                  )}
+                                  <span className="relative z-10">
+                                    {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                  </span>
+                                </motion.button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    ) : (appearance.layout || "cards") === "menu" ? (
+                      /* MENU LAYOUT - compact rows */
+                      <div className="space-y-2 mt-3">
+                        {items.map((item: Item, idx: number) => {
+                          // Section header
+                          if (item.type === "section") {
+                            return (
+                              <div key={idx} className="my-4 first:mt-1">
+                                <div className="flex items-center gap-2 px-1">
+                                  <div className="h-[2px] w-10 rounded-full" style={{ background: accentSolid }} />
+                                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: accentSolid }}>
+                                    {item.title || "SECTION"}
+                                  </h3>
+                                  <div className="h-[2px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
+                                </div>
+                                {item.note && (
+                                  <p className="text-xs text-gray-600 font-medium px-1 mt-1 italic">{item.note}</p>
+                                )}
+                              </div>
+                            );
+                          }
+                          
+                          // Subsection
+                          if (item.type === "subsection") {
+                            return (
+                              <div key={idx} className="my-3 first:mt-1 ml-3">
+                                <div className="flex items-center gap-2 px-1">
+                                  <div className="h-[1.5px] w-7 rounded-full" style={{ background: `${accentSolid}80` }} />
+                                  <h4 className="text-xs font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
+                                    {item.title || "Subsection"}
+                                  </h4>
+                                  <div className="h-[1.5px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
+                                </div>
+                                {item.note && (
+                                  <p className="text-xs text-gray-500 font-medium px-1 mt-1 italic">{item.note}</p>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Regular menu item row
+                          return (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.5 + idx * 0.05 }}
+                              className="flex gap-2 p-2 border-b border-gray-100 hover:bg-gray-50/50 transition-colors group"
+                            >
+                              {/* Small thumbnail */}
+                              {item.image && (
+                                <div 
+                                  className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200 cursor-pointer"
+                                  onClick={() => {
+                                    if (item.image) {
+                                      setSelectedImage(item.image);
+                                      setShowImageModal(true);
+                                    }
+                                  }}
+                                >
+                                  <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <h4 className="font-black text-xs text-gray-900 truncate">{item.title || "Item"}</h4>
+                                    {item.badge && item.badge !== "none" && (
+                                      <span 
+                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-black uppercase flex-shrink-0"
+                                        style={{
+                                          background: item.badge === "popular" 
+                                            ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)"
+                                            : "linear-gradient(135deg, #ffd32a 0%, #f39c12 100%)",
+                                          color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                        }}
+                                      >
+                                        {item.badge === "popular" ? "🔥" : "⚡"}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price || "$0"}</span>
+                                </div>
+                                {item.note && (
+                                  <p className="text-[10px] text-gray-600 mb-1 line-clamp-2 leading-snug">{item.note}</p>
+                                )}
+                                <button
+                                  className="text-[9px] font-bold px-2.5 py-1 relative overflow-hidden"
+                                  style={{
+                                    background: ctaBg,
+                                    color: ctaFg,
+                                    borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                                  }}
+                                  onClick={() => {
+                                    if (mode === "products" || mode === "digital") {
+                                      addToCart(item, quantity);
+                                    } else {
+                                      setSelectedItem(item);
+                                      setBookingStep("confirm");
+                                    }
+                                  }}
+                                >
+                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                </button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* CARDS LAYOUT - default */
+                      <div className="space-y-3 mt-3">
+                        {items.map((item: Item, idx: number) => {
+                      // Section Header rendering - completely different from products
+                      if (item.type === "section") {
+                        return (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 + idx * 0.1 }}
+                            className="my-6 first:mt-2"
+                          >
+                            {/* Full-width section divider */}
+                            <div className="flex items-center gap-3 px-2 mb-3">
+                              <div 
+                                className="h-[3px] w-12 rounded-full"
+                                style={{ background: accentSolid }}
+                              />
+                              <h3 
+                                className="text-xl font-black uppercase tracking-wider flex-shrink-0"
+                                style={{ color: accentSolid }}
+                              >
+                                {item.title || "SECTION"}
+                              </h3>
+                              <div 
+                                className="h-[3px] flex-1 rounded-full"
+                                style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }}
+                              />
+                            </div>
+                            {item.note && (
+                              <p className="text-sm text-gray-600 font-medium px-2 mb-2 italic">
+                                {item.note}
+                              </p>
+                            )}
+                          </motion.div>
+                        );
+                      }
+
+                      // Subsection rendering - smaller, indented
+                      if (item.type === "subsection") {
+                        return (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 + idx * 0.1 }}
+                            className="my-4 first:mt-2 ml-4"
+                          >
+                            <div className="flex items-center gap-2 px-2 mb-2">
+                              <div 
+                                className="h-[2px] w-6 rounded-full"
+                                style={{ background: `${accentSolid}80` }}
+                              />
+                              <h4 
+                                className="text-sm font-bold uppercase tracking-wide flex-shrink-0"
+                                style={{ color: `${accentSolid}cc` }}
+                              >
+                                {item.title || "Subsection"}
+                              </h4>
+                              <div 
+                                className="h-[2px] flex-1 rounded-full"
+                                style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }}
+                              />
+                            </div>
+                            {item.note && (
+                              <p className="text-xs text-gray-500 font-medium px-2 mb-2 italic">
+                                {item.note}
+                              </p>
+                            )}
+                          </motion.div>
+                        );
+                      }
+
+                      // Regular product/service item rendering
+                      return (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, x: -10 }}
@@ -992,9 +1353,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {item.price || "$0"}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-700 mb-2 leading-relaxed font-medium">
-                              {item.note || (mode === "services" ? "60 min • Book online" : "Details here")}
-                            </p>
+                            {item.note && (
+                              <p className="text-xs text-gray-700 mb-2 leading-relaxed font-medium">
+                                {item.note}
+                              </p>
+                            )}
                             {mode === "products" || mode === "digital" ? (
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
@@ -1073,7 +1436,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                    );
+                  })}
+                      </div>
+                    )}
                   </motion.div>
                   {/* Social + Contact Buttons Section */}
                   {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address) && (
