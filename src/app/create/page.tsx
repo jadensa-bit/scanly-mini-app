@@ -1949,7 +1949,6 @@ useEffect(() => {
                                   availability={availability}
                                   notifications={notifications}
                                   handle={cleanHandle}
-                                  payments={payments}
                                 />
                               </div>
                             </div>
