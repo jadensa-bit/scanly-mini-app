@@ -33,6 +33,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import StorefrontPreview from "@/components/StorefrontPreview";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
