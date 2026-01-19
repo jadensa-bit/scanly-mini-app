@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseclient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import InstallPWA from './InstallPWA';
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -38,6 +39,7 @@ export default function Header() {
             piqo
           </Link>
           <nav className="flex items-center space-x-4">
+            <InstallPWA />
             {user ? (
               <>
                 <Link href="/dashboard" className="text-white hover:text-gray-300">
