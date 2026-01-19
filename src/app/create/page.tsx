@@ -1935,29 +1935,21 @@ useEffect(() => {
                               {/* Screen content - scrollable */}
                               <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
                                 <StorefrontPreview
-                                  config={{
-                                    mode,
-                                    brandName,
-                                    brandLogo,
-                                    brandDescription,
-                                    products,
-                                    services,
-                                    headerStyle,
-                                    headerBg,
-                                    accentColor,
-                                    textColor,
-                                    bgColor,
-                                    cardColor,
-                                    productImages,
-                                    handle,
-                                    acceptsPayments,
-                                    availability,
-                                    serviceImages,
-                                    font,
-                                    rounded,
-                                  }}
+                                  mode={mode}
+                                  brandName={brandName}
+                                  tagline={tagline}
+                                  businessDescription={businessDescription}
+                                  items={items}
+                                  appearance={appearance}
+                                  staffProfiles={staffProfiles}
+                                  ownerEmail={ownerEmail}
+                                  brandLogo={brandLogo}
+                                  profilePic={profilePic}
+                                  social={social}
+                                  availability={availability}
+                                  notifications={notifications}
                                   handle={handle}
-                                  onImageUpload={handleImageUpload}
+                                  payments={payments}
                                 />
                               </div>
                             </div>
