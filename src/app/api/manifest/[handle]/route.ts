@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabaseclient';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { handle: string } }
+  { params }: { params: Promise<{ handle: string }> }
 ) {
-  const handle = params.handle;
+  const { handle } = await params;
 
   try {
     // Fetch the site configuration
