@@ -18,17 +18,61 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "
 const dmsans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-dmsans", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Piqo",
-  description: "Piqo — Scan. Shop. Done.",
+  title: "piqo - Instant Storefronts",
+  description: "Create instant QR storefronts, services, and bookings. Scan. Shop. Done.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "piqo",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.NodeNode }) {
   return (
     <html
       lang="en"
       className={`${inter.variable} ${poppins.variable} ${sora.variable} ${space.variable} ${jakarta.variable} ${dmsans.variable}`}
     >
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon-192.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="piqo" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-screen antialiased" suppressHydrationWarning={true}>
+        {/* PWA Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    (registration) => console.log('SW registered:', registration.scope),
+                    (err) => console.log('SW registration failed:', err)
+                  );
+                });
+              }
+            `,
+          }}
+        />
+        
         {/* Ambient premium background */}
         <div className="fixed inset-0 -z-10">
           <div className="absolute inset-0 bg-black" />
