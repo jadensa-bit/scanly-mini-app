@@ -795,7 +795,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="relative h-40 overflow-hidden"
+                    className="relative h-44 overflow-hidden flex flex-col"
                     style={{ background: headerBg }}
                   >
                     {/* Shimmer overlay */}
@@ -806,13 +806,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
                     />
                     {/* Logo - centered top */}
-                    <div className="absolute top-0 left-0 right-0 flex justify-center pt-1">
+                    <div className="flex justify-center pt-2 pb-2 flex-shrink-0">
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0, y: -10 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
                         className={cn(
-                          "h-20 w-20 border-2 border-white/30 bg-black/40 backdrop-blur-sm grid place-items-center overflow-hidden shadow-xl",
+                          "h-16 w-16 border-2 border-white/30 bg-black/40 backdrop-blur-sm grid place-items-center overflow-hidden shadow-xl",
                           logoRound
                         )}
                         style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1) inset" }}
@@ -832,7 +832,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       </motion.div>
                     </div>
                     {/* Brand name & tagline */}
-                    <div className="absolute bottom-1.5 left-3 right-3 text-center">
+                    <div className="px-4 pb-3 text-center flex-1 flex flex-col justify-end">
                       <motion.h2
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -854,7 +854,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           initial={{ y: 10, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           transition={{ delay: 0.4 }}
-                          className="text-white/80 text-xs mt-1 line-clamp-2 drop-shadow px-4"
+                          className="text-white/80 text-xs mt-1 line-clamp-2 drop-shadow"
                         >
                           {businessDescription}
                         </motion.p>
