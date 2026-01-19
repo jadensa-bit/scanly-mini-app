@@ -36,10 +36,10 @@ import {
 type ModeId = "services" | "booking" | "digital" | "products";
 
 type ItemBadge = "popular" | "limited" | "none";
-type ItemType = "product" | "section";
+type ItemType = "product" | "section" | "subsection";
 
 type BuildItem = {
-  type?: ItemType; // "product" (default) or "section"
+  type?: ItemType; // "product" (default), "section", or "subsection"
   title: string;
   price: string;
   note?: string;
