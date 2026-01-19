@@ -1852,11 +1852,11 @@ useEffect(() => {
                 </motion.button>
               </div>
 
-              {/* Preview content - scrollable */}
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="max-w-md mx-auto">
+              {/* Preview content - scrollable both horizontally and vertically */}
+              <div className="flex-1 overflow-auto p-4">
+                <div className="min-w-max">
                   {/* Preview Controls */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
                     <motion.button
                       type="button"
                       onClick={randomizeTheme}
@@ -1885,7 +1885,7 @@ useEffect(() => {
 
                   {/* Phone frame */}
                   <motion.div 
-                    className="rounded-[24px] p-0.5 relative"
+                    className="rounded-[24px] p-0.5 relative max-w-md mx-auto"
                     style={{
                       background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3), rgba(244,114,182,0.3))",
                     }}
@@ -1894,7 +1894,7 @@ useEffect(() => {
                     transition={{ delay: 0.1 }}
                   >
                     <div className="rounded-[22px] border border-white/12 bg-black/80 p-1.5">
-                      <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black shadow-2xl">
+                      <div className="relative overflow-visible rounded-[18px] border border-white/12 bg-black shadow-2xl">
                         {/* Phone header bar */}
                         <div className="flex items-center justify-between px-3 py-2 text-[10px] text-white/80 border-b border-white/10 bg-gradient-to-r from-black/90 via-black/70 to-black/90">
                           <span className="inline-flex items-center gap-1.5 truncate">
@@ -1918,11 +1918,11 @@ useEffect(() => {
                           key={previewTick}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="relative mx-auto w-full h-[600px] overflow-hidden"
+                          className="relative mx-auto w-full min-h-[600px]"
                         >
                           {/* Embedded preview content - reusing desktop preview structure */}
-                          <div className="rounded-[28px] border border-white/12 bg-black/45 p-3 h-full">
-                            <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col">
+                          <div className="rounded-[28px] border border-white/12 bg-black/45 p-3">
+                            <div className="relative overflow-auto rounded-[28px] border border-white/12 bg-black flex flex-col max-h-[70vh]">
                               {/* Header bar */}
                               <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
                                 <span className="inline-flex items-center gap-2">
@@ -1932,8 +1932,8 @@ useEffect(() => {
                                 <span className="text-white/60">{brandName || "Brand basics"}</span>
                               </div>
 
-                              {/* Screen content - scrollable */}
-                              <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
+                              {/* Screen content - scrollable both directions */}
+                              <div className="relative overflow-auto scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
                                 <StorefrontPreview
                                   mode={mode}
                                   brandName={brandName}
