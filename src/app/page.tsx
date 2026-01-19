@@ -13,12 +13,98 @@ import {
   CreditCard,
   ShieldCheck,
   BadgeCheck,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseclient";
 import AuthButtons from "@/components/AuthButtons";
+
+// Install Banner Component
+function InstallBanner() {
+  const [showBanner, setShowBanner] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    // Check if already installed
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone;
+    
+    if (isStandalone) {
+      return; // Don't show banner if already installed
+    }
+
+    // Listen for install prompt
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Show banner after 2 seconds for Safari/other browsers
+    const timer = setTimeout(() => {
+      if (!deferredPrompt) {
+        setShowBanner(true);
+      }
+    }, 2000);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      clearTimeout(timer);
+    };
+  }, [deferredPrompt]);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowBanner(false);
+      }
+    } else {
+      // For Safari - show instructions
+      alert('To install:\niOS: Tap Share → Add to Home Screen\nAndroid: Tap Menu (⋮) → Install app');
+    }
+  };
+
+  if (!showBanner) return null;
+
+  return (
+    <motion.div
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: -100, opacity: 0 }}
+      className="fixed top-20 left-0 right-0 z-40 mx-4 max-w-2xl lg:left-1/2 lg:-translate-x-1/2"
+    >
+      <div className="bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl shadow-2xl border border-white/20 p-4 sm:p-5">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
+            <Download className="w-6 h-6 text-purple-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-base sm:text-lg">Get the piqo-builder App</p>
+            <p className="text-white/90 text-sm">Install for faster access & offline use</p>
+          </div>
+          <button
+            onClick={handleInstall}
+            className="flex-shrink-0 px-4 sm:px-6 py-2.5 bg-white text-purple-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all shadow-lg active:scale-95"
+          >
+            Download
+          </button>
+          <button
+            onClick={() => setShowBanner(false)}
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 type ModeId = "services" | "products" | "digital";
 
@@ -1014,24 +1100,6 @@ export default function Home() {
 
   const [origin, setOrigin] = useState("");
   
-  // Redirect if app is installed (standalone mode)
-  useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone ||
-      document.referrer.includes('android-app://');
-    
-    if (isStandalone) {
-      // Check if user is logged in
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          router.push('/dashboard');
-        } else {
-          router.push('/create');
-        }
-      });
-    }
-  }, [router]);
-  
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
@@ -1042,6 +1110,9 @@ export default function Home() {
 
   return (
     <>
+      {/* PWA Install Banner - Only show if not installed */}
+      <InstallBanner />
+
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pb-20 pt-20 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
         {/* Animated Background Orbs */}

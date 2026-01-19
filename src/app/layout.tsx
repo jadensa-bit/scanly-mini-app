@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import StandaloneRedirect from "@/components/StandaloneRedirect";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-poppins", display: "swap" });
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         </div>
 
+        <StandaloneRedirect />
         <Header />
         {children}
       </body>
