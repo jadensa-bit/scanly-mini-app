@@ -17,7 +17,7 @@ export default function StandaloneRedirect() {
     if (!isStandalone) return;
 
     // Pages that should not redirect
-    const allowedPages = ['/dashboard', '/create', '/profile', '/u/'];
+    const allowedPages = ['/dashboard', '/create', '/profile', '/u/', '/login', '/signup'];
     const isAllowedPage = allowedPages.some(page => pathname.startsWith(page));
     
     // If already on an allowed page, don't redirect
@@ -28,9 +28,9 @@ export default function StandaloneRedirect() {
       if (user) {
         // Logged in users always go to dashboard when opening the app
         router.replace('/dashboard');
-      } else if (pathname === '/' || pathname === '/login' || pathname === '/signup') {
-        // Non-logged in users on homepage/auth pages go to create
-        router.replace('/create');
+      } else if (pathname === '/') {
+        // Non-logged in users on homepage go to login
+        router.replace('/login');
       }
     });
   }, [pathname, router]);
