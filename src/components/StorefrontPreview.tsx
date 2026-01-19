@@ -5,6 +5,7 @@ import { Sparkles, X, Download, ShoppingBag, User, Mail, Phone, MapPin } from "l
 import { useParams } from "next/navigation";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabaseclient";
+import InstallPiqoButton from "./InstallPiqoButton";
 
 // Type definitions
 type Item = {
@@ -178,6 +179,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [showCart, setShowCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   
+  // Scroll state for hiding header
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   // Creator info modal
   const [showCreatorInfo, setShowCreatorInfo] = useState(false);
   
@@ -244,6 +249,29 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   }, 0);
 
   const cartItemCount = cart.reduce((count, ci) => count + ci.quantity, 0);
+
+  // Scroll listener to hide header on scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    let lastScrollTop = 0;
+    const handleScroll = () => {
+      const scrollTop = scrollContainer.scrollTop;
+      
+      // Hide header when scrolling down past 50px, show when scrolling up or at top
+      if (scrollTop > 50 && scrollTop > lastScrollTop) {
+        setIsHeaderVisible(false);
+      } else if (scrollTop < lastScrollTop || scrollTop <= 10) {
+        setIsHeaderVisible(true);
+      }
+      
+      lastScrollTop = scrollTop;
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Debug: Log mode and availability on component mount/update
   useEffect(() => {
@@ -746,18 +774,27 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                 maxWidth: '100vw',
               }}
             >
-              {/* Header bar */}
-              <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
+              {/* Header bar - hide on scroll */}
+              <motion.div 
+                initial={{ y: 0 }}
+                animate={{ y: isHeaderVisible ? 0 : -60 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0"
+              >
                 <span className="inline-flex items-center gap-2">
                   <Sparkles className="h-3.5 w-3.5" />
                   Live
                 </span>
                 <span className="text-white/60">{brandName || "Brand basics"}</span>
-              </div>
+              </motion.div>
               {/* Notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
               {/* Screen content - scrollable */}
-              <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ fontFamily: previewFontFamily }}>
+              <div 
+                ref={scrollContainerRef}
+                className="relative overflow-y-scroll scrollbar-hide flex-1" 
+                style={{ fontFamily: previewFontFamily }}
+              >
                 {/* Profile Picture in Corner */}
                 {profilePic && (
                   <motion.div
@@ -2234,6 +2271,15 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Install App Button - only show if viewing a published piqo */}
+      {handle && (
+        <InstallPiqoButton 
+          handle={handle} 
+          brandName={brandName} 
+          brandLogo={brandLogo || profilePic}
+        />
+      )}
     </main>
   );
 }

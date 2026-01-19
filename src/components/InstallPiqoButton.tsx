@@ -1,13 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Download, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export default function InstallPWA() {
+interface InstallPiqoButtonProps {
+  handle: string;
+  brandName: string;
+  brandLogo?: string;
+}
+
+export default function InstallPiqoButton({ handle, brandName, brandLogo }: InstallPiqoButtonProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -15,6 +22,17 @@ export default function InstallPWA() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Inject dynamic manifest link
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.setAttribute('href', `/api/manifest/${handle}`);
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = `/api/manifest/${handle}`;
+      document.head.appendChild(link);
+    }
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -32,13 +50,11 @@ export default function InstallPWA() {
     setIsIOS(isIOSDevice);
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  }, [handle]);
 
   const handleInstall = () => {
-    // Immediate UI feedback
     setIsInstalling(true);
     
-    // Defer async work to next tick
     setTimeout(() => {
       if (deferredPrompt) {
         // Chrome/Edge - use native prompt
@@ -65,26 +81,14 @@ export default function InstallPWA() {
       <button
         onClick={handleInstall}
         disabled={isInstalling}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-cyan-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl active:scale-95 animate-pulse hover:animate-none disabled:opacity-75 disabled:cursor-wait"
-        title={isIOS ? 'Get installation instructions' : 'Download piqo-builder to your device'}
+        className="fixed top-6 right-6 z-50 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-full font-semibold text-sm hover:from-cyan-600 hover:to-purple-700 transition-all shadow-2xl hover:shadow-cyan-500/50 active:scale-95 animate-bounce hover:animate-none disabled:opacity-75 disabled:cursor-wait"
+        title={isIOS ? 'Get installation instructions' : `Install ${brandName} app`}
       >
-        <svg 
-          className="w-5 h-5" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2.5} 
-            d="M12 4v16m0 0l-4-4m4 4l4-4"
-          />
-        </svg>
+        <Download className="w-5 h-5" />
         <span className="hidden sm:inline">
-          {isInstalling ? 'Installing...' : (isIOS ? 'Install App' : 'Download App')}
+          {isInstalling ? 'Installing...' : (isIOS ? 'Install App' : 'Get App')}
         </span>
-        <span className="sm:hidden">{isInstalling ? '...' : (isIOS ? 'Install' : 'Download')}</span>
+        <span className="sm:hidden">{isInstalling ? '...' : 'Install'}</span>
       </button>
 
       {showInstructions && (
@@ -96,21 +100,23 @@ export default function InstallPWA() {
             className="bg-gradient-to-br from-white to-gray-50 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-gray-200" 
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Safe icon */}
+            {/* Icon */}
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m0 0l-4-4m4 4l4-4" />
-                </svg>
-              </div>
+              {brandLogo ? (
+                <img src={brandLogo} alt={brandName} className="w-16 h-16 rounded-2xl shadow-lg" />
+              ) : (
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Download className="w-8 h-8 text-white" />
+                </div>
+              )}
             </div>
 
             <h3 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Add piqo-builder to Home Screen
+              Add {brandName} to Home Screen
             </h3>
             
             <p className="text-center text-gray-600 mb-6 text-sm">
-              Install this app for quick access and a better experience
+              Install this app for quick access to {brandName}
             </p>
 
             {/* Badge showing it's safe */}
@@ -122,7 +128,7 @@ export default function InstallPWA() {
             </div>
 
             <div className="space-y-4 text-sm text-gray-600 mb-6">
-              {/* Show iOS instructions first if on iOS, or always show them prominently */}
+              {/* iOS instructions - show prominently if on iOS */}
               <div className={`${isIOS ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-400' : 'bg-blue-50 border-blue-200 text-gray-700'} border rounded-xl p-4`}>
                 <p className={`font-semibold mb-3 flex items-center gap-2 ${isIOS ? 'text-white' : 'text-blue-900'}`}>
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -148,9 +154,9 @@ export default function InstallPWA() {
                     <span>Tap <strong>"Add"</strong> in the top right corner</span>
                   </li>
                 </ol>
-                {isIOS && (
+                {isIOS && brandLogo && (
                   <div className="mt-3 pt-3 border-t border-blue-400 text-xs text-blue-100">
-                    💡 The app icon will appear on your home screen
+                    💡 The app will use the {brandName} logo as its icon
                   </div>
                 )}
               </div>

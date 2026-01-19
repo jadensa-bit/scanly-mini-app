@@ -31,6 +31,7 @@ import {
   Globe,
   Mail,
   User,
+  X,
 } from "lucide-react";
 
 type ModeId = "services" | "booking" | "digital" | "products";
@@ -1805,6 +1806,170 @@ useEffect(() => {
             );
           })}
         </motion.div>
+
+        {/* Mobile Preview Toggle Button - Only visible on mobile */}
+        <motion.button
+          type="button"
+          onClick={() => setPreviewOn((v) => !v)}
+          className="lg:hidden fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 backdrop-blur-xl px-4 py-3 font-semibold text-sm transition shadow-lg shadow-cyan-500/20"
+          style={{
+            background: previewOn
+              ? "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3))"
+              : "rgba(0,0,0,0.8)",
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Smartphone className="h-4 w-4" />
+          <span>{previewOn ? "Hide" : "Show"} Preview</span>
+        </motion.button>
+
+        {/* Mobile Preview Overlay - Full screen on mobile */}
+        {previewOn && (
+          <motion.div
+            className="lg:hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="h-full flex flex-col">
+              {/* Header with close button */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <Sparkles className="h-4 w-4 text-cyan-400" />
+                  Live Preview
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => setPreviewOn(false)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-sm font-semibold hover:bg-white/12 transition"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </motion.button>
+              </div>
+
+              {/* Preview content - scrollable */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="max-w-md mx-auto">
+                  {/* Preview Controls */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <motion.button
+                      type="button"
+                      onClick={randomizeTheme}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-purple-500/30 backdrop-blur-xl px-3 py-2 text-sm font-semibold transition"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(167,139,250,0.2), rgba(244,114,182,0.2))",
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      🎲 Randomize
+                    </motion.button>
+
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowQr((v) => !v)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 backdrop-blur-xl px-3 py-2 text-sm font-semibold hover:bg-white/12 transition"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <QrCode className="h-4 w-4" />
+                      QR
+                    </motion.button>
+                  </div>
+
+                  {/* Phone frame */}
+                  <motion.div 
+                    className="rounded-[24px] p-0.5 relative"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(167,139,250,0.3), rgba(244,114,182,0.3))",
+                    }}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <div className="rounded-[22px] border border-white/12 bg-black/80 p-1.5">
+                      <div className="relative overflow-hidden rounded-[18px] border border-white/12 bg-black shadow-2xl">
+                        {/* Phone header bar */}
+                        <div className="flex items-center justify-between px-3 py-2 text-[10px] text-white/80 border-b border-white/10 bg-gradient-to-r from-black/90 via-black/70 to-black/90">
+                          <span className="inline-flex items-center gap-1.5 truncate">
+                            <Sparkles className="h-3 w-3 text-cyan-400" />
+                            <span className="font-medium truncate max-w-[120px]">{brandName || "Your Store"}</span>
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-green-400"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                            />
+                            <span className="text-white/50 text-[9px]">live</span>
+                          </div>
+                        </div>
+
+                        {/* Notch */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
+
+                        <motion.div
+                          key={previewTick}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="relative mx-auto w-full h-[600px] overflow-hidden"
+                        >
+                          {/* Embedded preview content - reusing desktop preview structure */}
+                          <div className="rounded-[28px] border border-white/12 bg-black/45 p-3 h-full">
+                            <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-black h-full flex flex-col">
+                              {/* Header bar */}
+                              <div className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0">
+                                <span className="inline-flex items-center gap-2">
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  Live • {mode}
+                                </span>
+                                <span className="text-white/60">{brandName || "Brand basics"}</span>
+                              </div>
+
+                              {/* Screen content - scrollable */}
+                              <div className="relative overflow-y-scroll scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
+                                <StorefrontPreview
+                                  config={{
+                                    mode,
+                                    brandName,
+                                    brandLogo,
+                                    brandDescription,
+                                    products,
+                                    services,
+                                    headerStyle,
+                                    headerBg,
+                                    accentColor,
+                                    textColor,
+                                    bgColor,
+                                    cardColor,
+                                    productImages,
+                                    handle,
+                                    acceptsPayments,
+                                    availability,
+                                    serviceImages,
+                                    font,
+                                    rounded,
+                                  }}
+                                  handle={handle}
+                                  onImageUpload={handleImageUpload}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Main Content Area */}
         <div className="mt-6 relative">

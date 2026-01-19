@@ -17,7 +17,7 @@ export default function StandaloneRedirect() {
     if (!isStandalone) return;
 
     // Pages that should not redirect
-    const allowedPages = ['/dashboard', '/create', '/profile'];
+    const allowedPages = ['/dashboard', '/create', '/profile', '/u/'];
     const isAllowedPage = allowedPages.some(page => pathname.startsWith(page));
     
     // If already on an allowed page, don't redirect

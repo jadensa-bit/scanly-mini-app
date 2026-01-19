@@ -1149,7 +1149,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-10 max-w-3xl mx-auto font-medium leading-relaxed px-4"
           >
-            No website. No app. Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
+            Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
           </motion.p>
 
           <motion.div
@@ -1188,11 +1188,14 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-pink-400"><path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  No monthly fees
+                  No setup fee*
                 </div>
               </div>
               <p className="text-sm text-white/60 mt-4 max-w-md mx-auto">
                 Go live without Stripe — connect anytime to accept payments.
+              </p>
+              <p className="text-xs text-white/50 mt-3 max-w-lg mx-auto">
+                *Self-setup is free. Assisted-setup is available for additional fee.
               </p>
             </section>
 
@@ -1233,20 +1236,48 @@ export default function Home() {
           <h3 className="text-3xl md:text-4xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Perfect for:
           </h3>
-          <ul className="flex flex-wrap justify-center gap-4 text-lg md:text-xl font-semibold text-white/90">
-            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
-              ✂️ Barbers
-            </li>
-            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
-              💅 Nail techs
-            </li>
-            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
-              🧢 Merch sellers
-            </li>
-            <li className="flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:border-cyan-500/30 transition-all">
-              📲 Digital creators
-            </li>
-          </ul>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-white/10">
+                <img 
+                  src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=500&h=500&fit=crop&q=90" 
+                  alt="Barber" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <span className="text-base md:text-lg font-semibold text-white/90">Barbers</span>
+            </div>
+            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-white/10">
+                <img 
+                  src="https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=500&h=500&fit=crop&q=90" 
+                  alt="Nail tech" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <span className="text-base md:text-lg font-semibold text-white/90">Nail techs</span>
+            </div>
+            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center border border-white/10">
+                <img 
+                  src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500&h=500&fit=crop&q=90" 
+                  alt="Merch seller" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <span className="text-base md:text-lg font-semibold text-white/90">Merch sellers</span>
+            </div>
+            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
+                <img 
+                  src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=500&h=500&fit=crop&q=90" 
+                  alt="Digital creator" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <span className="text-base md:text-lg font-semibold text-white/90">Digital creators</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1512,7 +1543,7 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="text-2xl text-gray-300 mb-12 font-medium"
           >
-            Create your storefront in 2 minutes. No code, no monthly fees.
+            Create your storefront in 2 minutes. No code, no setup fee*.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1545,7 +1576,7 @@ export default function Home() {
       </section>
       {/* Footer */}
       <footer className="w-full text-center py-6 text-xs text-gray-400">
-        © 2026 piqo Labs LLC. All rights reserved.<br />
+        © 2026 piqo-builder LLC. All rights reserved.<br />
         piqo is a brand name used for a QR-based storefront and mini-app platform.
       </footer>
     </>

@@ -30,7 +30,16 @@ export default function ProfilePage() {
         setUser(user);
         setEmail(user.email || '');
         setName(user.user_metadata?.name || '');
-        setProfilePicture(user.user_metadata?.profile_picture || '');
+        
+        // Try to get profile picture from profiles table first, fallback to user metadata
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+        
+        const profilePic = profileData?.avatar_url || user.user_metadata?.profile_picture || '';
+        setProfilePicture(profilePic);
         
         // Get Bearer token for API calls
         const { data: { session } } = await supabase.auth.getSession();
@@ -160,6 +169,17 @@ export default function ProfilePage() {
       });
 
       if (updateError) throw updateError;
+
+      // Also update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Failed to update profile table:', profileError);
+        // Continue anyway since auth metadata was updated
+      }
 
       setProfilePicture(publicUrl);
       setMessage('Profile picture updated successfully!');
