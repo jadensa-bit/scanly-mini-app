@@ -1285,17 +1285,24 @@ export default function DashboardPage() {
                           {(dateBookings as Booking[]).map((b: Booking, index: number) => (
                       <tr key={String(b.id) || `booking-${index}`} className="hover:bg-white/5 transition-all duration-200 group">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-sm font-bold shadow-lg">
+                          <button
+                            onClick={() => {
+                              setSelectedBooking(b);
+                              setBookingDetailOpen(true);
+                            }}
+                            className="flex items-center gap-3 w-full text-left hover:bg-white/5 active:bg-white/10 rounded-lg p-2 -m-2 transition-all lg:pointer-events-none lg:hover:bg-transparent"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
                               {(b.customer_name || b.customer_email || 'U')[0].toUpperCase()}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-white truncate">{b.customer_name || b.customer_email?.split('@')[0] || '—'}</p>
                               {b.team_member_name && (
                                 <p className="text-xs text-gray-400 truncate">with {b.team_member_name}</p>
                               )}
+                              <p className="text-[10px] text-purple-400 font-medium mt-0.5 lg:hidden">Tap to view details</p>
                             </div>
-                          </div>
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-white font-medium truncate">{b.item_title || '—'}</p>
@@ -1530,15 +1537,22 @@ export default function DashboardPage() {
                       isCompleted ? 'opacity-60 bg-green-500/5' : ''
                     }`}>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 text-white flex items-center justify-center text-sm font-bold shadow-lg">
+                        <button
+                          onClick={() => {
+                            setSelectedOrder(o);
+                            setOrderDetailOpen(true);
+                          }}
+                          className="flex items-center gap-3 w-full text-left hover:bg-white/5 active:bg-white/10 rounded-lg p-2 -m-2 transition-all lg:pointer-events-none lg:hover:bg-transparent"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 text-white flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
                             {(o.customer_name || o.customer_email || 'U')[0].toUpperCase()}
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-white">{o.customer_name || o.customer_email?.split('@')[0] || '—'}</p>
-                            <p className="text-xs text-gray-400">{o.customer_email || '—'}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">{o.customer_name || o.customer_email?.split('@')[0] || '—'}</p>
+                            <p className="text-xs text-gray-400 truncate">{o.customer_email || '—'}</p>
+                            <p className="text-[10px] text-pink-400 font-medium mt-0.5 lg:hidden">Tap to view details</p>
                           </div>
-                        </div>
+                        </button>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-white">
                         <div>
