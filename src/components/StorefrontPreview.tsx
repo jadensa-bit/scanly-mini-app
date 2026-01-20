@@ -876,7 +876,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="text-white/90 text-sm font-medium truncate drop-shadow"
+                        className="text-white/90 text-sm font-medium drop-shadow line-clamp-2"
                       >
                         {tagline || "Your tagline here"}
                       </motion.p>
@@ -932,7 +932,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-black text-gray-900 truncate">{brandName || "Your Brand"}</h2>
-                      <p className="text-sm text-gray-600 truncate font-medium">{tagline || "Your tagline here"}</p>
+                      <p className="text-sm text-gray-600 font-medium line-clamp-2">{tagline || "Your tagline here"}</p>
                       {businessDescription && (
                         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 font-medium">
                           {businessDescription}
