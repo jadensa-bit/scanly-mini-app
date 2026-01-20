@@ -993,6 +993,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-black text-gray-900 truncate">{brandName || "Your Brand"}</h2>
                       <p className="text-sm text-gray-600 truncate font-medium">{tagline || "Your tagline here"}</p>
+                      {businessDescription && (
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 font-medium">
+                          {businessDescription}
+                        </p>
+                      )}
                     </div>
                     {/* About Creator button - show if bio or contact info exists */}
                     {(() => {
@@ -1545,7 +1550,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     )}
                   </motion.div>
                   {/* Social + Contact Buttons Section */}
-                  {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address) && (
+                  {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address || handle) && (
                     <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
                       <div className="pt-4 pb-3 border-t border-gray-200">
                         <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -1553,6 +1558,18 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         </h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        {handle && (
+                          <a 
+                            href={`/profile/${handle}`}
+                            className="flex items-center gap-1.5 px-3 py-2 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
+                            style={{ 
+                              borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                              background: `linear-gradient(135deg, ${accentSolid} 0%, ${hexToRgba(accentSolid, 0.8)} 100%)`
+                            }}
+                          >
+                            👤 View Profile
+                          </a>
+                        )}
                         {social.instagram && (
                           <a 
                             href={`https://instagram.com/${social.instagram.replace('@', '')}`}

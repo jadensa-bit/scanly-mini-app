@@ -3773,8 +3773,9 @@ useEffect(() => {
                   setSaving(true);
                   setErr(null);
                   try {
-                    // First, save the latest draft to the server so Supabase has the current state
-                    if (configDraft) {
+                    // ✅ For NEW piqos: ONLY publish (which will save + set user_id)
+                    // ✅ For EXISTING piqos: Save draft first, then publish
+                    if (configDraft && isEditMode) {
                       const save = await postJson('/api/site', configDraft);
                       if (!save.res.ok) {
                         const detail = String(save?.data?.detail || save?.data?.error || '').trim();
@@ -3782,12 +3783,15 @@ useEffect(() => {
                       }
                     }
 
-                    // Then call publish endpoint
+                    // Call publish endpoint - this sets user_id for new piqos
                     const res = await fetch('/api/site/publish', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       credentials: 'include',
-                      body: JSON.stringify({ handle: cleanHandle })
+                      body: JSON.stringify({ 
+                        handle: cleanHandle,
+                        config: !isEditMode ? configDraft : undefined // Pass config for new piqos
+                      })
                     });
                     const data = await res.json();
                     if (!res.ok || !data.ok) {
