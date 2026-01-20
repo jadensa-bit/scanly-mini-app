@@ -1077,7 +1077,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       e.stopPropagation();
                                       const itemType = item.type || "product";
                                       if (itemType === "product" || mode === "digital") {
-                                        addToCart(item, quantity);
+                                        addToCart(item, getItemQuantity(idx));
+                                        setItemQuantity(idx, 1);
                                       } else if (itemType === "service") {
                                         setSelectedItem(item);
                                         setBookingStep("confirm");
@@ -1220,7 +1221,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     e.stopPropagation(); // Prevent modal from opening
                                     const itemType = item.type || "product";
                                     if (itemType === "product" || mode === "digital") {
-                                      addToCart(item, quantity);
+                                      addToCart(item, getItemQuantity(idx));
+                                      setItemQuantity(idx, 1);
                                     } else if (itemType === "service") {
                                       setSelectedItem(item);
                                       setBookingStep("confirm");
@@ -2519,7 +2521,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   onClick={() => {
                     setShowItemDetails(false);
                     if (mode === "products" || mode === "digital") {
-                      addToCart(selectedItemDetails, quantity);
+                      addToCart(selectedItemDetails, 1);
                     } else {
                       setSelectedItem(selectedItemDetails);
                       setBookingStep("confirm");
