@@ -37,7 +37,7 @@ import StorefrontPreview from "@/components/StorefrontPreview";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
-type ItemBadge = "popular" | "limited" | "none";
+type ItemBadge = "popular" | "limited" | "new" | "trending" | "bestseller" | "sale" | "exclusive" | "none";
 type ItemType = "product" | "section" | "subsection";
 
 type BuildItem = {
@@ -2502,7 +2502,12 @@ useEffect(() => {
                           >
                             <option value="none">No badge</option>
                             <option value="popular">🔥 Popular</option>
+                            <option value="trending">📈 Trending</option>
+                            <option value="new">✨ New</option>
+                            <option value="bestseller">⭐ Bestseller</option>
                             <option value="limited">⚡ Limited</option>
+                            <option value="sale">🏷️ Sale</option>
+                            <option value="exclusive">💎 Exclusive</option>
                           </select>
                         </label>
                       </div>

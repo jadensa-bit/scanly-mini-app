@@ -113,6 +113,60 @@ function formatTime12Hour(time24: string | undefined): string {
 const DAY_ORDER: Record<string, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 7 };
 const DAY_LABELS: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
 
+// Badge styling helper
+function getBadgeStyle(badge: string): { background: string; color: string; emoji: string } {
+  switch (badge) {
+    case "popular":
+      return {
+        background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)",
+        color: "white",
+        emoji: "🔥"
+      };
+    case "trending":
+      return {
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        color: "white",
+        emoji: "📈"
+      };
+    case "new":
+      return {
+        background: "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)",
+        color: "white",
+        emoji: "✨"
+      };
+    case "bestseller":
+      return {
+        background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+        color: "white",
+        emoji: "⭐"
+      };
+    case "limited":
+      return {
+        background: "linear-gradient(135deg, #ffd32a 0%, #f39c12 100%)",
+        color: "#1a1a1a",
+        emoji: "⚡"
+      };
+    case "sale":
+      return {
+        background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+        color: "#1a1a1a",
+        emoji: "🏷️"
+      };
+    case "exclusive":
+      return {
+        background: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+        color: "white",
+        emoji: "💎"
+      };
+    default:
+      return {
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        color: "white",
+        emoji: "✨"
+      };
+  }
+}
+
 // Check if a slot falls within a staff member's working hours
 function slotMatchesStaffSchedule(slot: any, staffMember: any): boolean {
   if (!staffMember || !staffMember.workingDays) return true; // No custom schedule
@@ -189,6 +243,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   // Image modal state
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
+  
+  // Item details modal state
+  const [showItemDetails, setShowItemDetails] = useState(false);
+  const [selectedItemDetails, setSelectedItemDetails] = useState<Item | null>(null);
   
   // Booking state
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -1023,13 +1081,17 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: 0.5 + idx * 0.05 }}
-                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group"
+                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group cursor-pointer"
                               style={{
                                 borderRadius: `${cardRadius}px`,
                                 borderColor: `${accentSolid}40`,
                                 background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
                               }}
                               whileHover={{ y: -2 }}
+                              onClick={() => {
+                                setSelectedItemDetails(item);
+                                setShowItemDetails(true);
+                              }}
                             >
                               {/* Image/Icon */}
                               <div 
@@ -1075,13 +1137,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     animate={{ scale: 1, opacity: 1 }}
                                     className="absolute top-1.5 right-1.5 rounded-lg px-2 py-0.5 text-[8px] font-black uppercase shadow-lg"
                                     style={{
-                                      background: item.badge === "popular" 
-                                        ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)"
-                                        : "linear-gradient(135deg, #ffd32a 0%, #f39c12 100%)",
-                                      color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                      background: getBadgeStyle(item.badge).background,
+                                      color: getBadgeStyle(item.badge).color,
                                     }}
                                   >
-                                    {item.badge === "popular" ? "🔥" : "⚡"}
+                                    {getBadgeStyle(item.badge).emoji}
                                   </motion.span>
                                 )}
                               </div>
@@ -1101,7 +1161,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   }}
                                   whileHover={{ scale: 1.03 }}
                                   whileTap={{ scale: 0.97 }}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent modal from opening
                                     if (mode === "products" || mode === "digital") {
                                       addToCart(item, quantity);
                                     } else {
@@ -1174,7 +1235,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.5 + idx * 0.05 }}
-                              className="flex gap-2 p-2 border-b border-gray-100 hover:bg-gray-50/50 transition-colors group"
+                              className="flex gap-2 p-2 border-b border-gray-100 hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                              onClick={() => {
+                                setSelectedItemDetails(item);
+                                setShowItemDetails(true);
+                              }}
                             >
                               {/* Small thumbnail */}
                               {item.image && (
@@ -1198,13 +1263,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       <span 
                                         className="inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-black uppercase flex-shrink-0"
                                         style={{
-                                          background: item.badge === "popular" 
-                                            ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)"
-                                            : "linear-gradient(135deg, #ffd32a 0%, #f39c12 100%)",
-                                          color: item.badge === "popular" ? "white" : "#1a1a1a",
+                                          background: getBadgeStyle(item.badge).background,
+                                          color: getBadgeStyle(item.badge).color,
                                         }}
                                       >
-                                        {item.badge === "popular" ? "🔥" : "⚡"}
+                                        {getBadgeStyle(item.badge).emoji}
                                       </span>
                                     )}
                                   </div>
@@ -1220,7 +1283,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     color: ctaFg,
                                     borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
                                   }}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     if (mode === "products" || mode === "digital") {
                                       addToCart(item, quantity);
                                     } else {
@@ -1318,13 +1382,17 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + idx * 0.1 }}
-                        className="mb-3 overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-200 group relative"
+                        className="mb-3 overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-200 group relative cursor-pointer"
                         style={{
                           borderRadius: `${cardRadius}px`,
                           borderColor: `${accentSolid}50`,
                           background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.08)} 100%)`,
                         }}
                         whileHover={{ y: -2, scale: 1.01 }}
+                        onClick={() => {
+                          setSelectedItemDetails(item);
+                          setShowItemDetails(true);
+                        }}
                       >
                         <div className="flex gap-3 p-3 relative z-10">
                           {/* Item image or icon */}
@@ -1371,17 +1439,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     animate={{ scale: 1, opacity: 1 }}
                                     className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-wide flex-shrink-0 shadow-lg relative overflow-hidden"
                                     style={{
-                                      background: item.badge === "popular"
-                                        ? "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #fa8231 100%)"
-                                        : "linear-gradient(135deg, #ffd32a 0%, #ff9f1a 50%, #f39c12 100%)",
-                                      color: item.badge === "popular" ? "white" : "#1a1a1a",
-                                      boxShadow: item.badge === "popular"
-                                        ? "0 2px 10px rgba(238, 90, 36, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)"
-                                        : "0 2px 10px rgba(255, 159, 26, 0.6), inset 0 1px 0 rgba(255,255,255,0.4)",
+                                      background: getBadgeStyle(item.badge).background,
+                                      color: getBadgeStyle(item.badge).color,
+                                      boxShadow: `0 2px 10px ${hexToRgba(getBadgeStyle(item.badge).color === "white" ? "#ff6b6b" : "#ffd32a", 0.6)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                                     }}
                                   >
                                     <span className="relative z-10 flex items-center gap-1">
-                                      {item.badge === "popular" ? "🔥" : "⚡"} {item.badge === "popular" ? "Hot" : "New"}
+                                      {getBadgeStyle(item.badge).emoji} {item.badge.charAt(0).toUpperCase() + item.badge.slice(1)}
                                     </span>
                                   </motion.span>
                                 )}
@@ -1399,7 +1463,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
-                                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                    onClick={(e) => { e.stopPropagation(); setQuantity(Math.max(1, quantity - 1)); }}
                                     className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
                                     style={{ color: accentSolid }}
                                   >
@@ -1407,7 +1471,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   </button>
                                   <span className="px-3 text-sm font-black min-w-[30px] text-center text-gray-900">{quantity}</span>
                                   <button
-                                    onClick={() => setQuantity(quantity + 1)}
+                                    onClick={(e) => { e.stopPropagation(); setQuantity(quantity + 1); }}
                                     className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
                                     style={{ color: accentSolid }}
                                   >
@@ -1423,7 +1487,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   }}
                                   whileHover={{ scale: 1.05, y: -1 }}
                                   whileTap={{ scale: 0.95 }}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     addToCart(item, quantity);
                                     setQuantity(1);
                                   }}
@@ -1451,7 +1516,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 }}
                                 whileHover={{ scale: 1.05, y: -1 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedItem(item);
                                   setBookingStep("confirm");
                                 }}
@@ -2266,6 +2332,109 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Item Details Modal */}
+      <AnimatePresence>
+        {showItemDetails && selectedItemDetails && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowItemDetails(false)}
+          >
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+                <h3 className="text-lg font-black text-gray-900 flex-1 pr-4">{selectedItemDetails.title}</h3>
+                <button
+                  onClick={() => setShowItemDetails(false)}
+                  className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-6 overflow-y-auto max-h-[calc(85vh-140px)]">
+                {/* Image */}
+                {selectedItemDetails.image && (
+                  <div className="mb-6 rounded-2xl overflow-hidden">
+                    <img
+                      src={selectedItemDetails.image}
+                      alt={selectedItemDetails.title}
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Badge */}
+                {selectedItemDetails.badge && selectedItemDetails.badge !== "none" && (
+                  <div className="mb-4">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-black uppercase shadow-lg"
+                      style={{
+                        background: getBadgeStyle(selectedItemDetails.badge).background,
+                        color: getBadgeStyle(selectedItemDetails.badge).color,
+                      }}
+                    >
+                      {getBadgeStyle(selectedItemDetails.badge).emoji} {selectedItemDetails.badge.charAt(0).toUpperCase() + selectedItemDetails.badge.slice(1)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Price */}
+                <div className="mb-6">
+                  <span className="text-3xl font-black" style={{ color: accentSolid }}>
+                    {selectedItemDetails.price || "$0"}
+                  </span>
+                </div>
+
+                {/* Description */}
+                {selectedItemDetails.note && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-bold text-gray-900 mb-2">Description</h4>
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedItemDetails.note}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer CTA */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+                <motion.button
+                  className="w-full py-4 text-base font-black rounded-2xl shadow-lg"
+                  style={{
+                    background: ctaBg,
+                    color: ctaFg,
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowItemDetails(false);
+                    if (mode === "products" || mode === "digital") {
+                      addToCart(selectedItemDetails, quantity);
+                    } else {
+                      setSelectedItem(selectedItemDetails);
+                      setBookingStep("confirm");
+                    }
+                  }}
+                >
+                  {appearance.ctaText?.trim() || (mode === "services" ? "Book Now" : mode === "products" ? "Add to Cart" : "Get It")}
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
