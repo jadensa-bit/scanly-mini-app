@@ -1230,7 +1230,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     />
                                   )}
                                   <span className="relative z-10">
-                                    {item.buttonText || appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                    {item.buttonText || appearance.ctaText?.trim() || (mode === "products" ? "Add" : "Get")}
                                   </span>
                                 </motion.button>
                               </div>
