@@ -9,12 +9,17 @@ import InstallPiqoButton from "./InstallPiqoButton";
 
 // Type definitions
 type Item = {
-  type?: "product" | "service" | "section" | "subsection";
+  type?: "product" | "service" | "section" | "subsection" | "addon";
   title?: string;
   price?: string;
   note?: string;
   image?: string;
   badge?: string;
+  layout?: "cards" | "menu" | "tiles";
+  buttonText?: string;
+  deposit?: string;
+  bullets?: string[];
+  itemStyle?: "normal" | "featured";
 };
 type StaffProfile = {
   name: string;
@@ -234,6 +239,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     headerStyle: appearance.headerStyle,
     showSocials: appearance.showSocials 
   });
+  console.log('🎨 Items with layouts:', items?.map(item => ({ title: item.title, type: item.type, layout: item.layout })));
 
   // Cart state (for products and digital)
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -775,91 +781,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
       ? `linear-gradient(135deg, ${accentGradient.c1} 0%, ${accentGradient.c2} 100%)`
       : `linear-gradient(135deg, ${accentSolid}bb 0%, ${hexToRgba(accentSolid, 0.6)} 100%)`;
 
-  // Main phone preview (copied and adapted from create page)
+  // Clean storefront preview without phone frame wrapper
   return (
-    <main className="min-h-screen bg-black text-white relative overflow-hidden">
-      <motion.div
-        className="pointer-events-none fixed inset-0 opacity-60"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 10%, rgba(34,211,238,0.25), transparent 55%), radial-gradient(circle at 80% 90%, rgba(167,139,250,0.2), transparent 60%)",
-        }}
-        animate={{
-          opacity: [0.5, 0.7, 0.5],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <div
-        className={
-          // On mobile: full screen, no centering. On desktop: center and box.
-          "w-full h-full min-h-screen flex justify-center items-center sm:bg-transparent bg-black"
-        }
-        style={{
-          minHeight: '100vh',
-          width: '100vw',
-          padding: 0,
-          margin: 0,
-        }}
-      >
-        <div
-          className={
-            // On mobile: full screen, no max-width. On desktop: boxed phone frame.
-            "relative w-full h-full sm:mx-auto sm:w-full sm:max-w-xs sm:h-[700px] flex flex-col items-center justify-center"
-          }
-          style={{
-            height: '100vh',
-            maxWidth: '100vw',
-          }}
-        >
-          {/* Phone frame with glass effect */}
-          <div
-            className={
-              "sm:rounded-[28px] border border-white/12 bg-black/45 p-0 sm:p-3 h-full w-full"
-            }
-            style={{
-              borderRadius: '0px',
-              height: '100vh',
-              width: '100vw',
-              maxWidth: '100vw',
-              padding: 0,
-            }}
-          >
-            <div
-              className={
-                "relative overflow-hidden sm:rounded-[28px] border border-white/12 bg-black h-full flex flex-col"
-              }
-              style={{
-                borderRadius: '0px',
-                height: '100vh',
-                width: '100vw',
-                maxWidth: '100vw',
-              }}
-            >
-              {/* Header bar - hide on scroll */}
-              <motion.div 
-                initial={{ y: 0 }}
-                animate={{ y: isHeaderVisible ? 0 : -60 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex items-center justify-between px-4 py-2 text-[11px] text-white/80 border-b border-white/10 bg-black/70 flex-shrink-0"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Live
-                </span>
-                <span className="text-white/60">{brandName || "Brand basics"}</span>
-              </motion.div>
-              {/* Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black rounded-b-xl z-10" />
-              {/* Screen content - scrollable */}
-              <div 
-                ref={scrollContainerRef}
-                className="relative overflow-y-scroll scrollbar-hide flex-1" 
-                style={{ fontFamily: previewFontFamily }}
-              >
+    <div 
+      ref={scrollContainerRef}
+      className="relative w-full min-h-screen overflow-y-auto scrollbar-hide bg-gray-50" 
+      style={{ fontFamily: previewFontFamily }}
+    >
                 {/* Profile Picture in Corner */}
                 {profilePic && (
                   <motion.div
@@ -1026,7 +954,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     })()}
                   </motion.div>
                 )}
-                {/* Items list */}
+                {/* Items list - ONLY for products/digital modes */}
+                {(mode === "products" || mode === "digital") && (
                 <div className="px-4 pb-6 space-y-3 bg-gradient-to-b from-gray-50 via-white to-gray-50">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -1050,13 +979,14 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       </h3>
                       <span className="text-xs text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-full">{items.filter(it => it.type !== "section" && it.type !== "subsection").length}</span>
                     </div>
-                    {/* Layout support: cards (default), tiles, menu */}
-                    {(appearance.layout || "cards") === "tiles" ? (
-                      /* TILES LAYOUT - 2 column grid */
-                      <div className="grid grid-cols-2 gap-3 mt-3">
-                        {items.map((item: Item, idx: number) => {
-                          // Section header
-                          if (item.type === "section") {
+                    {/* Individual layout rendering - each item controls its own layout */}
+                    <div className="mt-3">
+                      {items.map((item: Item, idx: number) => {
+                        // Get individual item layout (defaults to "cards")
+                        const itemLayout = item.layout || "cards";
+                        
+                        // Section header - always full width
+                        if (item.type === "section") {
                             return (
                               <div key={idx} className="col-span-2 my-4 first:mt-1">
                                 <div className="flex items-center gap-2 px-1">
@@ -1091,14 +1021,122 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             );
                           }
 
-                          // Regular product/service tile
+                          // TILES LAYOUT - compact 2-column
+                          if (itemLayout === "tiles") {
+                            return (
+                              <div key={idx} className="w-1/2 inline-block align-top px-1.5 mb-3">
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.5 + idx * 0.05 }}
+                                className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group cursor-pointer h-full"
+                                style={{
+                                  borderRadius: `${cardRadius}px`,
+                                  borderColor: `${accentSolid}40`,
+                                  background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                                }}
+                                whileHover={{ y: -2 }}
+                                onClick={() => {
+                                  setSelectedItemDetails(item);
+                                  setShowItemDetails(true);
+                                }}
+                              >
+                                <div className="relative h-24 overflow-hidden">
+                                  {item.image ? (
+                                    <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-2xl"
+                                      style={{ background: `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
+                                      <span>{mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}</span>
+                                    </div>
+                                  )}
+                                  {item.badge && item.badge !== "none" && (
+                                    <span className="absolute top-1.5 right-1.5 rounded-lg px-2 py-0.5 text-[8px] font-black uppercase shadow-lg"
+                                      style={{
+                                        background: getBadgeStyle(item.badge).background,
+                                        color: getBadgeStyle(item.badge).color,
+                                      }}>
+                                      {getBadgeStyle(item.badge).emoji}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="p-2.5">
+                                  <h4 className="text-xs font-black text-gray-900 mb-1 line-clamp-2">{item.title || "Item"}</h4>
+                                  {item.note && <p className="text-[10px] text-gray-600 mb-2 line-clamp-2">{item.note}</p>}
+                                  {shouldShowPrice(item.price) && (
+                                    <div className="text-xs font-black mb-2" style={{ color: accentSolid }}>{item.price}</div>
+                                  )}
+                                  <motion.button
+                                    className="w-full py-2 text-[10px] font-black"
+                                    style={{
+                                      background: ctaBg,
+                                      color: ctaFg,
+                                      borderRadius: `${Math.min(cardRadius * 0.6, 10)}px`,
+                                    }}
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const itemType = item.type || "product";
+                                      if (itemType === "product" || mode === "digital") {
+                                        addToCart(item, quantity);
+                                      } else if (itemType === "service") {
+                                        setSelectedItem(item);
+                                        setBookingStep("confirm");
+                                      }
+                                    }}
+                                  >
+                                    {item.buttonText || appearance.ctaText?.trim() || (mode === "services" ? "Book" : "Add")}
+                                  </motion.button>
+                                </div>
+                              </motion.div>
+                              </div>
+                            );
+                          }
+
+                          // MENU LAYOUT - compact horizontal row
+                          if (itemLayout === "menu") {
+                            return (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 + idx * 0.05 }}
+                                className="flex gap-2 p-3 rounded-xl border-2 shadow-sm hover:shadow-md transition-all cursor-pointer mb-3"
+                                style={{
+                                  borderColor: `${accentSolid}30`,
+                                  background: `linear-gradient(90deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                                }}
+                                whileHover={{ x: 2 }}
+                                onClick={() => {
+                                  setSelectedItemDetails(item);
+                                  setShowItemDetails(true);
+                                }}
+                              >
+                                {item.image && (
+                                  <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden">
+                                    <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-black text-xs text-gray-900 truncate">{item.title || "Item"}</h4>
+                                  {item.note && <p className="text-[10px] text-gray-600 truncate">{item.note}</p>}
+                                </div>
+                                {shouldShowPrice(item.price) && (
+                                  <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price}</span>
+                                )}
+                              </motion.div>
+                            );
+                          }
+
+                          // CARDS LAYOUT - full width with details (default)
                           return (
                             <motion.div
                               key={idx}
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: 0.5 + idx * 0.05 }}
-                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group cursor-pointer"
+                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all relative group cursor-pointer mb-3"
                               style={{
                                 borderRadius: `${cardRadius}px`,
                                 borderColor: `${accentSolid}40`,
@@ -1200,7 +1238,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     />
                                   )}
                                   <span className="relative z-10">
-                                    {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                    {item.buttonText || appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
                                   </span>
                                 </motion.button>
                               </div>
@@ -1208,134 +1246,36 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           );
                         })}
                       </div>
-                    ) : (appearance.layout || "cards") === "menu" ? (
-                      /* MENU LAYOUT - compact rows */
-                      <div className="space-y-2 mt-3">
-                        {items.map((item: Item, idx: number) => {
-                          // Section header
-                          if (item.type === "section") {
-                            return (
-                              <div key={idx} className="my-4 first:mt-1">
-                                <div className="flex items-center gap-2 px-1">
-                                  <div className="h-[2px] w-10 rounded-full" style={{ background: accentSolid }} />
-                                  <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: accentSolid }}>
-                                    {item.title || "SECTION"}
-                                  </h3>
-                                  <div className="h-[2px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }} />
-                                </div>
-                                {item.note && (
-                                  <p className="text-xs text-gray-600 font-medium px-1 mt-1 italic">{item.note}</p>
-                                )}
-                              </div>
-                            );
+                    </motion.div>
+                  </div>
+                )}
+              
+              {/* SERVICES MODE */}
+              {mode === "services" && (
+                <div>
+                  {bookingStep === "browse" && (
+                    <div>
+                      {/* Services List - Organized by sections/subsections */}
+                      <div className="px-4 py-4">
+                        <div className="grid grid-cols-2 gap-2">
+                        {items.map((item, idx) => {
+                          // Get individual item layout (defaults to "cards")
+                          const itemLayout = item.layout || "cards";
+                          
+                          // Debug log to verify layout changes
+                          if (typeof window !== 'undefined' && item.type !== 'section' && item.type !== 'subsection') {
+                            console.log(`[Services Layout] ${item.title}: type="${item.type}" layout="${item.layout}" → using "${itemLayout}"`);
                           }
                           
-                          // Subsection
-                          if (item.type === "subsection") {
-                            return (
-                              <div key={idx} className="my-3 first:mt-1 ml-3">
-                                <div className="flex items-center gap-2 px-1">
-                                  <div className="h-[1.5px] w-7 rounded-full" style={{ background: `${accentSolid}80` }} />
-                                  <h4 className="text-xs font-bold uppercase tracking-wide" style={{ color: `${accentSolid}cc` }}>
-                                    {item.title || "Subsection"}
-                                  </h4>
-                                  <div className="h-[1.5px] flex-1 rounded-full" style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }} />
-                                </div>
-                                {item.note && (
-                                  <p className="text-xs text-gray-500 font-medium px-1 mt-1 italic">{item.note}</p>
-                                )}
-                              </div>
-                            );
-                          }
-
-                          // Regular menu item row
-                          return (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.5 + idx * 0.05 }}
-                              className="flex gap-2 p-2 border-b border-gray-100 hover:bg-gray-50/50 transition-colors group cursor-pointer"
-                              onClick={() => {
-                                setSelectedItemDetails(item);
-                                setShowItemDetails(true);
-                              }}
-                            >
-                              {/* Small thumbnail */}
-                              {item.image && (
-                                <div 
-                                  className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200 cursor-pointer"
-                                  onClick={() => {
-                                    if (item.image) {
-                                      setSelectedImage(item.image);
-                                      setShowImageModal(true);
-                                    }
-                                  }}
-                                >
-                                  <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                                  <div className="flex items-center gap-1.5 min-w-0">
-                                    <h4 className="font-black text-xs text-gray-900 truncate">{item.title || "Item"}</h4>
-                                    {item.badge && item.badge !== "none" && (
-                                      <span 
-                                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[7px] font-black uppercase flex-shrink-0"
-                                        style={{
-                                          background: getBadgeStyle(item.badge).background,
-                                          color: getBadgeStyle(item.badge).color,
-                                        }}
-                                      >
-                                        {getBadgeStyle(item.badge).emoji}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {shouldShowPrice(item.price) && (
-                                    <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price}</span>
-                                  )}
-                                </div>
-                                {item.note && (
-                                  <p className="text-[10px] text-gray-600 mb-1 line-clamp-2 leading-snug">{item.note}</p>
-                                )}
-                                <button
-                                  className="text-[9px] font-bold px-2.5 py-1 relative overflow-hidden"
-                                  style={{
-                                    background: ctaBg,
-                                    color: ctaFg,
-                                    borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const itemType = item.type || "product";
-                                    if (itemType === "product" || mode === "digital") {
-                                      addToCart(item, quantity);
-                                    } else if (itemType === "service") {
-                                      setSelectedItem(item);
-                                      setBookingStep("confirm");
-                                    }
-                                  }}
-                                >
-                                  {appearance.ctaText?.trim() || (item.type === "service" ? "Book" : "Add")}
-                                </button>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      /* CARDS LAYOUT - default */
-                      <div className="space-y-3 mt-3">
-                        {items.map((item: Item, idx: number) => {
-                      // Section Header rendering - completely different from products
-                      if (item.type === "section") {
+                          // Section Header rendering - completely different from products
+                          if (item.type === "section") {
                         return (
                           <motion.div
                             key={idx}
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + idx * 0.1 }}
-                            className="my-6 first:mt-2"
+                            className="my-6 first:mt-2 col-span-full"
                           >
                             {/* Full-width section divider */}
                             <div className="flex items-center gap-3 px-2 mb-3">
@@ -1371,7 +1311,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + idx * 0.1 }}
-                            className="my-4 first:mt-2 ml-4"
+                            className="my-4 first:mt-2 ml-4 col-span-full"
                           >
                             <div className="flex items-center gap-2 px-2 mb-2">
                               <div 
@@ -1398,14 +1338,90 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         );
                       }
 
-                      // Regular product/service item rendering
+                      // MENU LAYOUT - compact horizontal row
+                      if (itemLayout === "menu") {
+                        return (
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 + idx * 0.05 }}
+                            className="col-span-2 flex gap-2 p-3 rounded-xl border-2 shadow-sm hover:shadow-md transition-all cursor-pointer relative"
+                            style={{
+                              borderColor: `${accentSolid}30`,
+                              background: `linear-gradient(90deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                            }}
+                            whileHover={{ x: 2 }}
+                            onClick={() => {
+                              setSelectedItemDetails(item);
+                              setShowItemDetails(true);
+                            }}
+                          >
+                            {item.image && (
+                              <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden">
+                                <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-black text-xs text-gray-900 truncate">{item.title || "Item"}</h4>
+                              {item.note && <p className="text-[10px] text-gray-600 truncate">{item.note}</p>}
+                            </div>
+                            {shouldShowPrice(item.price) && (
+                              <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price}</span>
+                            )}
+                          </motion.div>
+                        );
+                      }
+
+                      // TILES LAYOUT - compact tiles
+                      if (itemLayout === "tiles") {
+                        return (
+                          <div key={idx} className="col-span-1">
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.5 + idx * 0.05 }}
+                              className="overflow-hidden border-2 shadow-md hover:shadow-lg transition-all cursor-pointer h-full relative"
+                              style={{
+                                borderRadius: `${cardRadius}px`,
+                                borderColor: `${accentSolid}40`,
+                                background: `linear-gradient(135deg, white 0%, ${hexToRgba(accentSolid, 0.05)} 100%)`,
+                              }}
+                              whileHover={{ y: -2 }}
+                              onClick={() => {
+                                setSelectedItemDetails(item);
+                                setShowItemDetails(true);
+                              }}
+                            >
+                              <div className="relative h-20 overflow-hidden">
+                                {item.image ? (
+                                  <img src={item.image} alt={item.title || "Item"} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xl"
+                                    style={{ background: `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
+                                    <span>✂️</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-2">
+                                <h4 className="text-xs font-black text-gray-900 mb-1 line-clamp-1">{item.title || "Service"}</h4>
+                                {shouldShowPrice(item.price) && (
+                                  <div className="text-xs font-black" style={{ color: accentSolid }}>{item.price}</div>
+                                )}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
+
+                      // CARDS LAYOUT (default) - full width cards
                       return (
                       <motion.div
                         key={idx}
+                        className="col-span-2 mb-3 overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-200 group relative cursor-pointer"
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + idx * 0.1 }}
-                        className="mb-3 overflow-hidden border-2 shadow-lg hover:shadow-xl transition-all duration-200 group relative cursor-pointer"
                         style={{
                           borderRadius: `${cardRadius}px`,
                           borderColor: `${accentSolid}50`,
@@ -1484,7 +1500,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {item.note}
                               </p>
                             )}
-                            {(item.type === "product" || !item.type || mode === "digital") ? (
+                            {(item.type === "product" || !item.type) ? (
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
@@ -1566,196 +1582,193 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       </motion.div>
                     );
                   })}
-                      </div>
-                    )}
-                  </motion.div>
-                  {/* Social + Contact Buttons Section */}
-                  {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address || handle) && (
-                    <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
-                      <div className="pt-4 pb-3 border-t border-gray-200">
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                          <span className="text-lg">💬</span> Connect
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {handle && (
-                          <a 
-                            href={`/profile/${handle}`}
-                            className="flex items-center gap-1.5 px-3 py-2 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
-                            style={{ 
-                              borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
-                              background: `linear-gradient(135deg, ${accentSolid} 0%, ${hexToRgba(accentSolid, 0.8)} 100%)`
-                            }}
-                          >
-                            👤 View Profile
-                          </a>
-                        )}
-                        {social.instagram && (
-                          <a 
-                            href={`https://instagram.com/${social.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
-                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
-                          >
-                            📷 Instagram
-                          </a>
-                        )}
-                        {social.tiktok && (
-                          <a 
-                            href={`https://tiktok.com/@${social.tiktok.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-2 bg-black text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
-                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
-                          >
-                            🎵 TikTok
-                          </a>
-                        )}
-                        {social.website && (
-                          <a 
-                            href={social.website.startsWith('http') ? social.website : `https://${social.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
-                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
-                          >
-                            🌐 Website
-                          </a>
-                        )}
-                        {social.phone && (
-                          <a 
-                            href={`tel:${social.phone}`}
-                            className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
-                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
-                          >
-                            📞 Call
-                          </a>
-                        )}
-                        {social.address && (
-                          <a 
-                            href={`https://maps.google.com/?q=${encodeURIComponent(social.address)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
-                            style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
-                          >
-                            📍 Directions
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {/* Staff/Team Section - only for services */}
-                  {mode === "services" && (appearance.showStaff ?? true) && staffProfiles.length > 0 && (
-                    <div className="px-3 pb-4 bg-gradient-to-b from-white to-gray-50">
-                      <div className="flex items-center justify-between pt-3 pb-2">
-                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">👥 Our Team</h3>
-                        <span className="text-[9px] text-gray-500 font-medium">{staffProfiles.length} staff</span>
-                      </div>
-                      <div className="space-y-2">
-                        {staffProfiles.slice(0, 2).map((staff: any, idx: number) => {
-                          const hasCustomHours = staff.workingDays && Object.values(staff.workingDays).some((day: any) => day?.enabled);
-                          const enabledDays = hasCustomHours 
-                            ? Object.entries(staff.workingDays).filter(([_, day]) => (day as any)?.enabled)
-                            : [];
-                          
-                          return (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.6 + idx * 0.1 }}
-                              className="rounded-xl border-2 p-3 bg-white shadow-lg hover:shadow-xl transition-all duration-200"
-                              style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}50` }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="h-14 w-14 rounded-full flex items-center justify-center text-white font-black text-lg shadow-md" style={{ background: accentSolid }}>
-                                  {staff.name.charAt(0)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5 mb-0.5">
-                                    <span className="text-sm font-black text-gray-900 truncate">{staff.name}</span>
-                                    <span className="text-xs text-yellow-600 flex items-center gap-0.5">⭐ {staff.rating}</span>
-                                  </div>
-                                  <div className="text-xs text-gray-700 font-medium truncate mb-1">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
-                                  {hasCustomHours && enabledDays.length > 0 && (
-                                    <div className="text-[10px] text-gray-600 mt-1 font-medium">
-                                      🕐 {enabledDays.length} days • {formatTime12Hour((enabledDays[0][1] as any).start)}-{formatTime12Hour((enabledDays[0][1] as any).end)}
-                                    </div>
-                                  )}
-                                </div>
-                                <button className="px-3 py-2 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
-                                  Book
-                                </button>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                  {/* Business Hours Section - optional for all modes */}
-                  {(appearance.showHours ?? false) && availability?.days && (
-                    <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
-                      <div className="pt-4 pb-3 border-t border-gray-200">
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                          <span className="text-lg">🕐</span> Hours
-                        </h3>
-                      </div>
-                      <div className="space-y-1.5 bg-white border-2 border-gray-200 rounded-xl p-3 shadow-md">
-                        {Object.entries(availability.days)
-                          .filter(([_dayId, day]) => (day as Day).enabled)
-                          .length > 0 ? (
-                            Object.entries(availability.days)
-                              .filter(([_dayId, day]) => (day as Day).enabled)
-                              .sort(([dayA], [dayB]) => (DAY_ORDER[dayA] || 99) - (DAY_ORDER[dayB] || 99))
-                              .map(([dayId, day], idx) => {
-                                const d = day as Day;
-                                return (
-                                  <div key={dayId} className="flex justify-between items-center text-xs py-1">
-                                    <span className="text-gray-900 font-black">
-                                      {DAY_LABELS[dayId] || dayId}
-                                    </span>
-                                    <span className="text-gray-700 font-bold">{formatTime12Hour(d.start)} - {formatTime12Hour(d.end)}</span>
-                                  </div>
-                                );
-                              })
-                          ) : (
-                            <div className="flex justify-between items-center text-[9px]">
-                              <span className="text-gray-700 font-semibold">Hours</span>
-                              <span className="text-gray-500">Set in Details tab</span>
-                            </div>
-                          )}
-                        <div className="flex justify-between items-center text-xs pt-2 border-t-2 border-gray-200 mt-2">
-                          <span className="text-gray-700 font-bold">
-                            {mode === "services"
-                              ? `${availability.slotMinutes}min slots • ${availability.advanceDays} days ahead`
-                              : `Open ${availability.advanceDays} days/week`}
-                          </span>
-                          <span className="px-2.5 py-1 bg-green-100 text-green-700 font-black text-[10px] rounded-lg shadow-sm" style={{ borderRadius: `${Math.min(cardRadius * 0.3, 4)}px` }}>
-                            {mode === "services" ? "BOOKABLE" : "OPEN"}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  {/* Powered by Piqo Footer */}
-                  {(appearance.showPoweredBy ?? true) && (
-                    <div className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-center border-t-2 border-gray-200">
-                      <div className="text-xs text-gray-600 font-bold">
-                        Powered by <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">piqo</span>
-                      </div>
+                      {/* Social + Contact Buttons Section */}
+                      {(appearance.showSocials ?? true) && (social.instagram || social.tiktok || social.website || social.phone || social.address || handle) && (
+                        <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
+                          <div className="pt-4 pb-3 border-t border-gray-200">
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                              <span className="text-lg">💬</span> Connect
+                            </h3>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {handle && (
+                              <a 
+                                href={`/profile/${handle}`}
+                                className="flex items-center gap-1.5 px-3 py-2 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
+                                style={{ 
+                                  borderRadius: `${Math.min(cardRadius * 0.5, 8)}px`,
+                                  background: `linear-gradient(135deg, ${accentSolid} 0%, ${hexToRgba(accentSolid, 0.8)} 100%)`
+                                }}
+                              >
+                                👤 View Profile
+                              </a>
+                            )}
+                            {social.instagram && (
+                              <a 
+                                href={`https://instagram.com/${social.instagram.replace('@', '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
+                                style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                              >
+                                📷 Instagram
+                              </a>
+                            )}
+                            {social.tiktok && (
+                              <a 
+                                href={`https://tiktok.com/@${social.tiktok.replace('@', '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-black text-white text-xs font-black hover:shadow-lg hover:scale-105 transition-all duration-200" 
+                                style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                              >
+                                🎵 TikTok
+                              </a>
+                            )}
+                            {social.website && (
+                              <a 
+                                href={social.website.startsWith('http') ? social.website : `https://${social.website}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                                style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                              >
+                                🌐 Website
+                              </a>
+                            )}
+                            {social.phone && (
+                              <a 
+                                href={`tel:${social.phone}`}
+                                className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                                style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                              >
+                                📞 Call
+                              </a>
+                            )}
+                            {social.address && (
+                              <a 
+                                href={`https://maps.google.com/?q=${encodeURIComponent(social.address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-[8px] font-bold hover:shadow-lg transition-shadow" 
+                                style={{ borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}
+                              >
+                                📍 Directions
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* Staff/Team Section - only for services */}
+                      {mode === "services" && (appearance.showStaff ?? true) && staffProfiles.length > 0 && (
+                        <div className="px-3 pb-4 bg-gradient-to-b from-white to-gray-50">
+                          <div className="flex items-center justify-between pt-3 pb-2">
+                            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">👥 Our Team</h3>
+                            <span className="text-[9px] text-gray-500 font-medium">{staffProfiles.length} staff</span>
+                          </div>
+                          <div className="space-y-2">
+                            {staffProfiles.slice(0, 2).map((staff: any, idx: number) => {
+                              const hasCustomHours = staff.workingDays && Object.values(staff.workingDays).some((day: any) => day?.enabled);
+                              const enabledDays = hasCustomHours 
+                                ? Object.entries(staff.workingDays).filter(([_, day]) => (day as any)?.enabled)
+                                : [];
+                              
+                              return (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.6 + idx * 0.1 }}
+                                  className="rounded-xl border-2 p-3 bg-white shadow-lg hover:shadow-xl transition-all duration-200"
+                                  style={{ borderRadius: `${cardRadius}px`, borderColor: `${appearance.accent || "#22D3EE"}50` }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-14 w-14 rounded-full flex items-center justify-center text-white font-black text-lg shadow-md" style={{ background: accentSolid }}>
+                                      {staff.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className="text-sm font-black text-gray-900 truncate">{staff.name}</span>
+                                        <span className="text-xs text-yellow-600 flex items-center gap-0.5">⭐ {staff.rating}</span>
+                                      </div>
+                                      <div className="text-xs text-gray-700 font-medium truncate mb-1">{staff.role} • {staff.specialties?.slice(0, 2).join(", ")}</div>
+                                      {hasCustomHours && enabledDays.length > 0 && (
+                                        <div className="text-[10px] text-gray-600 mt-1 font-medium">
+                                          🕐 {enabledDays.length} days • {formatTime12Hour((enabledDays[0][1] as any).start)}-{formatTime12Hour((enabledDays[0][1] as any).end)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button className="px-3 py-2 text-xs font-black text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200" style={{ backgroundColor: accentSolid, borderRadius: `${Math.min(cardRadius * 0.5, 8)}px` }}>
+                                      Book
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {/* Business Hours Section - optional for all modes */}
+                      {(appearance.showHours ?? false) && availability?.days && (
+                        <div className="px-4 pb-4 bg-gradient-to-b from-white to-gray-50">
+                          <div className="pt-4 pb-3 border-t border-gray-200">
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                              <span className="text-lg">🕐</span> Hours
+                            </h3>
+                          </div>
+                          <div className="space-y-1.5 bg-white border-2 border-gray-200 rounded-xl p-3 shadow-md">
+                            {Object.entries(availability.days)
+                              .filter(([_dayId, day]) => (day as Day).enabled)
+                              .length > 0 ? (
+                                Object.entries(availability.days)
+                                  .filter(([_dayId, day]) => (day as Day).enabled)
+                                  .sort(([dayA], [dayB]) => (DAY_ORDER[dayA] || 99) - (DAY_ORDER[dayB] || 99))
+                                  .map(([dayId, day], idx) => {
+                                    const d = day as Day;
+                                    return (
+                                      <div key={dayId} className="flex justify-between items-center text-xs py-1">
+                                        <span className="text-gray-900 font-black">
+                                          {DAY_LABELS[dayId] || dayId}
+                                        </span>
+                                        <span className="text-gray-700 font-bold">{formatTime12Hour(d.start)} - {formatTime12Hour(d.end)}</span>
+                                      </div>
+                                    );
+                                  })
+                              ) : (
+                                <div className="flex justify-between items-center text-[9px]">
+                                  <span className="text-gray-700 font-semibold">Hours</span>
+                                  <span className="text-gray-500">Set in Details tab</span>
+                                </div>
+                              )}
+                            <div className="flex justify-between items-center text-xs pt-2 border-t-2 border-gray-200 mt-2">
+                              <span className="text-gray-700 font-bold">
+                                {mode === "services"
+                                  ? `${availability.slotMinutes}min slots • ${availability.advanceDays} days ahead`
+                                  : `Open ${availability.advanceDays} days/week`}
+                              </span>
+                              <span className="px-2.5 py-1 bg-green-100 text-green-700 font-black text-[10px] rounded-lg shadow-sm" style={{ borderRadius: `${Math.min(cardRadius * 0.3, 4)}px` }}>
+                                {mode === "services" ? "BOOKABLE" : "OPEN"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {/* Powered by Piqo Footer */}
+                      {(appearance.showPoweredBy ?? true) && (
+                        <div className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-center border-t-2 border-gray-200">
+                          <div className="text-xs text-gray-600 font-bold">
+                            Powered by <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">piqo</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              )}
 
-      {/* Floating Cart Button - for products/digital only */}
+              {/* Floating Cart Button - for products/digital only */}
       {(mode === "products" || mode === "digital") && cartItemCount > 0 && (
         <motion.button
           initial={{ scale: 0 }}
@@ -2490,6 +2503,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           brandLogo={brandLogo || profilePic}
         />
       )}
-    </main>
+    </div>
   );
 }

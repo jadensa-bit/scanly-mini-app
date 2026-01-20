@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -40,15 +41,20 @@ import StorefrontPreview from "@/components/StorefrontPreview";
 type ModeId = "services" | "booking" | "digital" | "products";
 
 type ItemBadge = "popular" | "limited" | "new" | "trending" | "bestseller" | "sale" | "exclusive" | "none";
-type ItemType = "product" | "service" | "section" | "subsection";
+type ItemType = "product" | "service" | "section" | "subsection" | "addon";
 
 type BuildItem = {
   type?: ItemType; // "product", "service", "section", or "subsection"
   title: string;
   price: string;
+  deposit?: string; // deposit amount for services
   note?: string;
+  bullets?: string[]; // bullet points for features/details
   badge?: ItemBadge;
   image?: string; // data URL for item image
+  itemStyle?: "normal" | "featured"; // highlight individual products
+  buttonText?: string; // custom button text for add-ons
+  layout?: LayoutMode; // individual layout style for this item
 };
 
 type ThemePreset = "neon" | "minimal" | "warm" | "luxe" | "custom";
@@ -292,29 +298,29 @@ function pickDefaultItemsForMode(mode: ModeId): BuildItem[] {
   if (mode === "services") {
     return [
       { title: "Signature Fade + Lineup", price: "$45", note: "45 min • Most popular", badge: "popular" },
-      { title: "Beard Trim + Hot Towel", price: "$35", note: "30 min • Premium add-on", badge: "none" },
-      { title: "VIP Treatment", price: "$85", note: "90 min • Full experience", badge: "limited" },
+      { title: "Beard Trim + Hot Towel", price: "$35", note: "30 min • Premium add-on", badge: "trending" },
+      { title: "VIP Treatment", price: "$85", note: "90 min • Full experience", badge: "exclusive" },
     ];
   }
   if (mode === "products") {
     return [
-      { title: "Signature Tee (Black)", price: "$28", note: "100% cotton • Limited edition", badge: "popular" },
-      { title: "Holographic Sticker Pack", price: "$8", note: "Pack of 5 • Waterproof", badge: "none" },
-      { title: "Premium Bundle", price: "$45", note: "Tee + Cap + Stickers", badge: "limited" },
+      { title: "Signature Tee (Black)", price: "$28", note: "100% cotton • Limited edition", badge: "bestseller" },
+      { title: "Holographic Sticker Pack", price: "$8", note: "Pack of 5 • Waterproof", badge: "new" },
+      { title: "Premium Bundle", price: "$45", note: "Tee + Cap + Stickers", badge: "sale" },
     ];
   }
   if (mode === "digital") {
     return [
       { title: "8-Week Shred Program", price: "$29", note: "Instant access • Video guides", badge: "popular" },
-      { title: "Macro Calculator + Guide", price: "$15", note: "PDF download • Lifetime access", badge: "none" },
+      { title: "Macro Calculator + Guide", price: "$15", note: "PDF download • Lifetime access", badge: "new" },
       { title: "Complete Bundle", price: "$39", note: "Everything included • Best value", badge: "limited" },
     ];
   }
   // Fallback for booking or other modes
   return [
     { title: "Standard Booking", price: "$25", note: "Locks your time slot", badge: "popular" },
-    { title: "Priority Booking", price: "$40", note: "Faster confirmation", badge: "none" },
-    { title: "Consultation", price: "$0", note: "Free • Limited slots", badge: "limited" },
+    { title: "Priority Booking", price: "$40", note: "Faster confirmation", badge: "trending" },
+    { title: "Consultation", price: "$0", note: "Free • Limited slots", badge: "new" },
   ];
 }
 
@@ -1193,7 +1199,7 @@ async function startStripeConnect() {
             console.error("Error setting savingServer to false:", error);
           }
         }
-      }, 1500), // end debounce
+      }, 300), // Fast auto-publish for instant live updates (300ms)
     []
   );
 
@@ -1288,6 +1294,24 @@ useEffect(() => {
   const addService = () => {
     setItems((prev) => {
       const next = [...prev, { type: "service", title: "New service", price: "$0", note: "", badge: "none" } as BuildItem];
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+
+  const addAddon = () => {
+    setItems((prev) => {
+      const next = [...prev, { type: "addon", title: "Add-on", price: "$0", note: "", badge: "none", layout: "menu" } as BuildItem];
       // Instant preview update
       if (typeof window !== "undefined" && cleanHandle) {
         const base = configDraft;
@@ -2109,11 +2133,12 @@ useEffect(() => {
                               {/* Screen content - scrollable both directions */}
                               <div className="relative overflow-auto scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
                                 <StorefrontPreview
+                                  key={`${previewTick}-${items.length}-${JSON.stringify(items.map(i => i.layout))}`}
                                   mode={mode}
                                   brandName={brandName}
                                   tagline={tagline}
                                   businessDescription={businessDescription}
-                                  items={items}
+                                  items={items.filter(item => item.type !== 'addon')}
                                   appearance={appearance}
                                   staffProfiles={staffProfiles}
                                   ownerEmail={ownerEmail}
@@ -2304,7 +2329,12 @@ useEffect(() => {
                   <span className="text-sm font-bold text-white">Tagline</span>
                   <input
                     value={tagline}
-                    onChange={(e) => setTagline(e.target.value)}
+                    onChange={(e) => {
+                      setTagline(e.target.value);
+                      // Force immediate preview update for tagline changes
+                      skipNextPreviewTickRef.current = true;
+                      setPreviewTick(x => x + 1);
+                    }}
                     className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25"
                     placeholder="Ex: Tap, pay, confirmed."
                   />
@@ -2525,6 +2555,19 @@ useEffect(() => {
                     <span className="hidden xs:inline">Add Service</span>
                     <span className="xs:hidden">Service</span>
                   </motion.button>
+                  {mode === "services" && (
+                    <motion.button
+                      type="button"
+                      onClick={addAddon}
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 transition shadow-lg shadow-purple-500/10"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      <span className="hidden xs:inline">Add-on</span>
+                      <span className="xs:hidden">Add-on</span>
+                    </motion.button>
+                  )}
                 </div>
               </div>
 
@@ -2548,6 +2591,7 @@ useEffect(() => {
                     const isSection = it.type === "section";
                     const isSubsection = it.type === "subsection";
                     const isService = it.type === "service";
+                    const isAddon = it.type === "addon";
                     const isProduct = it.type === "product" || !it.type; // default to product
                     
                     return (
@@ -2560,6 +2604,8 @@ useEffect(() => {
                           ? 'border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 hover:border-indigo-500/40 ml-4'
                           : isService
                           ? 'border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:border-cyan-500/40'
+                          : isAddon
+                          ? 'border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:border-purple-500/40'
                           : 'border-white/12 bg-black/30 hover:border-white/20 hover:bg-black/35'
                       }`}
                       initial={{ opacity: 0, y: 10 }}
@@ -2675,13 +2721,106 @@ useEffect(() => {
                         </div>
                       </div>
 
-                      {!isSection && !isSubsection && (
+                      {!isSection && !isSubsection && !isAddon && (
                       <>
+                      {/* Layout Selector - For products, services, and addons */}
+                      {(isProduct || isService || isAddon) && (
+                        <div className="pl-4 sm:pl-10 mb-3">
+                          <span className="text-xs font-semibold text-white/70 block mb-1.5">
+                            Display Format {it.layout && `(${it.layout})`}
+                          </span>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {(["cards", "menu", "tiles"] as LayoutMode[]).map((layoutOption) => {
+                              const isActive = (it.layout || "cards") === layoutOption;
+                              return (
+                                <button
+                                  key={layoutOption}
+                                  type="button"
+                                  onClick={() => {
+                                    console.log(`[Layout Button] Clicked ${layoutOption} for item ${idx}: "${items[idx]?.title}"`);
+                                    const newItems = [...items];
+                                    newItems[idx] = { ...newItems[idx], layout: layoutOption };
+                                    console.log(`[Layout Button] Updated item layout:`, newItems[idx]);
+                                    
+                                    // Force synchronous state update
+                                    flushSync(() => {
+                                      setItems(newItems);
+                                    });
+                                    console.log(`[Layout Button] State updated, new items count:`, newItems.length);
+                                    
+                                    // Update localStorage immediately
+                                    if (typeof window !== "undefined" && cleanHandle && configDraft) {
+                                      const updatedConfig = { ...configDraft, items: newItems, createdAt: Date.now() };
+                                      try {
+                                        localStorage.setItem(storageKey(cleanHandle), JSON.stringify(updatedConfig));
+                                        console.log(`[Layout Button] LocalStorage updated for ${cleanHandle}`);
+                                      } catch {}
+                                    }
+                                    
+                                    // Force preview update - items are now guaranteed to be updated
+                                    skipNextPreviewTickRef.current = true;
+                                    setPreviewTick(x => x + 1);
+                                    console.log(`[Layout Button] Preview tick incremented`);
+                                  }}
+                                  className={`px-2 py-2 rounded-lg border text-xs font-medium transition-all duration-200 ${
+                                    isActive
+                                      ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
+                                      : "bg-black/30 border-white/10 text-white/60 hover:bg-white/5 hover:border-white/20 hover:text-white/80"
+                                  }`}
+                                >
+                                  {layoutOption === "cards" && "📋 Card"}
+                                  {layoutOption === "menu" && "📜 Menu"}
+                                  {layoutOption === "tiles" && "🔳 Tile"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                       {/* Details row */}
                       <div className="grid gap-2 sm:grid-cols-2 pl-4 sm:pl-10">
+                        {/* Button Text for Add-ons */}
+                        {isAddon && (
+                          <label className="grid gap-1.5 sm:col-span-2">
+                            <span className="text-xs font-semibold text-white/70">Button Text <span className="text-white/50 font-normal">(optional)</span></span>
+                            <input
+                              value={it.buttonText || ""}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[idx] = { ...newItems[idx], buttonText: newValue };
+                                  return newItems;
+                                });
+                              }}
+                              className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-purple-500/30"
+                              placeholder="e.g. Add this, Book Now, Buy"
+                            />
+                            <span className="text-[10px] text-purple-300/60">Customize what the button says for this add-on</span>
+                          </label>
+                        )}
                         <label className="grid gap-1.5">
-                          <span className="text-xs font-semibold text-white/70">Description</span>
-                          <input
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-white/70">Description</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  const currentNote = newItems[idx].note || "";
+                                  const newNote = currentNote + (currentNote ? "\n" : "") + "• ";
+                                  newItems[idx] = { ...newItems[idx], note: newNote };
+                                  return newItems;
+                                });
+                              }}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/15 text-white/70 hover:text-white transition flex items-center gap-1"
+                              title="Add bullet point"
+                            >
+                              <Plus className="h-2.5 w-2.5" />
+                              Bullet
+                            </button>
+                          </div>
+                          <textarea
                             value={it.note || ""}
                             onChange={(e) => {
                               const newValue = e.target.value;
@@ -2691,8 +2830,9 @@ useEffect(() => {
                                 return newItems;
                               });
                             }}
-                            className="rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25"
-                            placeholder={mode === "services" ? "e.g. 30 min • Includes styling" : "Short description"}
+                            rows={3}
+                            className="rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 resize-none"
+                            placeholder={mode === "services" ? "e.g. 30 min session\n• Includes consultation\n• Professional styling" : "e.g. Premium quality\n• Free shipping\n• 30-day returns"}
                           />
                         </label>
 
@@ -2721,6 +2861,29 @@ useEffect(() => {
                           </select>
                         </label>
                       </div>
+
+                      {/* Deposit field for services */}
+                      {isService && (
+                        <div className="pl-4 sm:pl-10">
+                          <label className="grid gap-1.5">
+                            <span className="text-xs font-semibold text-white/70">Deposit Amount <span className="text-white/50 font-normal">(optional)</span></span>
+                            <input
+                              value={it.deposit || ""}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[idx] = { ...newItems[idx], deposit: newValue };
+                                  return newItems;
+                                });
+                              }}
+                              className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-200 hover:border-cyan-500/30"
+                              placeholder="e.g. $10 or 50%"
+                            />
+                            <span className="text-[10px] text-cyan-300/60">Require a deposit to secure this booking</span>
+                          </label>
+                        </div>
+                      )}
 
                       {/* Image upload row */}
                       <div className="pl-4 sm:pl-10 mt-2">
@@ -2834,6 +2997,12 @@ useEffect(() => {
                           Service • Customers can book appointments for this
                         </div>
                       )}
+                      {isAddon && (
+                        <div className="pl-4 sm:pl-10 text-xs text-purple-300/70 flex items-center gap-2">
+                          <Plus className="h-3 w-3" />
+                          Add-on • Simple optional extra (name + price only)
+                        </div>
+                      )}
                       {isProduct && !isSection && !isSubsection && (
                         <div className="pl-4 sm:pl-10 text-xs text-green-300/70 flex items-center gap-2">
                           <ShoppingBag className="h-3 w-3" />
@@ -2928,27 +3097,7 @@ useEffect(() => {
                   </div>
                 </label>
 
-                <label className="grid gap-1">
-                  <span className="text-xs text-white/80">Layout</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["cards", "menu", "tiles"] as LayoutMode[]).map((l) => {
-                      const on = (appearance.layout || "cards") === l;
-                      return (
-                        <button
-                          key={l}
-                          type="button"
-                          onClick={() => applyAppearancePatchInstant({ layout: l })}
-                          className={cn(
-                            "rounded-2xl border px-3 py-3 text-xs font-semibold transition",
-                            on ? "border-white/35 bg-white/12" : "border-white/12 bg-black/30 hover:bg-white/10"
-                          )}
-                        >
-                          {l === "cards" ? "Cards" : l === "menu" ? "Menu" : "Tiles"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
+                {/* Layout selector removed - creators control individual item formatting via Item Style toggle */}
 
                 <label className="grid gap-1">
                   <span className="text-xs text-white/80">Logo shape</span>
@@ -4097,7 +4246,7 @@ useEffect(() => {
 
           {/* RIGHT - Fixed Preview */}
           <div 
-            className="hidden lg:block w-[500px] fixed right-[max(1rem,calc((100%-80rem)/2))] z-30"
+            className="hidden md:block w-[400px] lg:w-[500px] fixed right-4 lg:right-[max(1rem,calc((100%-80rem)/2))] z-30"
             style={{
               top: '1rem',
               height: 'calc(100vh - 2rem)',
