@@ -217,7 +217,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
   // Destructure other props
   const brandName = props.brandName || "My Brand";
-  const tagline = props.tagline || "Scan → Book → Done";
+  const tagline = props.tagline !== undefined ? props.tagline : "Scan → Book → Done";
   const businessDescription = props.businessDescription || "";
   const items = props.items || [];
   const appearance = props.appearance || {};
@@ -878,14 +878,16 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       >
                         {brandName || "Your Brand"}
                       </motion.h2>
-                      <motion.p
-                        initial={{ y: 10, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="text-white/90 text-sm font-medium drop-shadow line-clamp-2"
-                      >
-                        {tagline || "Your tagline here"}
-                      </motion.p>
+                      {tagline && (
+                        <motion.p
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className="text-white/90 text-sm font-medium drop-shadow line-clamp-2"
+                        >
+                          {tagline}
+                        </motion.p>
+                      )}
                       {businessDescription && (
                         <motion.p
                           initial={{ y: 10, opacity: 0 }}
@@ -938,7 +940,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-black text-gray-900 truncate">{brandName || "Your Brand"}</h2>
-                      <p className="text-sm text-gray-600 font-medium line-clamp-2">{tagline || "Your tagline here"}</p>
+                      {tagline && (
+                        <p className="text-sm text-gray-600 font-medium line-clamp-2">{tagline}</p>
+                      )}
                       {businessDescription && (
                         <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 font-medium">
                           {businessDescription}

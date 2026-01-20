@@ -17,3 +17,4 @@ declare module 'react-qr-scanner' {
   const QrScanner: FC<QrScannerProps>;
   export default QrScanner;
 }
+                                                                                                                                              
