@@ -2284,22 +2284,23 @@ useEffect(() => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
                   <Layers className="h-4 w-4 text-orange-400" />
                   {mode === "services" ? "Services" : mode === "products" ? "Products" : "Digital Items"} ({items.length})
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {items.length === 0 && (
                     <motion.button
                       type="button"
                       onClick={() => setItems(pickDefaultItemsForMode(mode))}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 transition shadow-lg shadow-purple-500/10"
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 transition shadow-lg shadow-purple-500/10"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Wand2 className="h-4 w-4" />
-                      Quick Fill
+                      <Wand2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden xs:inline">Quick Fill</span>
+                      <span className="xs:hidden">Fill</span>
                     </motion.button>
                   )}
                   {mode === "products" && (
@@ -2307,33 +2308,35 @@ useEffect(() => {
                       <motion.button
                         type="button"
                         onClick={addSectionHeader}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition shadow-lg shadow-blue-500/10"
+                        className="inline-flex items-center gap-1.5 rounded-2xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-300 hover:bg-blue-500/20 transition shadow-lg shadow-blue-500/10"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Type className="h-4 w-4" />
-                        Add Section
+                        <Type className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline">Add Section</span>
+                        <span className="xs:hidden">Section</span>
                       </motion.button>
                       <motion.button
                         type="button"
                         onClick={addSubsection}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition shadow-lg shadow-indigo-500/10"
+                        className="inline-flex items-center gap-1.5 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition shadow-lg shadow-indigo-500/10"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <Type className="h-3.5 w-3.5" />
-                        Add Subsection
+                        <Type className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <span className="hidden xs:inline">Add Subsection</span>
+                        <span className="xs:hidden">Sub</span>
                       </motion.button>
                     </>
                   )}
                   <motion.button
                     type="button"
                     onClick={addItem}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/20 transition shadow-lg shadow-green-500/10"
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 hover:bg-green-500/20 transition shadow-lg shadow-green-500/10"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}
                   </motion.button>
                 </div>
@@ -2374,20 +2377,20 @@ useEffect(() => {
                       layout
                     >
                       {/* Header row */}
-                      <div className="flex items-center gap-3 mb-3">
-                        {/* Item number badge */}
-                        <div className={`flex-shrink-0 w-7 h-7 rounded-lg border grid place-items-center text-xs font-bold ${
-                          isSection 
-                            ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' 
-                            : isSubsection
-                            ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
-                            : 'bg-white/5 border-white/10 text-white/50'
-                        }`}>
-                          {isSection ? <Type className="h-3.5 w-3.5" /> : isSubsection ? <Type className="h-3 w-3" /> : idx + 1}
-                        </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                          {/* Item number badge */}
+                          <div className={`flex-shrink-0 w-7 h-7 rounded-lg border grid place-items-center text-xs font-bold ${
+                            isSection 
+                              ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' 
+                              : isSubsection
+                              ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
+                              : 'bg-white/5 border-white/10 text-white/50'
+                          }`}>
+                            {isSection ? <Type className="h-3.5 w-3.5" /> : isSubsection ? <Type className="h-3 w-3" /> : idx + 1}
+                          </div>
 
-                        {/* Title input (and Price for non-section items) */}
-                        <div className="flex-1 flex items-center gap-2">
+                          {/* Title input */}
                           <input
                             value={it.title}
                             onChange={(e) =>
@@ -2404,6 +2407,8 @@ useEffect(() => {
                             }`}
                             placeholder={isSection ? "e.g. Breakfast" : isSubsection ? "e.g. Hot Drinks" : (mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook")}
                           />
+
+                          {/* Price input - show inline on desktop, below on mobile */}
                           {!isSection && !isSubsection && (
                             <input
                               value={it.price}
@@ -2412,14 +2417,14 @@ useEffect(() => {
                                   prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
                                 )
                               }
-                              className="w-24 rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
+                              className="w-20 sm:w-24 rounded-xl border border-white/15 bg-black/50 px-2 sm:px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
                               placeholder="$25"
                             />
                           )}
                         </div>
 
                         {/* Action buttons */}
-                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
                           {/* Move up */}
                           <button
                             type="button"
@@ -2469,7 +2474,7 @@ useEffect(() => {
                       {!isSection && !isSubsection && (
                       <>
                       {/* Details row */}
-                      <div className="grid gap-2 sm:grid-cols-2 pl-10">
+                      <div className="grid gap-2 sm:grid-cols-2 pl-4 sm:pl-10">
                         <label className="grid gap-1.5">
                           <span className="text-xs font-semibold text-white/70">Description</span>
                           <input
@@ -2503,8 +2508,8 @@ useEffect(() => {
                       </div>
 
                       {/* Image upload row */}
-                      <div className="pl-10 mt-2">
-                        <div className="flex items-center gap-3">
+                      <div className="pl-4 sm:pl-10 mt-2">
+                        <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-3">
                           {/* Image preview */}
                           <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-white/12 bg-black/40 flex-shrink-0">
                             {it.image ? (
@@ -2519,9 +2524,10 @@ useEffect(() => {
                           
                           {/* Upload / Remove buttons */}
                           <div className="flex-1 flex items-center gap-2">
-                            <label className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-xs text-white/70 hover:bg-white/10 hover:text-white/90 transition cursor-pointer">
+                            <label className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-xs text-white/70 hover:bg-white/10 hover:text-white/90 transition cursor-pointer">
                               <ImageIcon className="h-3.5 w-3.5" />
-                              {it.image ? "Change image" : "Add image"}
+                              <span className="hidden xs:inline">{it.image ? "Change image" : "Add image"}</span>
+                              <span className="xs:hidden">{it.image ? "Change" : "Add"}</span>
                               <input
                                 type="file"
                                 accept="image/*"
@@ -2572,13 +2578,13 @@ useEffect(() => {
                       )}
 
                       {isSection && (
-                        <div className="pl-10 text-xs text-blue-300/70 flex items-center gap-2">
+                        <div className="pl-4 sm:pl-10 text-xs text-blue-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
                           Section header • Groups menu items visually
                         </div>
                       )}
                       {isSubsection && (
-                        <div className="pl-10 text-xs text-indigo-300/70 flex items-center gap-2">
+                        <div className="pl-4 sm:pl-10 text-xs text-indigo-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
                           Subsection • Organizes items within a section
                         </div>

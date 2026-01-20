@@ -61,6 +61,9 @@ export async function GET(req: NextRequest) {
   const TABLE_CANDIDATES = ["scanly_sites", "sites", "site"]; // Check scanly_sites first since new piqos go there
   let allSites: any[] = [];
   let sitesError: any = null;
+  
+  // ✅ Track which handles we've seen and which table they came from
+  const handleToTableMap = new Map<string, { table: string, site: any }>();
 
   for (const table of TABLE_CANDIDATES) {
     // ✅ CRITICAL: Always filter by user_id first
@@ -106,16 +109,24 @@ export async function GET(req: NextRequest) {
       continue; // Try next table instead of stopping
     }
 
-    // ✅ Add sites from this table to our collection (avoiding duplicates by handle)
+    // ✅ IMPROVED: Add sites from this table, preventing duplicates
+    // If a handle exists in multiple tables, prefer the one from the first table (scanly_sites)
     if (data && data.length > 0) {
-      const existingHandles = new Set(allSites.map(s => s.handle));
-      const newSites = data.filter((s: any) => !existingHandles.has(s.handle));
-      allSites.push(...newSites);
-      console.log(`✅ Dashboard: Added ${newSites.length} new sites from ${table}, total now: ${allSites.length}`);
+      let addedCount = 0;
+      for (const site of data) {
+        if (!handleToTableMap.has(site.handle)) {
+          handleToTableMap.set(site.handle, { table, site });
+          addedCount++;
+        } else {
+          console.log(`⚠️ Dashboard: Skipping duplicate handle "${site.handle}" from ${table} (already found in ${handleToTableMap.get(site.handle)?.table})`);
+        }
+      }
+      console.log(`✅ Dashboard: Added ${addedCount} unique sites from ${table} (skipped ${data.length - addedCount} duplicates), total now: ${handleToTableMap.size}`);
     }
   }
 
-  const sites = allSites;
+  // Convert map to array
+  const sites = Array.from(handleToTableMap.values()).map(entry => entry.site);
 
   if (sites.length === 0 && sitesError) {
     console.error("❌ Dashboard: Could not fetch sites from any table");

@@ -110,7 +110,24 @@ async function upsertSite(supabase: any, handle: string, config: any, userId?: s
 
   console.log("📝 upsertSite - payload user_id:", payload.user_id || "NOT SET", "handle:", handle, "saveAsDraft:", saveAsDraft, "isExisting:", isExisting);
 
-  for (const table of TABLE_CANDIDATES) {
+  // ✅ CRITICAL FIX: First, find which table (if any) already contains this handle
+  // This prevents creating duplicate entries across multiple tables
+  let targetTable: string | null = null;
+  
+  if (isExisting) {
+    console.log(`🔍 Searching for existing site with handle: ${handle}`);
+    const existingSite = await findSiteByHandle(supabase, handle);
+    if (existingSite.data && existingSite.table) {
+      targetTable = existingSite.table;
+      console.log(`✅ Found existing site in table: ${targetTable}`);
+    }
+  }
+  
+  // If not found or it's a new site, use the first available table
+  const tablesToTry = targetTable ? [targetTable] : TABLE_CANDIDATES;
+  console.log(`📋 Will try tables in order:`, tablesToTry);
+
+  for (const table of tablesToTry) {
     console.log(`🔄 Trying table: ${table}`);
     
     // preserve existing stripe_account_id if present on the existing row
