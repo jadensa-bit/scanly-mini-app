@@ -291,16 +291,22 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     // Don't add section headers or subsections to cart
     if (item.type === "section" || item.type === "subsection") return;
     
+    console.log('🛒 Adding to cart:', { title: item.title, type: item.type, quantity: qty });
+    
     setCart(prev => {
       const existing = prev.find(ci => ci.item.title === item.title);
       if (existing) {
-        return prev.map(ci =>
+        const updated = prev.map(ci =>
           ci.item.title === item.title
             ? { ...ci, quantity: ci.quantity + qty }
             : ci
         );
+        console.log('🛒 Updated cart:', updated);
+        return updated;
       }
-      return [...prev, { item, quantity: qty }];
+      const newCart = [...prev, { item, quantity: qty }];
+      console.log('🛒 New cart:', newCart);
+      return newCart;
     });
   };
 
@@ -326,6 +332,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   }, 0);
 
   const cartItemCount = cart.reduce((count, ci) => count + ci.quantity, 0);
+
+  console.log('🛒 Cart state:', { mode, cartItemCount, cartItems: cart.length, cart });
 
   // Scroll listener to hide header on scroll
   useEffect(() => {
