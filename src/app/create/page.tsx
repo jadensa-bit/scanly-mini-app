@@ -790,10 +790,15 @@ async function startStripeConnect() {
 
   async function onPickLogoFile(file?: File | null) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) return;
+    if (!file.type.startsWith("image/")) {
+      setToast("❌ Please select an image file");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
     
     // Show uploading state
     setToast("📤 Uploading logo...");
+    console.log('🔄 Starting logo upload:', file.name, file.size, 'bytes');
     
     // Show preview immediately while uploading
     const preview = await fileToDataUrl(file);
@@ -814,15 +819,33 @@ async function startStripeConnect() {
       }
     } catch {}
     
-    // Upload to server to get hosted URL
+    // Upload to server to get hosted URL with timeout
     try {
       const fd = new FormData();
       fd.append("file", file, file.name || "upload.jpg");
-      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
+      
+      console.log('📡 Sending upload request to /api/uploads...');
+      
+      // Add timeout to prevent infinite hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const res = await fetch("/api/uploads", { 
+        method: "POST", 
+        body: fd, 
+        credentials: 'include',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('📨 Upload response received:', res.status, res.statusText);
+      
       const data = await res.json().catch(() => ({}));
       
       if (res.ok && data?.url) {
         // Success - replace preview with hosted URL
+        console.log('✅ Upload successful, hosted URL:', data.url);
         setBrandLogo(data.url);
         
         // Update localStorage with hosted URL
@@ -844,17 +867,22 @@ async function startStripeConnect() {
         setTimeout(() => setToast(null), 2000);
       } else {
         // Upload failed - show error with details
-        console.error('Logo upload failed:', { status: res.status, error: data?.error });
+        console.error('❌ Logo upload failed:', { status: res.status, error: data?.error, data });
         const errorMsg = data?.error || "Upload failed";
         setToast(`❌ ${errorMsg}`);
         setTimeout(() => setToast(null), 4000);
         // Keep preview as base64 - it will still work locally
         console.log('Keeping base64 preview for local use');
       }
-    } catch (err) {
+    } catch (err: any) {
       // Upload failed - show error
-      console.error('Logo upload error:', err);
-      setToast("❌ Upload failed. Using local preview only.");
+      if (err.name === 'AbortError') {
+        console.error('⏱️ Upload timeout after 30 seconds');
+        setToast("❌ Upload timeout. Using local preview.");
+      } else {
+        console.error('❌ Logo upload error:', err);
+        setToast("❌ Upload failed. Using local preview only.");
+      }
       setTimeout(() => setToast(null), 4000);
       // Keep preview as base64 - it will still work locally
       console.log('Keeping base64 preview for local use');
