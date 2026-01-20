@@ -217,7 +217,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
   // Destructure other props
   const brandName = props.brandName || "My Brand";
-  const tagline = props.tagline !== undefined ? props.tagline : "Scan → Book → Done";
+  const tagline = props.tagline || ""; // Use empty string if not provided
   const businessDescription = props.businessDescription || "";
   const items = props.items || [];
   const appearance = props.appearance || {};
