@@ -1997,6 +1997,27 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         )}
                       </div>
 
+                      {/* Show cart items (add-ons) if any */}
+                      {mode === 'services' && cart.length > 0 && (
+                        <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl shadow-md space-y-2">
+                          <p className="text-sm font-black text-gray-900 mb-2">🛍️ Add-ons to purchase:</p>
+                          {cart.map((cartItem, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-xs">
+                              <span className="font-medium text-gray-700">
+                                {cartItem.item.title} × {cartItem.quantity}
+                              </span>
+                              <span className="font-black text-gray-900">
+                                {cartItem.item.price}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="pt-2 border-t border-blue-300 flex justify-between items-center">
+                            <span className="font-black text-gray-900">Total:</span>
+                            <span className="font-black text-gray-900">${cartTotal.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Show booking fields ONLY for services */}
                       {mode === 'services' && (
                         <>
@@ -2216,6 +2237,16 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         )}
                         {selectedTeamMember && (
                           <div><strong>Specialist:</strong> {teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name || "Selected"}</div>
+                        )}
+                        {cart.length > 0 && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <div className="font-black text-gray-900 mb-1">Add-ons purchased:</div>
+                            {cart.map((cartItem, idx) => (
+                              <div key={idx} className="text-xs text-gray-700 ml-2">
+                                • {cartItem.item.title} × {cartItem.quantity}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
 
