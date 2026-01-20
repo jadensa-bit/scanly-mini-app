@@ -2133,7 +2133,7 @@ useEffect(() => {
                               {/* Screen content - scrollable both directions */}
                               <div className="relative overflow-auto scrollbar-hide flex-1" style={{ ...previewStyle, fontFamily: previewFontFamily }}>
                                 <StorefrontPreview
-                                  key={`${previewTick}-${items.length}-${JSON.stringify(items.map(i => i.layout))}`}
+                                  key={`preview-${previewTick}-${items.length}-${items.map((i, idx) => `${idx}:${i.layout || 'cards'}`).join(',')}`}
                                   mode={mode}
                                   brandName={brandName}
                                   tagline={tagline}
