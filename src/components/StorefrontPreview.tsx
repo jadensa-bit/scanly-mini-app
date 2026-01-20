@@ -1039,7 +1039,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center text-2xl"
                                       style={{ background: `linear-gradient(135deg, ${accentSolid}, ${hexToRgba(accentSolid, 0.6)})` }}>
-                                      <span>{mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}</span>
+                                      <span>{mode === "products" ? "🛍️" : "⚡"}</span>
                                     </div>
                                   )}
                                   {item.badge && item.badge !== "none" && (
