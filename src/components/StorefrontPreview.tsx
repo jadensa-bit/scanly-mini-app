@@ -244,7 +244,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   // Cart state (for products and digital)
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [itemQuantities, setItemQuantities] = useState<Record<number, number>>({});
+  
+  // Helper to get quantity for an item index
+  const getItemQuantity = (idx: number) => itemQuantities[idx] || 1;
+  const setItemQuantity = (idx: number, qty: number) => {
+    setItemQuantities(prev => ({ ...prev, [idx]: qty }));
+  };
   
   // Scroll state for hiding header
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -1500,15 +1506,21 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setQuantity(Math.max(1, quantity - 1)); }}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      setItemQuantity(idx, Math.max(1, getItemQuantity(idx) - 1)); 
+                                    }}
                                     className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
                                     style={{ color: accentSolid }}
                                   >
                                     −
                                   </button>
-                                  <span className="px-3 text-sm font-black min-w-[30px] text-center text-gray-900">{quantity}</span>
+                                  <span className="px-3 text-sm font-black min-w-[30px] text-center text-gray-900">{getItemQuantity(idx)}</span>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setQuantity(quantity + 1); }}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      setItemQuantity(idx, getItemQuantity(idx) + 1); 
+                                    }}
                                     className="px-3 py-2 text-sm font-black hover:bg-gray-100 transition-colors duration-200"
                                     style={{ color: accentSolid }}
                                   >
@@ -1526,8 +1538,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   whileTap={{ scale: 0.95 }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    addToCart(item, quantity);
-                                    setQuantity(1);
+                                    addToCart(item, getItemQuantity(idx));
+                                    setItemQuantity(idx, 1);
                                   }}
                                 >
                                   {shine && (
