@@ -1270,21 +1270,23 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             className="my-6 first:mt-2 col-span-full -mx-4 px-4"
                           >
                             {/* Full-width section divider */}
-                            <div className="flex items-center gap-3 px-2 mb-3">
-                              <div 
-                                className="h-[3px] w-12 rounded-full"
-                                style={{ background: accentSolid }}
-                              />
+                            <div className="px-2 mb-3">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div 
+                                  className="h-[3px] w-12 rounded-full flex-shrink-0"
+                                  style={{ background: accentSolid }}
+                                />
+                                <div 
+                                  className="h-[3px] flex-1 rounded-full"
+                                  style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }}
+                                />
+                              </div>
                               <h3 
-                                className="text-xl font-black uppercase tracking-wider flex-shrink-0"
+                                className="text-xl font-black uppercase tracking-wider break-words"
                                 style={{ color: accentSolid }}
                               >
                                 {item.title || "SECTION"}
                               </h3>
-                              <div 
-                                className="h-[3px] flex-1 rounded-full"
-                                style={{ background: `linear-gradient(90deg, ${accentSolid}, transparent)` }}
-                              />
                             </div>
                             {item.note && (
                               <p className="text-sm text-gray-600 font-medium px-2 mb-2 italic">
@@ -1305,21 +1307,23 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             transition={{ delay: 0.5 + idx * 0.1 }}
                             className="my-4 first:mt-2 ml-0 col-span-full -mx-4 px-4"
                           >
-                            <div className="flex items-center gap-2 px-2 mb-2">
-                              <div 
-                                className="h-[2px] w-6 rounded-full"
-                                style={{ background: `${accentSolid}80` }}
-                              />
+                            <div className="px-2 mb-2">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <div 
+                                  className="h-[2px] w-6 rounded-full flex-shrink-0"
+                                  style={{ background: `${accentSolid}80` }}
+                                />
+                                <div 
+                                  className="h-[2px] flex-1 rounded-full"
+                                  style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }}
+                                />
+                              </div>
                               <h4 
-                                className="text-sm font-bold uppercase tracking-wide flex-shrink-0"
+                                className="text-sm font-bold uppercase tracking-wide break-words"
                                 style={{ color: `${accentSolid}cc` }}
                               >
                                 {item.title || "Subsection"}
                               </h4>
-                              <div 
-                                className="h-[2px] flex-1 rounded-full"
-                                style={{ background: `linear-gradient(90deg, ${hexToRgba(accentSolid, 0.5)}, transparent)` }}
-                              />
                             </div>
                             {item.note && (
                               <p className="text-xs text-gray-500 font-medium px-2 mb-2 italic">
