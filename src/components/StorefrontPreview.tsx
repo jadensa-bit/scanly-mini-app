@@ -1267,7 +1267,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + idx * 0.1 }}
-                            className="my-6 first:mt-2 col-span-full"
+                            className="my-6 first:mt-2 col-span-full -mx-4 px-4"
                           >
                             {/* Full-width section divider */}
                             <div className="flex items-center gap-3 px-2 mb-3">
@@ -1303,7 +1303,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + idx * 0.1 }}
-                            className="my-4 first:mt-2 ml-4 col-span-full"
+                            className="my-4 first:mt-2 ml-0 col-span-full -mx-4 px-4"
                           >
                             <div className="flex items-center gap-2 px-2 mb-2">
                               <div 
