@@ -965,17 +965,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     <div className="flex items-center justify-between pt-4 pb-3 border-b border-gray-200">
                       <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
                         <span className="text-lg">
-                          {mode === "services"
-                            ? "⚡"
-                            : mode === "products"
-                              ? "🔥"
-                              : "💎"}
+                          {mode === "products" ? "🔥" : "💎"}
                         </span>
-                        {mode === "services"
-                          ? "Services"
-                          : mode === "products"
-                            ? "Items"
-                            : "Digital"}
+                        {mode === "products" ? "Items" : "Digital"}
                       </h3>
                       <span className="text-xs text-gray-600 font-bold bg-gray-100 px-3 py-1 rounded-full">{items.filter(it => it.type !== "section" && it.type !== "subsection").length}</span>
                     </div>
