@@ -61,6 +61,7 @@ You should see 3 rows returned.
 3. Complete the booking flow
 
 ### See Live Updates
+
 1. Go to [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
 2. You should see bookings appear in the "Recent Bookings" section in real-time
 

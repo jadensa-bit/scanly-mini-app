@@ -32,16 +32,18 @@ import {
   Mail,
   User,
   X,
+  CalendarClock,
+  ShoppingBag,
 } from "lucide-react";
 import StorefrontPreview from "@/components/StorefrontPreview";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
 type ItemBadge = "popular" | "limited" | "new" | "trending" | "bestseller" | "sale" | "exclusive" | "none";
-type ItemType = "product" | "section" | "subsection";
+type ItemType = "product" | "service" | "section" | "subsection";
 
 type BuildItem = {
-  type?: ItemType; // "product" (default), "section", or "subsection"
+  type?: ItemType; // "product", "service", "section", or "subsection"
   title: string;
   price: string;
   note?: string;
@@ -1283,6 +1285,24 @@ useEffect(() => {
     });
   };
 
+  const addService = () => {
+    setItems((prev) => {
+      const next = [...prev, { type: "service", title: "New service", price: "$0", note: "", badge: "none" } as BuildItem];
+      // Instant preview update
+      if (typeof window !== "undefined" && cleanHandle) {
+        const base = configDraft;
+        if (base) {
+          try {
+            localStorage.setItem(storageKey(cleanHandle), JSON.stringify({ ...base, items: next, createdAt: Date.now() }));
+          } catch {}
+        }
+        skipNextPreviewTickRef.current = true;
+        setPreviewTick((x) => x + 1);
+      }
+      return next;
+    });
+  };
+
   const addSectionHeader = () => {
     setItems((prev) => {
       const next = [...prev, { type: "section", title: "New Section", price: "", note: "", badge: "none" } as BuildItem];
@@ -2491,7 +2511,19 @@ useEffect(() => {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    Add {mode === "services" ? "Service" : mode === "products" ? "Product" : "Item"}
+                    <span className="hidden xs:inline">Add Product</span>
+                    <span className="xs:hidden">Product</span>
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={addService}
+                    className="inline-flex items-center gap-1.5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition shadow-lg shadow-cyan-500/10"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <CalendarClock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden xs:inline">Add Service</span>
+                    <span className="xs:hidden">Service</span>
                   </motion.button>
                 </div>
               </div>
@@ -2515,6 +2547,8 @@ useEffect(() => {
                   {items.map((it, idx) => {
                     const isSection = it.type === "section";
                     const isSubsection = it.type === "subsection";
+                    const isService = it.type === "service";
+                    const isProduct = it.type === "product" || !it.type; // default to product
                     
                     return (
                     <motion.div 
@@ -2524,6 +2558,8 @@ useEffect(() => {
                           ? 'border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:border-blue-500/40' 
                           : isSubsection
                           ? 'border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 hover:border-indigo-500/40 ml-4'
+                          : isService
+                          ? 'border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:border-cyan-500/40'
                           : 'border-white/12 bg-black/30 hover:border-white/20 hover:bg-black/35'
                       }`}
                       initial={{ opacity: 0, y: 10 }}
@@ -2539,9 +2575,11 @@ useEffect(() => {
                               ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' 
                               : isSubsection
                               ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
+                              : isService
+                              ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300'
                               : 'bg-white/5 border-white/10 text-white/50'
                           }`}>
-                            {isSection ? <Type className="h-3.5 w-3.5" /> : isSubsection ? <Type className="h-3 w-3" /> : idx + 1}
+                            {isSection ? <Type className="h-3.5 w-3.5" /> : isSubsection ? <Type className="h-3 w-3" /> : isService ? <CalendarClock className="h-3.5 w-3.5" /> : idx + 1}
                           </div>
 
                           {/* Title input */}
@@ -2781,13 +2819,25 @@ useEffect(() => {
                       {isSection && (
                         <div className="pl-4 sm:pl-10 text-xs text-blue-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
-                          Section header • Groups {mode === "services" ? "services" : "menu items"} visually
+                          Section header • Groups items visually
                         </div>
                       )}
                       {isSubsection && (
                         <div className="pl-4 sm:pl-10 text-xs text-indigo-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
-                          Subsection • Organizes {mode === "services" ? "services" : "items"} within a section
+                          Subsection • Organizes items within a section
+                        </div>
+                      )}
+                      {isService && (
+                        <div className="pl-4 sm:pl-10 text-xs text-cyan-300/70 flex items-center gap-2">
+                          <CalendarClock className="h-3 w-3" />
+                          Service • Customers can book appointments for this
+                        </div>
+                      )}
+                      {isProduct && !isSection && !isSubsection && (
+                        <div className="pl-4 sm:pl-10 text-xs text-green-300/70 flex items-center gap-2">
+                          <ShoppingBag className="h-3 w-3" />
+                          Product • Customers can add to cart and checkout
                         </div>
                       )}
                     </motion.div>

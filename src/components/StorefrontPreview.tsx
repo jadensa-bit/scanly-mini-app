@@ -9,7 +9,7 @@ import InstallPiqoButton from "./InstallPiqoButton";
 
 // Type definitions
 type Item = {
-  type?: "product" | "section" | "subsection";
+  type?: "product" | "service" | "section" | "subsection";
   title?: string;
   price?: string;
   note?: string;
@@ -107,6 +107,13 @@ function formatTime12Hour(time24: string | undefined): string {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   hour = hour % 12 || 12; // Convert 0 to 12 for midnight
   return `${hour}:${minute} ${ampm}`;
+}
+
+// Check if price should be displayed (not $0 or empty)
+function shouldShowPrice(price: string | undefined): boolean {
+  if (!price) return false;
+  const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ''));
+  return numericPrice > 0;
 }
 
 // Day ordering for display (Mon-Sun)
@@ -907,7 +914,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
                         className={cn(
-                          "h-16 w-16 border-2 border-white/30 bg-black/40 backdrop-blur-sm grid place-items-center overflow-hidden shadow-xl",
+                          businessDescription ? "h-20 w-20" : "h-32 w-32",
+                          "border-2 border-white/30 bg-black/40 backdrop-blur-sm grid place-items-center overflow-hidden shadow-xl",
                           logoRound
                         )}
                         style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1) inset" }}
@@ -922,7 +930,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                             )}
                           />
                         ) : (
-                          <Sparkles className="h-8 w-8 text-white/70" />
+                          <Sparkles className={cn(businessDescription ? "h-10 w-10" : "h-16 w-16", "text-white/70")} />
                         )}
                       </motion.div>
                     </div>
@@ -979,7 +987,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     transition={{ delay: 0.1 }}
                     className="flex items-center gap-4 px-5 py-4 border-b border-gray-200 bg-gradient-to-b from-white to-gray-50/50"
                   >
-                    <div className={cn("h-14 w-14 border-2 border-gray-300 bg-white grid place-items-center overflow-hidden shadow-md", logoRound)}>
+                    <div className={cn(
+                      businessDescription ? "h-16 w-16" : "h-24 w-24",
+                      "border-2 border-gray-300 bg-white grid place-items-center overflow-hidden shadow-md",
+                      logoRound
+                    )}>
                       {brandLogo ? (
                         <img
                           src={brandLogo}
@@ -987,7 +999,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           className={cn("h-full w-full", logoFit === "cover" ? "object-cover" : "object-contain p-2")}
                         />
                       ) : (
-                        <Sparkles className="h-6 w-6 text-gray-400" />
+                        <Sparkles className={cn(businessDescription ? "h-7 w-7" : "h-10 w-10", "text-gray-400")} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1156,7 +1168,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {item.note && (
                                   <p className="text-[10px] text-gray-600 mb-2 line-clamp-2 leading-snug">{item.note}</p>
                                 )}
-                                <div className="text-xs font-black mb-2" style={{ color: accentSolid }}>{item.price || "$0"}</div>
+                                {shouldShowPrice(item.price) && (
+                                  <div className="text-xs font-black mb-2" style={{ color: accentSolid }}>{item.price}</div>
+                                )}
                                 <motion.button
                                   className="w-full py-2 text-[10px] font-black relative overflow-hidden"
                                   style={{
@@ -1168,9 +1182,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   whileTap={{ scale: 0.97 }}
                                   onClick={(e) => {
                                     e.stopPropagation(); // Prevent modal from opening
-                                    if (mode === "products" || mode === "digital") {
+                                    const itemType = item.type || "product";
+                                    if (itemType === "product" || mode === "digital") {
                                       addToCart(item, quantity);
-                                    } else {
+                                    } else if (itemType === "service") {
                                       setSelectedItem(item);
                                       setBookingStep("confirm");
                                     }
@@ -1276,7 +1291,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       </span>
                                     )}
                                   </div>
-                                  <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price || "$0"}</span>
+                                  {shouldShowPrice(item.price) && (
+                                    <span className="font-black text-xs flex-shrink-0" style={{ color: accentSolid }}>{item.price}</span>
+                                  )}
                                 </div>
                                 {item.note && (
                                   <p className="text-[10px] text-gray-600 mb-1 line-clamp-2 leading-snug">{item.note}</p>
@@ -1290,15 +1307,16 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (mode === "products" || mode === "digital") {
+                                    const itemType = item.type || "product";
+                                    if (itemType === "product" || mode === "digital") {
                                       addToCart(item, quantity);
-                                    } else {
+                                    } else if (itemType === "service") {
                                       setSelectedItem(item);
                                       setBookingStep("confirm");
                                     }
                                   }}
                                 >
-                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book" : mode === "products" ? "Add" : "Get")}
+                                  {appearance.ctaText?.trim() || (item.type === "service" ? "Book" : "Add")}
                                 </button>
                               </div>
                             </motion.div>
@@ -1455,16 +1473,18 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   </motion.span>
                                 )}
                               </div>
-                              <span className="font-black text-sm flex-shrink-0" style={{ color: accentSolid }}>
-                                {item.price || "$0"}
-                              </span>
+                              {shouldShowPrice(item.price) && (
+                                <span className="font-black text-sm flex-shrink-0" style={{ color: accentSolid }}>
+                                  {item.price}
+                                </span>
+                              )}
                             </div>
                             {item.note && (
                               <p className="text-xs text-gray-700 mb-2 leading-relaxed font-medium">
                                 {item.note}
                               </p>
                             )}
-                            {mode === "products" || mode === "digital" ? (
+                            {(item.type === "product" || !item.type || mode === "digital") ? (
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
@@ -1511,7 +1531,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   </span>
                                 </motion.button>
                               </div>
-                            ) : (
+                            ) : item.type === "service" ? (
                               <motion.button
                                 className="w-full py-2.5 text-xs font-black shadow-lg hover:shadow-xl relative overflow-hidden cursor-pointer"
                                 style={{
@@ -1537,10 +1557,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 )}
                                 <span className="relative z-10 flex items-center justify-center gap-1.5">
                                   <span className="text-sm">📅</span>
-                                  {appearance.ctaText?.trim() || (mode === "services" ? "Book Now" : "Get Now")}
+                                  {appearance.ctaText?.trim() || "Book Now"}
                                 </span>
                               </motion.button>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </motion.div>
@@ -1797,7 +1817,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   <div key={idx} className="flex items-center gap-3 p-3 bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
                     <div className="flex-1">
                       <p className="font-black text-sm text-gray-900">{ci.item.title}</p>
-                      <p className="text-xs text-gray-700 font-bold">{ci.item.price} each</p>
+                      {shouldShowPrice(ci.item.price) && (
+                        <p className="text-xs text-gray-700 font-bold">{ci.item.price} each</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -1961,7 +1983,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     <div className="space-y-4">
                       <div className="p-4 bg-white border-2 border-gray-200 rounded-xl shadow-md">
                         <p className="text-sm font-black mb-1 text-gray-900">{mode === 'services' ? 'Service' : 'Item'}: {selectedItem.title}</p>
-                        <p className="text-sm text-gray-700 font-bold">{selectedItem.price}</p>
+                        {shouldShowPrice(selectedItem.price) && (
+                          <p className="text-sm text-gray-700 font-bold">{selectedItem.price}</p>
+                        )}
                       </div>
 
                       {/* Show booking fields ONLY for services */}

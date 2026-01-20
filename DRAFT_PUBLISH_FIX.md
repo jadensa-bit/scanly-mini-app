@@ -5,6 +5,7 @@ When users edit their piqo, the changes were immediately going live to their `/u
 
 ## Solution
 Added a draft/publish workflow:
+
 1. **New sites**: When creating a new piqo, changes go directly to `config` (live immediately)
 2. **Editing existing sites**: Changes save to `draft_config` (not visible to customers)
 3. **Publishing**: When user clicks "Go live" or "All done! Ready to go live", the `draft_config` is copied to `config` and becomes live
