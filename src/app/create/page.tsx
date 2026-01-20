@@ -843,19 +843,21 @@ async function startStripeConnect() {
         setToast("✅ Logo uploaded!");
         setTimeout(() => setToast(null), 2000);
       } else {
-        // Upload failed - show error
-        setToast("❌ Logo upload failed. Please try again.");
-        setTimeout(() => setToast(null), 3000);
-        // Remove preview since upload failed
-        setBrandLogo("");
+        // Upload failed - show error with details
+        console.error('Logo upload failed:', { status: res.status, error: data?.error });
+        const errorMsg = data?.error || "Upload failed";
+        setToast(`❌ ${errorMsg}`);
+        setTimeout(() => setToast(null), 4000);
+        // Keep preview as base64 - it will still work locally
+        console.log('Keeping base64 preview for local use');
       }
     } catch (err) {
       // Upload failed - show error
       console.error('Logo upload error:', err);
-      setToast("❌ Logo upload failed. Please check your connection.");
-      setTimeout(() => setToast(null), 3000);
-      // Remove preview since upload failed
-      setBrandLogo("");
+      setToast("❌ Upload failed. Using local preview only.");
+      setTimeout(() => setToast(null), 4000);
+      // Keep preview as base64 - it will still work locally
+      console.log('Keeping base64 preview for local use');
     }
   }
 
