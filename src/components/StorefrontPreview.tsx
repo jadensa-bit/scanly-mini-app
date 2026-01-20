@@ -1174,7 +1174,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                     />
                                     <span className="relative z-10">
-                                      {mode === "services" ? "✂️" : mode === "products" ? "🛍️" : "⚡"}
+                                      {mode === "products" ? "🛍️" : "⚡"}
                                     </span>
                                   </div>
                                 )}
