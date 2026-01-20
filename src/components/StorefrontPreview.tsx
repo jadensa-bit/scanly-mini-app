@@ -839,7 +839,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="relative h-44 overflow-hidden flex flex-col"
+                    className="relative min-h-44 flex flex-col"
                     style={{ background: headerBg }}
                   >
                     {/* Shimmer overlay */}
