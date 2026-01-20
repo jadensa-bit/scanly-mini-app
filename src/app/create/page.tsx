@@ -2457,7 +2457,7 @@ useEffect(() => {
                       <span className="xs:hidden">Fill</span>
                     </motion.button>
                   )}
-                  {mode === "products" && (
+                  {(mode === "products" || mode === "services") && (
                     <>
                       <motion.button
                         type="button"
@@ -2562,7 +2562,13 @@ useEffect(() => {
                                 ? 'border-indigo-500/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 hover:border-indigo-500/40'
                                 : 'border-white/15 focus:border-orange-500/50 focus:ring-orange-500/20 hover:border-white/25'
                             }`}
-                            placeholder={isSection ? "e.g. Breakfast" : isSubsection ? "e.g. Hot Drinks" : (mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook")}
+                            placeholder={
+                              isSection 
+                                ? (mode === "services" ? "e.g. Hair Services" : "e.g. Breakfast")
+                                : isSubsection 
+                                ? (mode === "services" ? "e.g. Cuts & Styling" : "e.g. Hot Drinks")
+                                : (mode === "services" ? "e.g. Haircut" : mode === "products" ? "e.g. T-Shirt" : "e.g. eBook")
+                            }
                           />
 
                           {/* Price input - show inline on desktop, below on mobile */}
@@ -2775,13 +2781,13 @@ useEffect(() => {
                       {isSection && (
                         <div className="pl-4 sm:pl-10 text-xs text-blue-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
-                          Section header • Groups menu items visually
+                          Section header • Groups {mode === "services" ? "services" : "menu items"} visually
                         </div>
                       )}
                       {isSubsection && (
                         <div className="pl-4 sm:pl-10 text-xs text-indigo-300/70 flex items-center gap-2">
                           <Type className="h-3 w-3" />
-                          Subsection • Organizes items within a section
+                          Subsection • Organizes {mode === "services" ? "services" : "items"} within a section
                         </div>
                       )}
                     </motion.div>
@@ -2792,7 +2798,10 @@ useEffect(() => {
               <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/30 shadow-lg shadow-blue-500/10">
                 <div className="text-sm text-blue-100 flex items-start gap-2">
                   <span className="text-lg">💡</span>
-                  <p><span className="font-bold">Tip:</span> Add 2-5 items for best results. Customers see the first 3 on your storefront preview.</p>
+                  <p>
+                    <span className="font-bold">Tip:</span> Add 2-5 {mode === "services" ? "services" : "items"} for best results. 
+                    {mode === "services" || mode === "products" ? " Use sections to organize them into categories." : ""} Customers see the first 3 on your storefront preview.
+                  </p>
                 </div>
               </div>
 
