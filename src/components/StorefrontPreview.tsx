@@ -877,7 +877,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       </motion.div>
                     </div>
                     {/* Brand name & tagline */}
-                    <div className="px-4 pb-3 text-center flex-1 flex flex-col justify-end">
+                    <div className="px-4 pb-6 text-center flex-1 flex flex-col justify-end">
                       <motion.h2
                         initial={{ y: 10, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -901,7 +901,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           initial={{ y: 10, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           transition={{ delay: 0.4 }}
-                          className="text-white/80 text-xs mt-1 line-clamp-2 drop-shadow"
+                          className="text-white/80 text-xs mt-1 mb-2 line-clamp-2 drop-shadow"
                         >
                           {businessDescription}
                         </motion.p>
