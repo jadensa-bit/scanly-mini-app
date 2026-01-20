@@ -1078,7 +1078,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                       }
                                     }}
                                   >
-                                    {item.buttonText || appearance.ctaText?.trim() || (mode === "services" ? "Book" : "Add")}
+                                    {item.buttonText || appearance.ctaText?.trim() || "Add"}
                                   </motion.button>
                                 </div>
                               </motion.div>
