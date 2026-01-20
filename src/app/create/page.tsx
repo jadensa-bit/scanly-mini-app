@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -2393,11 +2393,14 @@ useEffect(() => {
                           {/* Title input */}
                           <input
                             value={it.title}
-                            onChange={(e) =>
-                              setItems((prev) =>
-                                prev.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x))
-                              )
-                            }
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[idx] = { ...newItems[idx], title: newValue };
+                                return newItems;
+                              });
+                            }}
                             className={`flex-1 rounded-xl border bg-black/50 px-3 py-2.5 text-sm font-semibold text-white placeholder:text-white/40 outline-none focus:ring-2 transition-all duration-200 ${
                               isSection
                                 ? 'border-blue-500/30 focus:border-blue-500/50 focus:ring-blue-500/20 hover:border-blue-500/40'
@@ -2412,11 +2415,14 @@ useEffect(() => {
                           {!isSection && !isSubsection && (
                             <input
                               value={it.price}
-                              onChange={(e) =>
-                                setItems((prev) =>
-                                  prev.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x))
-                                )
-                              }
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                setItems((prev) => {
+                                  const newItems = [...prev];
+                                  newItems[idx] = { ...newItems[idx], price: newValue };
+                                  return newItems;
+                                });
+                              }}
                               className="w-20 sm:w-24 rounded-xl border border-white/15 bg-black/50 px-2 sm:px-3 py-2.5 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 text-center"
                               placeholder="$25"
                             />
@@ -2479,11 +2485,14 @@ useEffect(() => {
                           <span className="text-xs font-semibold text-white/70">Description</span>
                           <input
                             value={it.note || ""}
-                            onChange={(e) =>
-                              setItems((prev) =>
-                                prev.map((x, i) => (i === idx ? { ...x, note: e.target.value } : x))
-                              )
-                            }
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[idx] = { ...newItems[idx], note: newValue };
+                                return newItems;
+                              });
+                            }}
                             className="rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25"
                             placeholder={mode === "services" ? "e.g. 30 min • Includes styling" : "Short description"}
                           />
@@ -2493,11 +2502,14 @@ useEffect(() => {
                           <span className="text-xs font-semibold text-white/70">Badge</span>
                           <select
                             value={it.badge || "none"}
-                            onChange={(e) =>
-                              setItems((prev) =>
-                                prev.map((x, i) => (i === idx ? { ...x, badge: e.target.value as ItemBadge } : x))
-                              )
-                            }
+                            onChange={(e) => {
+                              const newValue = e.target.value as ItemBadge;
+                              setItems((prev) => {
+                                const newItems = [...prev];
+                                newItems[idx] = { ...newItems[idx], badge: newValue };
+                                return newItems;
+                              });
+                            }}
                             className="w-full appearance-none rounded-xl border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200 hover:border-white/25 cursor-pointer"
                           >
                             <option value="none">No badge</option>
