@@ -1492,7 +1492,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {item.note}
                               </p>
                             )}
-                            {(item.type === "product" || !item.type) ? (
+                            {(item.type === "product" || item.type === "addon" || !item.type) ? (
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
@@ -1760,8 +1760,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                 </div>
               )}
 
-              {/* Floating Cart Button - for products/digital only */}
-      {(mode === "products" || mode === "digital") && cartItemCount > 0 && (
+              {/* Floating Cart Button - for products/digital and services with add-ons */}
+      {((mode === "products" || mode === "digital" || mode === "services") && cartItemCount > 0) && (
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
