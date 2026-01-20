@@ -82,16 +82,16 @@ export async function POST(req: Request) {
       .from('uploads')
       .getPublicUrl(thumbName);
 
-    const url = u✅ Upload successful:', { url, thumb });
+    const url = urlData.publicUrl;
+    const thumb = thumbUrlData.publicUrl;
+
+    console.log('✅ Upload successful:', { url, thumb });
     return NextResponse.json({ url, thumb });
   } catch (err: any) {
     console.error('❌ Upload API error:', err);
     return NextResponse.json({ 
       error: err?.message || String(err),
       stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
-   
-  } catch (err: any) {
-    console.error('Upload API error:', err);
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
+    }, { status: 500 });
   }
 }
