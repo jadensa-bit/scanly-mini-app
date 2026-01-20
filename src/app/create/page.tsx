@@ -783,8 +783,14 @@ async function startStripeConnect() {
   async function onPickLogoFile(file?: File | null) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    const url = await fileToDataUrl(file);
-    setBrandLogo(url);
+    
+    // Show uploading state
+    setToast("📤 Uploading logo...");
+    
+    // Show preview immediately while uploading
+    const preview = await fileToDataUrl(file);
+    setBrandLogo(preview);
+    
     // write instant preview draft so the preview iframe updates immediately
     try {
       const h = cleanHandle;
@@ -792,27 +798,110 @@ async function startStripeConnect() {
         const base = configDraft;
         if (base) {
           try {
-            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: url, createdAt: Date.now() }));
+            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: preview, createdAt: Date.now() }));
           } catch {}
           skipNextPreviewTickRef.current = true;
           setPreviewTick((x) => x + 1);
         }
       }
     } catch {}
+    
+    // Upload to server to get hosted URL
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name || "upload.jpg");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      
+      if (res.ok && data?.url) {
+        // Success - replace preview with hosted URL
+        setBrandLogo(data.url);
+        
+        // Update localStorage with hosted URL
+        try {
+          const h = cleanHandle;
+          if (typeof window !== "undefined" && h) {
+            const base = configDraft;
+            if (base) {
+              try {
+                localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: data.url, createdAt: Date.now() }));
+              } catch {}
+              skipNextPreviewTickRef.current = true;
+              setPreviewTick((x) => x + 1);
+            }
+          }
+        } catch {}
+        
+        setToast("✅ Logo uploaded!");
+        setTimeout(() => setToast(null), 2000);
+      } else {
+        // Upload failed - show error
+        setToast("❌ Logo upload failed. Please try again.");
+        setTimeout(() => setToast(null), 3000);
+        // Remove preview since upload failed
+        setBrandLogo("");
+      }
+    } catch (err) {
+      // Upload failed - show error
+      console.error('Logo upload error:', err);
+      setToast("❌ Logo upload failed. Please check your connection.");
+      setTimeout(() => setToast(null), 3000);
+      // Remove preview since upload failed
+      setBrandLogo("");
+    }
   }
 
   async function onPickBgImage(file?: File | null) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    const url = await fileToDataUrl(file);
-    setAppearance((p) => ({ ...p, bgMode: "image", bgImage: url }));
+    
+    // Show uploading state
+    setToast("📤 Uploading background...");
+    
+    // Show preview immediately while uploading
+    const preview = await fileToDataUrl(file);
+    setAppearance((p) => ({ ...p, bgMode: "image", bgImage: preview }));
+    
+    // Upload to server to get hosted URL
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name || "upload.jpg");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      
+      if (res.ok && data?.url) {
+        // Success - replace preview with hosted URL
+        setAppearance((p) => ({ ...p, bgMode: "image", bgImage: data.url }));
+        setToast("✅ Background uploaded!");
+        setTimeout(() => setToast(null), 2000);
+      } else {
+        // Upload failed - show error
+        setToast("❌ Background upload failed. Please try again.");
+        setTimeout(() => setToast(null), 3000);
+        // Remove preview since upload failed
+        setAppearance((p) => ({ ...p, bgMode: "gradient", bgImage: undefined }));
+      }
+    } catch (err) {
+      // Upload failed - show error
+      console.error('Background upload error:', err);
+      setToast("❌ Background upload failed. Please check your connection.");
+      setTimeout(() => setToast(null), 3000);
+      // Remove preview since upload failed
+      setAppearance((p) => ({ ...p, bgMode: "gradient", bgImage: undefined }));
+    }
   }
 
   async function onPickProfilePic(file?: File | null) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    const url = await fileToDataUrl(file);
-    setProfilePic(url);
+    
+    // Show uploading state
+    setToast("📤 Uploading profile photo...");
+    
+    // Show preview immediately while uploading
+    const preview = await fileToDataUrl(file);
+    setProfilePic(preview);
+    
     // write instant preview draft so the preview updates immediately
     try {
       const h = cleanHandle;
@@ -820,18 +909,66 @@ async function startStripeConnect() {
         const base = configDraft;
         if (base) {
           try {
-            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: url, createdAt: Date.now() }));
+            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: preview, createdAt: Date.now() }));
           } catch {}
           skipNextPreviewTickRef.current = true;
           setPreviewTick((x) => x + 1);
         }
       }
     } catch {}
+    
+    // Upload to server to get hosted URL
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name || "upload.jpg");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      
+      if (res.ok && data?.url) {
+        // Success - replace preview with hosted URL
+        setProfilePic(data.url);
+        
+        // Update localStorage with hosted URL
+        try {
+          const h = cleanHandle;
+          if (typeof window !== "undefined" && h) {
+            const base = configDraft;
+            if (base) {
+              try {
+                localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: data.url, createdAt: Date.now() }));
+              } catch {}
+              skipNextPreviewTickRef.current = true;
+              setPreviewTick((x) => x + 1);
+            }
+          }
+        } catch {}
+        
+        setToast("✅ Profile photo uploaded!");
+        setTimeout(() => setToast(null), 2000);
+      } else {
+        // Upload failed - show error
+        setToast("❌ Photo upload failed. Please try again.");
+        setTimeout(() => setToast(null), 3000);
+        // Remove preview since upload failed
+        setProfilePic("");
+      }
+    } catch (err) {
+      // Upload failed - show error
+      console.error('Profile pic upload error:', err);
+      setToast("❌ Photo upload failed. Please check your connection.");
+      setTimeout(() => setToast(null), 3000);
+      // Remove preview since upload failed
+      setProfilePic("");
+    }
   }
 
   async function onPickStaffPhoto(file: File | null, idx: number) {
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
+    
+    // Show uploading state
+    setToast("📤 Uploading staff photo...");
+    
     // show an instant preview first
     const preview = await fileToDataUrl(file);
     updateStaff(idx, { photo: preview });
@@ -857,6 +994,7 @@ async function startStripeConnect() {
       fd.append("file", file, file.name || "upload.jpg");
       const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
       const data = await res.json().catch(() => ({}));
+      
       if (res.ok && data?.url) {
         updateStaff(idx, { photo: data.url });
 
@@ -875,8 +1013,24 @@ async function startStripeConnect() {
             }
           }
         } catch {}
+        
+        setToast("✅ Staff photo uploaded!");
+        setTimeout(() => setToast(null), 2000);
+      } else {
+        // Upload failed - show error
+        setToast("❌ Staff photo upload failed. Please try again.");
+        setTimeout(() => setToast(null), 3000);
+        // Remove preview since upload failed
+        updateStaff(idx, { photo: undefined });
       }
-    } catch {}
+    } catch (err) {
+      // Upload failed - show error
+      console.error('Staff photo upload error:', err);
+      setToast("❌ Staff photo upload failed. Please check your connection.");
+      setTimeout(() => setToast(null), 3000);
+      // Remove preview since upload failed
+      updateStaff(idx, { photo: undefined });
+    }
   }
 
   // draft config for live preview
@@ -2552,25 +2706,49 @@ useEffect(() => {
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (!file || !file.type.startsWith("image/")) return;
+                                  
+                                  // Show uploading state
+                                  setToast("📤 Uploading image...");
+                                  
+                                  // Show preview immediately while uploading
+                                  const preview = await fileToDataUrl(file);
+                                  setItems((prev) =>
+                                    prev.map((x, i) => (i === idx ? { ...x, image: preview } : x))
+                                  );
+                                  
                                   // Upload to server to get hosted URL
-                                  let imageUrl = "";
                                   try {
                                     const fd = new FormData();
                                     fd.append("file", file, file.name || "upload.jpg");
                                     const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
                                     const data = await res.json().catch(() => ({}));
+                                    
                                     if (res.ok && data?.url) {
-                                      imageUrl = data.url;
+                                      // Success - replace preview with hosted URL
+                                      setItems((prev) =>
+                                        prev.map((x, i) => (i === idx ? { ...x, image: data.url } : x))
+                                      );
+                                      setToast("✅ Image uploaded!");
+                                      setTimeout(() => setToast(null), 2000);
                                     } else {
-                                      // fallback to base64 if upload fails
-                                      imageUrl = await fileToDataUrl(file);
+                                      // Upload failed - show error
+                                      setToast("❌ Upload failed. Please try again.");
+                                      setTimeout(() => setToast(null), 3000);
+                                      // Remove preview since upload failed
+                                      setItems((prev) =>
+                                        prev.map((x, i) => (i === idx ? { ...x, image: undefined } : x))
+                                      );
                                     }
-                                  } catch {
-                                    imageUrl = await fileToDataUrl(file);
+                                  } catch (err) {
+                                    // Upload failed - show error
+                                    console.error('Upload error:', err);
+                                    setToast("❌ Upload failed. Please check your connection.");
+                                    setTimeout(() => setToast(null), 3000);
+                                    // Remove preview since upload failed
+                                    setItems((prev) =>
+                                      prev.map((x, i) => (i === idx ? { ...x, image: undefined } : x))
+                                    );
                                   }
-                                  setItems((prev) =>
-                                    prev.map((x, i) => (i === idx ? { ...x, image: imageUrl } : x))
-                                  );
                                 }}
                               />
                             </label>
