@@ -226,6 +226,13 @@ export async function POST(req: Request) {
     }
 
     /* -------------------------
+       3) Initialize Resend for emails
+    ------------------------- */
+    const ownerEmail = await fetchOwnerEmailByHandle(supabase, handle);
+    const resend = getResend();
+    const from = process.env.RESEND_FROM_EMAIL;
+
+    /* -------------------------
        4) Send digital files to customer if order contains digital items
     ------------------------- */
     if (orderId && customerEmail && mode === "digital") {
@@ -294,12 +301,8 @@ export async function POST(req: Request) {
     }
 
     /* -------------------------
-       3) Email notification (optional)
+       5) Email notification to owner (optional)
     ------------------------- */
-    const ownerEmail = await fetchOwnerEmailByHandle(supabase, handle);
-
-    const resend = getResend();
-    const from = process.env.RESEND_FROM_EMAIL;
 
     if (ownerEmail && resend && from) {
       const subject =
