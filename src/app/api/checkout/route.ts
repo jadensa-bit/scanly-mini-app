@@ -260,12 +260,15 @@ export async function POST(req: Request) {
     // Optional platform fee (0 by default)
     const applicationFee = calcFee(amountSafe);
 
-    // 1) Create pending order in Supabase - store items as JSON
+    // 1) Create pending order in Supabase - store items as JSON with digital file info
     const orderItemsForDb = lineItems.map((item: any) => ({
       title: item.item_title,
       price: item.item_price,
       quantity: item.quantity,
       note: item.note || '',
+      digitalFile: item.digitalFile || null,
+      digitalFileName: item.digitalFileName || null,
+      digitalFileType: item.digitalFileType || null,
     }));
 
     const { data: order, error: insertError } = await supabase

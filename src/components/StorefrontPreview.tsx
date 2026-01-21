@@ -623,7 +623,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     try {
       // For products/digital products with cart functionality
       if ((mode === "products" || mode === "digital") && cart.length > 0) {
-        // Create checkout session with multiple items
+        // Create checkout session with multiple items including digital files
         const checkoutRes = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -637,6 +637,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
               item_price: ci.item.price || "",
               quantity: ci.quantity,
               note: ci.item.note || "",
+              digitalFile: ci.item.digitalFile || null,
+              digitalFileName: ci.item.digitalFileName || null,
+              digitalFileType: ci.item.digitalFileType || null,
             })),
           }),
         });

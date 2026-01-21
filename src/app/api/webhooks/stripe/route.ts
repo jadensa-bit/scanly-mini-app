@@ -226,6 +226,74 @@ export async function POST(req: Request) {
     }
 
     /* -------------------------
+       4) Send digital files to customer if order contains digital items
+    ------------------------- */
+    if (orderId && customerEmail && mode === "digital") {
+      try {
+        // Fetch the order with all items
+        const { data: orderData } = await supabase
+          .from("scanly_orders")
+          .select("order_items")
+          .eq("id", orderId)
+          .single();
+
+        if (orderData?.order_items && Array.isArray(orderData.order_items)) {
+          const digitalItems = orderData.order_items.filter((item: any) => item.digitalFile);
+          
+          if (digitalItems.length > 0 && resend && from) {
+            const downloadLinks = digitalItems
+              .map((item: any, idx: number) => 
+                `<li style="margin-bottom: 12px;">
+                  <b>${item.title}</b> ${item.price ? `— ${item.price}` : ''}
+                  <br/>
+                  <a href="${item.digitalFile}" 
+                     style="display:inline-block;margin-top:6px;padding:8px 16px;background:#6366f1;color:white;text-decoration:none;border-radius:8px;font-size:14px;">
+                    📥 Download ${item.digitalFileName || 'File'}
+                  </a>
+                </li>`
+              )
+              .join('');
+
+            const customerHtml = `
+              <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;">
+                <h2 style="margin:0 0 8px;">Your Digital Files Are Ready! 🎉</h2>
+                <p style="margin:0 0 16px;color:#444;">
+                  Thank you for your purchase${customerName ? `, ${customerName}` : ''}! Your digital items are ready to download.
+                </p>
+
+                <div style="border:1px solid #eee;border-radius:12px;padding:16px;background:#f9fafb;">
+                  <h3 style="margin:0 0 12px;font-size:16px;">Your Downloads:</h3>
+                  <ul style="list-style:none;padding:0;margin:0;">
+                    ${downloadLinks}
+                  </ul>
+                </div>
+
+                <p style="margin:16px 0 0;color:#666;font-size:13px;">
+                  💡 Tip: Download your files now. These links will remain active for your convenience.
+                </p>
+                
+                <p style="margin:12px 0 0;color:#999;font-size:12px;">
+                  From @${handle} • Powered by piqo
+                </p>
+              </div>
+            `;
+
+            await resend.emails.send({
+              from,
+              to: customerEmail,
+              subject: `Your Digital Files from @${handle}`,
+              html: customerHtml,
+            });
+            
+            console.log(`✅ Sent digital files email to ${customerEmail} for order ${orderId}`);
+          }
+        }
+      } catch (e: any) {
+        console.error("Failed to send digital files email:", e?.message || e);
+      }
+    }
+
+    /* -------------------------
        3) Email notification (optional)
     ------------------------- */
     const ownerEmail = await fetchOwnerEmailByHandle(supabase, handle);
