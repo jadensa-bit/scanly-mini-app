@@ -2771,26 +2771,29 @@ useEffect(() => {
                                     const newItems = [...items];
                                     newItems[idx] = { ...newItems[idx], layout: layoutOption };
                                     console.log(`[Layout Button] Updated item layout:`, newItems[idx]);
+                                    console.log(`[Layout Button] All items layouts:`, newItems.map(i => ({ title: i.title, layout: i.layout })));
                                     
-                                    // Force synchronous state update
-                                    flushSync(() => {
-                                      setItems(newItems);
-                                    });
-                                    console.log(`[Layout Button] State updated, new items count:`, newItems.length);
+                                    // Update state - this will trigger configDraft to recalculate
+                                    setItems(newItems);
                                     
-                                    // Update localStorage immediately
-                                    if (typeof window !== "undefined" && cleanHandle && configDraft) {
-                                      const updatedConfig = { ...configDraft, items: newItems, createdAt: Date.now() };
+                                    // Update localStorage immediately with the new items
+                                    if (typeof window !== "undefined" && cleanHandle) {
                                       try {
-                                        localStorage.setItem(storageKey(cleanHandle), JSON.stringify(updatedConfig));
-                                        console.log(`[Layout Button] LocalStorage updated for ${cleanHandle}`);
-                                      } catch {}
+                                        const saved = localStorage.getItem(storageKey(cleanHandle));
+                                        if (saved) {
+                                          const config = JSON.parse(saved);
+                                          config.items = newItems;
+                                          config.createdAt = Date.now();
+                                          localStorage.setItem(storageKey(cleanHandle), JSON.stringify(config));
+                                          console.log(`[Layout Button] LocalStorage updated for ${cleanHandle}`);
+                                        }
+                                      } catch (e) {
+                                        console.error('[Layout Button] LocalStorage error:', e);
+                                      }
                                     }
                                     
-                                    // Force preview update - items are now guaranteed to be updated
-                                    skipNextPreviewTickRef.current = true;
-                                    setPreviewTick(x => x + 1);
-                                    console.log(`[Layout Button] Preview tick incremented`);
+                                    // Force preview update 
+                                    console.log(`[Layout Button] Forcing preview update`);
                                   }}
                                   className={`px-2 py-2 rounded-lg border text-xs font-medium transition-all duration-200 ${
                                     isActive
