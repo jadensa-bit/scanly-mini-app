@@ -5,13 +5,17 @@
 You now have a **full booking flow** on your storefront! Here's what works:
 
 ### **For Customers:**
-1. Click **"Book"** button on a service
-2. See available time slots
-3. Enter name and email
-4. Confirm booking
-5. See success confirmation
+
+1. **Browse services** and add any extras/add-ons to cart
+2. Click **"Book"** button on a service
+3. See available time slots
+4. Review service + any cart items (add-ons)
+5. Enter name and email
+6. Confirm booking
+7. See success confirmation
 
 ### **For Creators:**
+
 - Bookings appear **instantly** in your dashboard
 - No page refresh needed (realtime updates)
 - See customer name, email, and booking time
@@ -21,12 +25,25 @@ You now have a **full booking flow** on your storefront! Here's what works:
 ## How It Works
 
 ### **1. Booking Modal**
+
 When customers tap "Book" on a service, a modal appears with:
+
+- **Service details** - Selected service and any add-on items in cart
 - **Time slot picker** - Shows available slots from your `/api/slots` endpoint
 - **Customer info form** - Name and email input
 - **Confirmation** - Displays after booking is created
 
+### **1.5. Shopping Cart (Add-ons)**
+
+For services mode with product/addon items:
+
+- **Floating cart button** - Appears when items are added to cart
+- **Cart modal** - Shows all cart items with quantity controls
+- **Add-ons display** - Cart items shown in booking confirmation
+- **Combined checkout** - Service booking + product purchase in one flow
+
 ### **2. Database Flow**
+
 ```
 Customer clicks "Book"
     ↓
@@ -44,6 +61,8 @@ Dashboard sees update via Realtime
 ### **3. Key Components Added**
 
 **State Management:**
+
+- `cart` - Shopping cart for add-on items
 - `selectedItem` - Which service is being booked
 - `bookingStep` - Track where user is (browse, confirm, success)
 - `slots` - Available time slots
@@ -51,7 +70,8 @@ Dashboard sees update via Realtime
 - `selectedSlot` - Which time slot was picked
 
 **Functions:**
-- `createBooking()` - Sends POST to `/api/bookings/create`
+- `addToCart()` - Add product/addon items to cart
+- `createBooking()` - Sends POST to `/api/bookings/create` (includes cart items)
 - `resetBooking()` - Closes modal and clears state
 - Auto-fetch slots when confirm step starts
 
@@ -60,6 +80,7 @@ Dashboard sees update via Realtime
 ## Testing the Booking Flow
 
 ### **Step 1: Create a Services Piqo**
+
 1. Go to `/create`
 2. Set **Mode** to "services"
 3. Add a service (e.g., "Haircut - $25")
@@ -67,6 +88,7 @@ Dashboard sees update via Realtime
 5. Publish
 
 ### **Step 2: Try Booking**
+
 1. Click the **QR button** to view your storefront
 2. Click **"Book"** on the service
 3. Pick a time slot
@@ -75,6 +97,7 @@ Dashboard sees update via Realtime
 6. See success screen
 
 ### **Step 3: See It Live on Dashboard**
+
 1. Go to `/dashboard`
 2. Check "Recent Bookings" section
 3. Your booking should appear **instantly** (no refresh!)
@@ -84,20 +107,24 @@ Dashboard sees update via Realtime
 ## What's Still Needed
 
 ### **1. Slot Generation**
+
 Right now, `/api/slots` returns empty because no slots exist yet. Need to:
 - Add API to auto-generate slots from availability settings
 - OR allow creators to manually create slots
 
 ### **2. Payment (Optional)**
+
 If you want deposits:
 - Add Stripe checkout before confirmation
 - Update booking status to "pending_payment" until paid
 
 ### **3. Calendar Export**
+
 Allow customers to add booking to their calendar:
 - `/api/bookings/ics?booking_id=123` - Already exists!
 
 ### **4. Notifications**
+
 Send confirmation emails:
 - Use Supabase Edge Functions or SendGrid
 - Already has notification settings in config
@@ -120,6 +147,7 @@ Send confirmation emails:
 ## Next Steps
 
 ### **Quick Win:** Add Slot Generation
+
 Currently bookings work but slots table is empty. Add an API to auto-generate slots:
 
 ```javascript
@@ -129,6 +157,7 @@ Currently bookings work but slots table is empty. Add an API to auto-generate sl
 ```
 
 ### **Money Maker:** Add Stripe Payment
+
 Before booking confirmation, collect deposit:
 ```javascript
 // 1. Initiate Stripe payment
@@ -137,6 +166,7 @@ Before booking confirmation, collect deposit:
 ```
 
 ### **Nice to Have:** SMS Reminders
+
 Send reminders 24h before booking:
 ```javascript
 // Use Supabase Edge Functions or Twilio
@@ -156,6 +186,7 @@ If bookings don't appear:
 - [ ] Check Supabase logs for API errors
 
 If slots are empty:
+
 - [ ] Slots must be manually created or auto-generated
 - [ ] Check `/api/slots?handle=yourhandle` returns data
 - [ ] Verify slots exist in Supabase `slots` table

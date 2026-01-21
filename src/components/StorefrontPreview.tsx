@@ -241,7 +241,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   });
   console.log('🎨 Items with layouts:', items?.map(item => ({ title: item.title, type: item.type, layout: item.layout })));
 
-  // Cart state (for products and digital)
+  // Cart state (for products, digital, and services with add-ons)
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [itemQuantities, setItemQuantities] = useState<Record<number, number>>({});
@@ -276,6 +276,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTeamMember, setSelectedTeamMember] = useState<string>("");
+  const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({}); // Track selected add-ons with quantities
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -285,6 +286,29 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   
   // Track if we've already attempted slot generation to prevent infinite loops
   const slotsGenerationAttempted = useRef<Record<string, boolean>>({});
+  
+  // Toast notification for cart actions
+  const [cartToast, setCartToast] = useState<{ show: boolean; message: string }>({ show: false, message: "" });
+  
+  // Get available add-on items for the dropdown
+  const availableAddOns = items.filter(item => 
+    item.type === "product" || 
+    item.type === "addon" || 
+    (item.type !== "service" && item.type !== "section" && item.type !== "subsection")
+  );
+  
+  // Debug logging
+  useEffect(() => {
+    if (mode === 'services') {
+      console.log('🛍️ Available add-ons for dropdown:', availableAddOns);
+      console.log('🛍️ All items:', items.map(i => ({ title: i.title, type: i.type })));
+    }
+  }, [mode, items, availableAddOns]);
+  
+  const showCartToast = (message: string) => {
+    setCartToast({ show: true, message });
+    setTimeout(() => setCartToast({ show: false, message: "" }), 2000);
+  };
 
   // Cart helper functions
   const addToCart = (item: Item, qty: number = 1) => {
@@ -302,16 +326,19 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             : ci
         );
         console.log('🛒 Updated cart:', updated);
+        showCartToast(`Updated ${item.title} (${existing.quantity + qty})`);
         return updated;
       }
       const newCart = [...prev, { item, quantity: qty }];
       console.log('🛒 New cart:', newCart);
+      showCartToast(`Added ${item.title} to cart! 🎉`);
       return newCart;
     });
   };
 
   const removeFromCart = (itemTitle: string) => {
     setCart(prev => prev.filter(ci => ci.item.title !== itemTitle));
+    showCartToast(`Removed ${itemTitle}`);
   };
 
   const updateCartQuantity = (itemTitle: string, quantity: number) => {
@@ -714,6 +741,23 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
       // No payment required for services - create booking immediately
       const selectedMember = teamMembers.find(m => m.id === selectedTeamMember);
+      
+      // Prepare add-ons data from the dropdown selections
+      const bookingAddOns = Object.entries(selectedAddOns)
+        .map(([key, qty]) => {
+          if (qty === 0) return null;
+          const addonIdx = parseInt(key.split('-').pop() || '0');
+          const addon = availableAddOns[addonIdx];
+          if (!addon) return null;
+          return {
+            item_title: addon.title,
+            item_price: addon.price,
+            quantity: qty,
+            note: addon.note || "",
+          };
+        })
+        .filter(Boolean);
+      
       const res = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -726,6 +770,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           customer_name: customerName.trim(),
           customer_email: customerEmail.trim(),
           item_title: selectedItem?.title,
+          add_ons: bookingAddOns.length > 0 ? bookingAddOns : undefined, // Include add-ons if any selected
         }),
       });
 
@@ -759,6 +804,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     setSelectedSlot(null);
     setSelectedDate("");
     setSelectedTeamMember("");
+    setSelectedAddOns({}); // Clear selected add-ons
     setCustomerName("");
     setCustomerEmail("");
     setBookingError(null);
@@ -1267,6 +1313,41 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                 <div>
                   {bookingStep === "browse" && (
                     <div>
+                      {/* Add-ons info banner - only show if there are product/addon items */}
+                      {items.some(item => item.type === "product" || item.type === "addon") && (
+                        <div className="px-4 pt-4 pb-2">
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-xl shadow-md"
+                            style={{ borderColor: accentSolid }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">🛒</span>
+                              <div className="flex-1">
+                                <p className="text-sm font-black text-gray-900 mb-1">
+                                  Add Extras Before Booking!
+                                </p>
+                                <p className="text-xs text-gray-700 font-medium">
+                                  Browse add-ons below and tap "Add to Cart" to include them with your booking.
+                                </p>
+                              </div>
+                            </div>
+                            {cartItemCount > 0 && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                className="mt-3 pt-3 border-t-2 border-blue-200"
+                              >
+                                <p className="text-xs font-bold flex items-center gap-2" style={{ color: accentSolid }}>
+                                  <span>✓</span>
+                                  <span>{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'} in cart • ${cartTotal.toFixed(2)}</span>
+                                </p>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        </div>
+                      )}
                       {/* Services List - Organized by sections/subsections */}
                       <div className="px-4 py-4">
                         <div className="grid grid-cols-2 gap-2">
@@ -1516,7 +1597,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {item.note}
                               </p>
                             )}
-                            {(item.type === "product" || item.type === "addon" || !item.type) ? (
+                            {item.type === "product" || item.type === "addon" ? (
                               <div className="flex gap-2">
                                 <div className="flex items-center border-2 rounded-xl overflow-hidden bg-white shadow-md" style={{ borderColor: `${accentSolid}60` }}>
                                   <button
@@ -1569,7 +1650,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   </span>
                                 </motion.button>
                               </div>
-                            ) : item.type === "service" ? (
+                            ) : (
                               <motion.button
                                 className="w-full py-2.5 text-xs font-black shadow-lg hover:shadow-xl relative overflow-hidden cursor-pointer"
                                 style={{
@@ -1598,7 +1679,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                   {appearance.ctaText?.trim() || "Book Now"}
                                 </span>
                               </motion.button>
-                            ) : null}
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -1812,6 +1893,24 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           </div>
         </motion.button>
       )}
+      
+      {/* Cart Toast Notification */}
+      <AnimatePresence>
+        {cartToast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.8 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl border-2 border-white max-w-xs"
+            style={{
+              background: accentSolid,
+              color: ctaFg,
+            }}
+          >
+            <p className="text-sm font-black text-center">{cartToast.message}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cart Modal */}
       <AnimatePresence>
@@ -2183,6 +2282,98 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                               </select>
                             )}
                           </div>
+
+                          {/* Add-ons Dropdown Selector */}
+                          {availableAddOns.length > 0 && (
+                            <div>
+                              <label className="block text-sm font-black mb-2 text-gray-900">
+                                🛍️ Add extras to your booking
+                                <span className="text-xs font-medium text-gray-600 ml-2">(Optional)</span>
+                              </label>
+                              <div className="space-y-3">
+                                {availableAddOns.map((addon, idx) => {
+                                  const addonKey = `${addon.title}-${idx}`;
+                                  const quantity = selectedAddOns[addonKey] || 0;
+                                  
+                                  return (
+                                    <div key={addonKey} className="p-3 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 transition">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-black text-gray-900 truncate">{addon.title}</p>
+                                          {addon.note && (
+                                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{addon.note}</p>
+                                          )}
+                                        </div>
+                                        {shouldShowPrice(addon.price) && (
+                                          <span className="text-sm font-black ml-2 flex-shrink-0" style={{ color: accentSolid }}>
+                                            {addon.price}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedAddOns(prev => {
+                                              const newQuantity = Math.max(0, (prev[addonKey] || 0) - 1);
+                                              if (newQuantity === 0) {
+                                                const { [addonKey]: _, ...rest } = prev;
+                                                return rest;
+                                              }
+                                              return { ...prev, [addonKey]: newQuantity };
+                                            });
+                                          }}
+                                          disabled={quantity === 0}
+                                          className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg font-black text-sm transition"
+                                          style={{ color: accentSolid }}
+                                        >
+                                          −
+                                        </button>
+                                        <span className="w-12 text-center text-sm font-black text-gray-900">
+                                          {quantity}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedAddOns(prev => ({
+                                              ...prev,
+                                              [addonKey]: (prev[addonKey] || 0) + 1
+                                            }));
+                                          }}
+                                          className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg font-black text-sm transition"
+                                          style={{ color: accentSolid }}
+                                        >
+                                          +
+                                        </button>
+                                        <span className="flex-1 text-xs text-gray-600 font-medium ml-2">
+                                          {quantity > 0 ? `Added: ${quantity}` : 'Not added'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                
+                                {/* Add-ons Summary */}
+                                {Object.keys(selectedAddOns).length > 0 && (
+                                  <div className="p-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl">
+                                    <p className="text-xs font-black text-gray-900 mb-2">📦 Selected add-ons:</p>
+                                    {Object.entries(selectedAddOns).map(([key, qty]) => {
+                                      const addonIdx = parseInt(key.split('-').pop() || '0');
+                                      const addon = availableAddOns[addonIdx];
+                                      if (!addon || qty === 0) return null;
+                                      
+                                      return (
+                                        <div key={key} className="flex justify-between text-xs text-gray-700 mb-1">
+                                          <span className="font-medium">{addon.title} × {qty}</span>
+                                          <span className="font-black">{addon.price}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                             </>
                           )}
                         </>
@@ -2264,9 +2455,27 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         {selectedTeamMember && (
                           <div><strong>Specialist:</strong> {teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name || "Selected"}</div>
                         )}
+                        {/* Show selected add-ons from dropdown */}
+                        {Object.keys(selectedAddOns).length > 0 && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <div className="font-black text-gray-900 mb-1">Add-ons included:</div>
+                            {Object.entries(selectedAddOns).map(([key, qty]) => {
+                              if (qty === 0) return null;
+                              const addonIdx = parseInt(key.split('-').pop() || '0');
+                              const addon = availableAddOns[addonIdx];
+                              if (!addon) return null;
+                              return (
+                                <div key={key} className="text-xs text-gray-700 ml-2">
+                                  • {addon.title} × {qty}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* Also show cart items if any */}
                         {cart.length > 0 && (
                           <div className="pt-2 border-t border-gray-200">
-                            <div className="font-black text-gray-900 mb-1">Add-ons purchased:</div>
+                            <div className="font-black text-gray-900 mb-1">Cart items:</div>
                             {cart.map((cartItem, idx) => (
                               <div key={idx} className="text-xs text-gray-700 ml-2">
                                 • {cartItem.item.title} × {cartItem.quantity}
@@ -2547,15 +2756,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Install App Button - only show if viewing a published piqo */}
-      {handle && (
-        <InstallPiqoButton 
-          handle={handle} 
-          brandName={brandName} 
-          brandLogo={brandLogo || profilePic}
-        />
-      )}
     </div>
   );
 }
