@@ -55,6 +55,9 @@ type BuildItem = {
   itemStyle?: "normal" | "featured"; // highlight individual products
   buttonText?: string; // custom button text for add-ons
   layout?: LayoutMode; // individual layout style for this item
+  digitalFile?: string; // URL to downloadable file for digital items
+  digitalFileType?: string; // MIME type of digital file
+  digitalFileName?: string; // Original filename for display
 };
 
 type ThemePreset = "neon" | "minimal" | "warm" | "luxe" | "custom";
@@ -3009,6 +3012,84 @@ useEffect(() => {
                         </div>
                         <div className="text-[10px] text-white/40 mt-1.5">Optional: Add a photo for this item</div>
                       </div>
+                      
+                      {/* Digital file upload for digital mode */}
+                      {mode === "digital" && !isSection && !isSubsection && (
+                        <div className="pl-4 sm:pl-10 mt-3">
+                          <div className="flex flex-col gap-2">
+                            {/* Digital file info */}
+                            {it.digitalFile ? (
+                              <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-3">
+                                <div className="flex items-center gap-2 text-xs text-cyan-200">
+                                  <LinkIcon className="h-4 w-4" />
+                                  <span className="flex-1 font-medium truncate">{it.digitalFileName || "Digital file"}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setItems((prev) =>
+                                        prev.map((x, i) => (i === idx ? { ...x, digitalFile: undefined, digitalFileName: undefined, digitalFileType: undefined } : x))
+                                      )
+                                    }
+                                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs text-red-300 hover:bg-red-500/20 transition"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition cursor-pointer">
+                                <LinkIcon className="h-4 w-4" />
+                                <span>Upload digital file or add link</span>
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    
+                                    // Show uploading state
+                                    setToast("📤 Uploading digital file...");
+                                    
+                                    // Upload to server to get hosted URL
+                                    try {
+                                      const fd = new FormData();
+                                      fd.append("file", file, file.name);
+                                      const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: 'include' });
+                                      const data = await res.json().catch(() => ({}));
+                                      
+                                      if (res.ok && data?.url) {
+                                        // Success - store file info
+                                        setItems((prev) =>
+                                          prev.map((x, i) => (i === idx ? { 
+                                            ...x, 
+                                            digitalFile: data.url,
+                                            digitalFileName: file.name,
+                                            digitalFileType: file.type
+                                          } : x))
+                                        );
+                                        setToast("✅ Digital file uploaded!");
+                                        setTimeout(() => setToast(null), 2000);
+                                      } else {
+                                        // Upload failed - show error
+                                        setToast("❌ Upload failed. Please try again.");
+                                        setTimeout(() => setToast(null), 3000);
+                                      }
+                                    } catch (err) {
+                                      // Upload failed - show error
+                                      console.error('Upload error:', err);
+                                      setToast("❌ Upload failed. Please check your connection.");
+                                      setTimeout(() => setToast(null), 3000);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            )}
+                            <div className="text-[10px] text-cyan-300/60">
+                              ⚡ Customers will receive this file/link instantly after purchase
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       </>
                       )}
 
