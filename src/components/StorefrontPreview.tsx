@@ -20,6 +20,9 @@ type Item = {
   deposit?: string;
   bullets?: string[];
   itemStyle?: "normal" | "featured";
+  digitalFile?: string;
+  digitalFileName?: string;
+  digitalFileType?: string;
 };
 type StaffProfile = {
   name: string;
