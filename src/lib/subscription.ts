@@ -41,22 +41,22 @@ export async function getUserSubscription(userId: string): Promise<SubscriptionI
     let currentPiqoCount = 0;
     
     // Try 'sites' table first
-    const { data: sites, error: sitesError } = await supabase
+    const { data: sites, error: sitesError, count: sitesCount } = await supabase
       .from('sites')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId);
     
-    if (!sitesError && sites !== null) {
-      currentPiqoCount = sites || 0;
+    if (!sitesError && sitesCount !== null) {
+      currentPiqoCount = sitesCount || 0;
     } else {
       // Fallback to 'scanly_sites' table
-      const { data: scanlySites, error: scanlySitesError } = await supabase
+      const { data: scanlySites, error: scanlySitesError, count: scanlySitesCount } = await supabase
         .from('scanly_sites')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId);
       
-      if (!scanlySitesError && scanlySites !== null) {
-        currentPiqoCount = scanlySites || 0;
+      if (!scanlySitesError && scanlySitesCount !== null) {
+        currentPiqoCount = scanlySitesCount || 0;
       }
     }
 
