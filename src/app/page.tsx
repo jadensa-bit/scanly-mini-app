@@ -1137,7 +1137,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight px-4"
           >
-            Your QR code. Their phone. Instant payment.
+            Scan. Shop. Pay. Done.
           </motion.h1>
 
           <motion.p
@@ -1146,7 +1146,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-10 max-w-3xl mx-auto font-medium leading-relaxed px-4"
           >
-            No website builders. No apps to download. Just a QR code that turns any phone into your checkout counter—in 3 seconds flat.
+            Turn any business into a QR-powered store in 60 seconds. No website builders. No apps. No friction.
           </motion.p>
 
           <motion.div
