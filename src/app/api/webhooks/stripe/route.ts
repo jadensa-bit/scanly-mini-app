@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { sendReceipt, sendBookingConfirmation, formatPhoneNumber, isValidPhoneNumber } from "@/lib/sms";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -132,9 +133,10 @@ export async function POST(req: Request) {
 
     const handle = (session.metadata?.handle || "").toString().trim();
 
-    // supports BOTH flows:
+    // supports orders, bookings, and tips:
     const orderId = (session.metadata?.order_id || session.metadata?.orderId || "").toString().trim();
     const bookingId = (session.metadata?.booking_id || session.metadata?.bookingId || "").toString().trim();
+    const tipId = (session.metadata?.tip_id || "").toString().trim();
 
     const mode = (session.metadata?.mode || "").toString().trim();
     const itemTitle = (session.metadata?.item_title || "").toString().trim();
@@ -301,7 +303,114 @@ export async function POST(req: Request) {
     }
 
     /* -------------------------
-       5) Email notification to owner (optional)
+       3) Update TIPS if tip_id exists
+    ------------------------- */
+    let wroteTip = false;
+    let tipWarn: string | null = null;
+
+    if (tipId) {
+      const { error: updErr } = await supabase
+        .from("tips")
+        .update({
+          status: "paid",
+          stripe_payment_intent: session.payment_intent?.toString() ?? null,
+          stripe_session_id: session.id,
+          paid_at: new Date().toISOString(),
+        })
+        .eq("id", tipId)
+        .eq("handle", handle);
+
+      if (updErr) {
+        tipWarn = updErr.message;
+        console.error("Tip update failed:", updErr);
+      } else {
+        wroteTip = true;
+        console.log(`💰 Tip ${tipId} marked as paid`);
+      }
+    }
+
+    /* -------------------------
+       5) Send SMS receipts to customers
+    ------------------------- */
+    const customerPhone = (session.metadata?.customer_phone || "").toString().trim() || null;
+    
+    // Send receipt SMS for orders
+    if (orderId && wroteOrder && customerPhone && isValidPhoneNumber(customerPhone)) {
+      try {
+        const { data: orderData } = await supabase
+          .from("scanly_orders")
+          .select("order_items, amount_cents, created_at")
+          .eq("id", orderId)
+          .single();
+
+        if (orderData) {
+          const { data: siteData } = await supabase
+            .from("scanly_sites")
+            .select("config")
+            .eq("handle", handle)
+            .single();
+
+          const storeName = siteData?.config?.brandName || handle;
+
+          await sendReceipt({
+            customerName: customerName || 'Valued Customer',
+            customerPhone: formatPhoneNumber(customerPhone),
+            items: (orderData.order_items || []).map((item: any) => ({
+              name: item.item_title || item.name || 'Item',
+              price: parseFloat(item.item_price || 0) / 100,
+              quantity: parseInt(item.quantity || 1),
+            })),
+            total: (orderData.amount_cents || 0) / 100,
+            storeName,
+            storeHandle: handle,
+            orderNumber: orderId.slice(-8).toUpperCase(),
+            date: new Date(orderData.created_at),
+          });
+
+          console.log(`📱 SMS receipt sent for order ${orderId}`);
+        }
+      } catch (smsError: any) {
+        console.error('SMS receipt failed:', smsError?.message);
+      }
+    }
+
+    // Send booking confirmation SMS
+    if (bookingId && wroteBooking && customerPhone && isValidPhoneNumber(customerPhone)) {
+      try {
+        const { data: bookingData } = await supabase
+          .from("bookings")
+          .select("service_name, service, slot_time")
+          .eq("id", bookingId)
+          .single();
+
+        if (bookingData) {
+          const { data: siteData } = await supabase
+            .from("scanly_sites")
+            .select("config")
+            .eq("handle", handle)
+            .single();
+
+          const storeName = siteData?.config?.brandName || handle;
+
+          await sendBookingConfirmation({
+            customerPhone: formatPhoneNumber(customerPhone),
+            customerName: customerName || 'Valued Customer',
+            storeName,
+            storeHandle: handle,
+            service: bookingData.service_name || bookingData.service || itemTitle || 'Service',
+            date: new Date(bookingData.slot_time),
+            bookingId: bookingId.slice(-8).toUpperCase(),
+          });
+
+          console.log(`📱 SMS booking confirmation sent for ${bookingId}`);
+        }
+      } catch (smsError: any) {
+        console.error('SMS booking confirmation failed:', smsError?.message);
+      }
+    }
+
+    /* -------------------------
+       6) Email notification to owner (optional)
     ------------------------- */
 
     if (ownerEmail && resend && from) {
@@ -347,7 +456,8 @@ export async function POST(req: Request) {
       emailed: !!ownerEmail,
       wroteBooking,
       wroteOrder,
-      warnings: [dedupe.warn, bookingWarn, orderWarn].filter(Boolean),
+      wroteTip,
+      warnings: [dedupe.warn, bookingWarn, orderWarn, tipWarn].filter(Boolean),
     });
   } catch (e: any) {
     console.error("Webhook handler error:", e);

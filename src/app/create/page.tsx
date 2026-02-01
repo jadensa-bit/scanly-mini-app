@@ -37,6 +37,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import StorefrontPreview from "@/components/StorefrontPreview";
+import { PiqoLimitBanner } from "@/components/SubscriptionGate";
+import { supabase } from "@/lib/supabaseclient";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
@@ -663,6 +665,8 @@ export default function CreatePage() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [existingPiqoCount, setExistingPiqoCount] = useState<number>(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [showQr, setShowQr] = useState(false);
   const [previewOn, setPreviewOn] = useState(true);
@@ -682,6 +686,60 @@ export default function CreatePage() {
   useEffect(() => {
     setPreviewTick(prev => prev + 1);
   }, [availability]);
+
+  // Check subscription status and piqo count
+  const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [canCreateMore, setCanCreateMore] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  
+  useEffect(() => {
+    async function checkSubscription() {
+      try {
+        // Get auth token
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setSubscriptionLoading(false);
+          return;
+        }
+        
+        const res = await fetch('/api/subscription', {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          credentials: 'include',
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const subscription = data.subscription;
+          setExistingPiqoCount(subscription.currentPiqoCount || 0);
+          setSubscriptionTier(subscription.tier);
+          setCanCreateMore(subscription.canCreateMore);
+          console.log('👤 Subscription:', subscription.tier, '| Piqos:', subscription.currentPiqoCount, '/', subscription.piqoLimit, '| Can create:', subscription.canCreateMore);
+        } else {
+          // Fallback to old dashboard API
+          const dashRes = await fetch('/api/dashboard', {
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
+          if (dashRes.ok) {
+            const data = await dashRes.json();
+            const count = data?.sites?.length || 0;
+            setExistingPiqoCount(count);
+            // Free tier: can create if count < 1
+            setCanCreateMore(count < 1);
+            console.log('👤 User has', count, 'existing piqos | Can create:', count < 1);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check subscription:', err);
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    }
+    checkSubscription();
+  }, []);
 
   const publicUrl = useMemo(() => buildStorefrontUrl(cleanHandle || "yourname"), [cleanHandle]);
   const qrUrl = useMemo(() => qrPngUrl(publicUrl, 520), [publicUrl]);
@@ -1605,6 +1663,14 @@ useEffect(() => {
 
     setSaving(true);
     try {
+      // 🚨 Check piqo limit based on subscription tier
+      if (!isEditMode && !canCreateMore) {
+        console.log('⚠️ User has reached piqo limit. Tier:', subscriptionTier, '| Count:', existingPiqoCount);
+        setSaving(false);
+        setShowUpgradeModal(true);
+        return;
+      }
+
       console.log(`📤 Publishing Piqo:`, {
         handle: h,
         brandName: config.brandName,
@@ -1927,6 +1993,15 @@ useEffect(() => {
             {/* Buttons moved to preview section */}
           </div>
         </header>
+
+        {/* Subscription Banner */}
+        <div className="mt-6">
+          <PiqoLimitBanner 
+            currentCount={existingPiqoCount} 
+            limit={subscriptionTier === 'free' ? 1 : 999} 
+            tier={subscriptionTier}
+          />
+        </div>
         </div>
 
         {/* Edit Mode Loading State */}
@@ -5323,10 +5398,10 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={onGenerate}
-                disabled={saving || !cleanHandle}
+                disabled={saving || !cleanHandle || (!isEditMode && !canCreateMore)}
                 className={cn(
                   "relative inline-flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-5 text-lg font-black transition-all active:scale-[0.98] shadow-2xl",
-                  saving || !cleanHandle
+                  saving || !cleanHandle || (!isEditMode && !canCreateMore)
                     ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-green-500/50 hover:shadow-green-500/70"
                 )}
@@ -5340,6 +5415,11 @@ useEffect(() => {
                     />
                     Publishing…
                   </>
+                ) : (!isEditMode && !canCreateMore) ? (
+                  <>
+                    <X className="h-6 w-6" />
+                    Piqo limit reached
+                  </>
                 ) : (
                   <>
                     <Zap className="h-6 w-6" />
@@ -5348,7 +5428,9 @@ useEffect(() => {
                 )}
               </button>
               <div className="mt-3 text-center text-sm font-semibold text-white/80 relative z-10">
-                {cleanHandle ? (
+                {(!isEditMode && !canCreateMore) ? (
+                  <span className="text-red-300">Upgrade to Pro to create more piqos</span>
+                ) : cleanHandle ? (
                   <>Publish to <span className="text-green-300 font-bold">/u/{cleanHandle}</span></>
                 ) : (
                   <span className="text-amber-300">Add a handle to publish</span>
@@ -5366,6 +5448,76 @@ useEffect(() => {
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl bg-black/90 text-white text-sm font-semibold shadow-lg border border-white/15 animate-fade-in">
           {toast}
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-gray-900 to-black border border-purple-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-3xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                Ready to scale? 🚀
+              </h3>
+              <p className="text-gray-300 text-lg">
+                You've got {existingPiqoCount} piqo{existingPiqoCount > 1 ? 's' : ''} already!
+              </p>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white font-semibold">Upgrade to Pro</span>
+                <span className="text-2xl font-black text-purple-400">$15/mo</span>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">Get unlimited piqos + priority support</p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2 text-gray-300">
+                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Unlimited piqo storefronts</span>
+                </li>
+                <li className="flex items-center gap-2 text-gray-300">
+                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Multi-location support</span>
+                </li>
+                <li className="flex items-center gap-2 text-gray-300">
+                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Advanced analytics</span>
+                </li>
+                <li className="flex items-center gap-2 text-gray-300">
+                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <span>Priority support</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <a
+                href="/pricing"
+                className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-center hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-5 h-5" />
+                View Pricing & Upgrade
+                <ArrowRight className="w-5 h-5" />
+              </a>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/15 transition-all"
+              >
+                Maybe later
+              </button>
+            </div>
+
+            <p className="text-center text-xs text-gray-500 mt-4">
+              Your first piqo stays free forever • No credit card required
+            </p>
+          </motion.div>
         </div>
       )}
     </main>

@@ -1121,9 +1121,6 @@ export default function Home() {
 
   return (
     <>
-      {/* PWA Install Banner - Only show if not installed */}
-      <InstallBanner />
-
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pb-20 pt-20 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-black to-black">
         {/* Animated Background Orbs */}
@@ -1140,7 +1137,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight px-4"
           >
-            Turn scans into sales — instantly.
+            Your QR code. Their phone. Instant payment.
           </motion.h1>
 
           <motion.p
@@ -1149,7 +1146,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 sm:mb-10 max-w-3xl mx-auto font-medium leading-relaxed px-4"
           >
-            Just scan and sell. Solve the pain of slow, clunky checkouts—let customers buy in seconds, right from their phone.
+            No website builders. No apps to download. Just a QR code that turns any phone into your checkout counter—in 3 seconds flat.
           </motion.p>
 
           <motion.div
@@ -1162,45 +1159,56 @@ export default function Home() {
               href="/signup"
               className="inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-lg sm:text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group active:scale-95 w-full sm:w-auto max-w-md"
             >
-              <span className="hidden sm:inline">Create Your QR Store — Start Free</span>
+              <span className="hidden sm:inline">Get Your First Piqo — Free Forever</span>
               <span className="sm:hidden">Start Free</span>
               <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
             </a>
-            <p className="text-xs sm:text-sm text-gray-400 mt-3">No credit card required</p>
+            <p className="text-xs sm:text-sm text-gray-400 mt-3">No credit card required • Get live in under 120 seconds</p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-full"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-sm font-medium text-green-300">🔥 127 QR codes created today</span>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Trust Signal Section */}
-            <section className="relative py-6 px-6 flex flex-col items-center justify-center">
-              <div className="flex flex-wrap justify-center gap-4 text-base md:text-lg font-medium text-white/80">
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-cyan-400"><path d="M17 9V7a5 5 0 0 0-10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="3" y="9" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 13h.01M17 13h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  Built with Stripe
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-green-400"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  Secure checkout
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-yellow-400"><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/></svg>
-                  Takes under 5 minutes
-                </div>
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 border border-white/15">
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" className="inline-block text-pink-400"><path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  No setup fee*
-                </div>
-              </div>
-              <p className="text-sm text-white/60 mt-4 max-w-md mx-auto">
-                Go live without Stripe — connect anytime to accept payments.
-              </p>
-              <p className="text-xs text-white/50 mt-3 max-w-lg mx-auto">
-                *Self-setup is free. Assisted-setup is available for additional fee.
-              </p>
-            </section>
+      <section className="relative py-12 sm:py-16 px-4 sm:px-6 flex flex-col items-center justify-center bg-gradient-to-b from-black to-gray-950/50">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base md:text-lg font-medium text-white/80">
+            <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-cyan-400 flex-shrink-0"><path d="M17 9V7a5 5 0 0 0-10 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="3" y="9" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 13h.01M17 13h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="whitespace-nowrap">💳 Stripe-level security</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-yellow-400 flex-shrink-0"><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/></svg>
+              <span className="whitespace-nowrap">⚡ Live in 90 seconds</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-green-400 flex-shrink-0"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="whitespace-nowrap">♾️ First piqo FREE forever</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-pink-400 flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="whitespace-nowrap">✨ No coding needed</span>
+            </div>
+          </div>
+          <p className="text-xs sm:text-sm text-white/60 mt-6 sm:mt-8 max-w-2xl mx-auto text-center font-medium">
+            Start selling instantly. Connect Stripe later when you're ready for payments.
+          </p>
+        </div>
+      </section>
 
       {/* Existing Users Section - Moved after trust signals for better flow */}
-      <section className="relative py-20 px-6 bg-gradient-to-br from-cyan-950/30 via-purple-950/20 to-black border-y border-white/10 overflow-hidden">
+      <section className="relative py-16 sm:py-20 px-4 sm:px-6 bg-gradient-to-br from-cyan-950/30 via-purple-950/20 to-black border-y border-white/10 overflow-hidden">
         {/* Subtle animated background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
           <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl opacity-30 animate-blob"></div>
@@ -1214,10 +1222,10 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-4xl md:text-5xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2">
               Already have a piqo?
             </h2>
-            <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto font-medium">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 max-w-2xl mx-auto font-medium px-2">
               Access your dashboard to manage your store, or use QR check-in for customer bookings.
             </p>
             <AuthButtons />
@@ -1225,64 +1233,334 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Comparison Section - piqo vs Old Way */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-gray-900 via-black to-gray-900">
+        <div className="max-w-5xl mx-auto">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
+          >
+            The old way vs. the piqo way
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-gray-400 mb-10 sm:mb-14 text-base sm:text-lg px-2"
+          >
+            Stop wasting time. Start selling instantly.
+          </motion.p>
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+            {/* Old Way */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <X className="w-6 h-6 text-red-400" />
+                </div>
+                <h4 className="text-2xl font-black text-red-300">Old Way (Slow ❌)</h4>
+              </div>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Build a website (weeks, $$$$)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Pay $29-299/month (before you make a sale)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Customer types long URL (typos, fails)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Wait for page to load (they leave)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Navigate menus (confusing, slow)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Type card details (annoying, abandoned carts)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-400">
+                  <span className="text-red-400 mt-1">❌</span>
+                  <span>Payment processing (delays, fees)</span>
+                </li>
+              </ul>
+              <div className="mt-6 p-4 bg-red-500/10 rounded-xl border border-red-500/20">
+                <p className="text-red-300 font-bold text-center">⏱️ Total time: 5-15 minutes (if they don't quit)</p>
+              </div>
+            </motion.div>
+            {/* piqo Way */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-2xl p-8 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-full filter blur-3xl"></div>
+              <div className="flex items-center gap-3 mb-6 relative z-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-2xl font-black text-cyan-300">piqo Way (Fast ⚡)</h4>
+              </div>
+              <ul className="space-y-4 relative z-10">
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">Scan QR code (instant)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">See menu (already loaded)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">Tap item (added to cart)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">Apple Pay / Google Pay (one tap)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">Done. Paid. (money in your account)</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-300">
+                  <span className="text-cyan-400 mt-1">✅</span>
+                  <span className="font-medium">$0/month (first piqo FREE forever)</span>
+                </li>
+              </ul>
+              <div className="mt-6 p-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-xl border border-cyan-500/30 relative z-10">
+                <p className="text-cyan-300 font-bold text-center">⚡ Total time: 3-8 seconds (seriously)</p>
+              </div>
+              <div className="mt-4 text-center relative z-10">
+                <span className="inline-block px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-sm rounded-full">
+                  💥 100X FASTER
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Simple 3 Steps */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black to-gray-950">
+        <div className="max-w-6xl mx-auto">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
+          >
+            Get live in 3 steps (takes 90 seconds) ⏱️
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-gray-400 mb-12 sm:mb-16 text-base sm:text-lg px-2"
+          >
+            Seriously, you'll be selling before you finish your coffee.
+          </motion.p>
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                1
+              </div>
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-8 pt-12 hover:border-cyan-500/30 transition-all">
+                <h4 className="text-2xl font-black text-white mb-3">Sign up (20 sec)</h4>
+                <p className="text-gray-400 leading-relaxed">Email, password, done. No lengthy forms, no verification wait. Just get in.</p>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="relative"
+            >
+              <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                2
+              </div>
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-8 pt-12 hover:border-purple-500/30 transition-all">
+                <h4 className="text-2xl font-black text-white mb-3">Add your stuff (40 sec)</h4>
+                <p className="text-gray-400 leading-relaxed">Type your service/product name and price. Upload a pic if you want. That's it.</p>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="relative"
+            >
+              <div className="absolute -top-4 -left-4 w-16 h-16 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                3
+              </div>
+              <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-8 pt-12 hover:border-pink-500/30 transition-all">
+                <h4 className="text-2xl font-black text-white mb-3">Get your QR (30 sec)</h4>
+                <p className="text-gray-400 leading-relaxed">Download, print, or share. You're live. Start making sales now.</p>
+              </div>
+            </motion.div>
+          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="text-center mt-10 sm:mt-14"
+          >
+            <a
+              href="/signup"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-base sm:text-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group active:scale-95"
+            >
+              <span>Start Now → Be Live in 90 Seconds</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Social Proof Quotes */}
+      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-gray-950 to-black">
+        <div className="max-w-5xl mx-auto">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-2xl sm:text-3xl md:text-4xl font-black text-center mb-10 sm:mb-12 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
+          >
+            People are going live right now 🚀
+          </motion.h3>
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-cyan-500/30 transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-2xl">💈</div>
+                <div>
+                  <div className="font-bold text-white">Marcus T.</div>
+                  <div className="text-sm text-gray-400">Barber, Miami</div>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed">"Made $450 in my first week just from walk-ins scanning my table tent. No more cash, no more 'I'll Venmo you later.' Game changer."</p>
+              <div className="mt-4 text-yellow-400 text-sm">⭐⭐⭐⭐⭐</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-2xl">💅</div>
+                <div>
+                  <div className="font-bold text-white">Jasmine L.</div>
+                  <div className="text-sm text-gray-400">Nail Tech, LA</div>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed">"Set up in literally 2 min. Posted my QR on Instagram and booked out 3 days ahead. Clients love how fast it is. I love getting paid instantly."</p>
+              <div className="mt-4 text-yellow-400 text-sm">⭐⭐⭐⭐⭐</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-orange-500/30 transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-2xl">👕</div>
+                <div>
+                  <div className="font-bold text-white">Tyler K.</div>
+                  <div className="text-sm text-gray-400">Merch, NYC</div>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed">"Sold 40 hoodies at my show last night. QR code on the merch table → people scan → instant checkout. Easiest sales night ever. Zero hassle."</p>
+              <div className="mt-4 text-yellow-400 text-sm">⭐⭐⭐⭐⭐</div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Use Case Section */}
-      <section className="relative py-16 px-6 flex flex-col items-center justify-center overflow-hidden">
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-gray-950/50 to-black">
         {/* Subtle animated background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
           <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-pink-500 rounded-full filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
         
-        <div className="max-w-2xl mx-auto text-center relative z-10">
-          <h3 className="text-3xl md:text-4xl font-black mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Perfect for:
+        <div className="max-w-3xl mx-auto text-center relative z-10 w-full">
+          <h3 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2">
+            Built for hustlers like you 💪
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
-              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-white/10">
+          <p className="text-base sm:text-lg text-gray-400 mb-10 sm:mb-12 max-w-2xl mx-auto px-2 font-medium">Join creators already making bank with their QR codes</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg sm:rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-white/10">
                 <img 
-                  src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=500&h=500&fit=crop&q=90" 
+                  src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=500&h=500&fit=crop&q=90" 
                   alt="Barber" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
-              <span className="text-base md:text-lg font-semibold text-white/90">Barbers</span>
+              <span className="text-sm sm:text-base md:text-lg font-semibold text-white/90">Barbers</span>
             </div>
-            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
-              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-white/10">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg sm:rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-white/10">
                 <img 
-                  src="https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=500&h=500&fit=crop&q=90" 
+                  src="https://images.unsplash.com/photo-1604654894610-df63bc536371?w=500&h=500&fit=crop&q=90" 
                   alt="Nail tech" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
-              <span className="text-base md:text-lg font-semibold text-white/90">Nail techs</span>
+              <span className="text-sm sm:text-base md:text-lg font-semibold text-white/90">Nail techs</span>
             </div>
-            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
-              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center border border-white/10">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg sm:rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center border border-white/10">
                 <img 
-                  src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500&h=500&fit=crop&q=90" 
+                  src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=500&h=500&fit=crop&q=90" 
                   alt="Merch seller" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
-              <span className="text-base md:text-lg font-semibold text-white/90">Merch sellers</span>
+              <span className="text-sm sm:text-base md:text-lg font-semibold text-white/90">Merch sellers</span>
             </div>
-            <div className="flex flex-col items-center gap-3 p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
-              <div className="w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg sm:rounded-2xl hover:bg-white/10 hover:border-cyan-500/30 transition-all group">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-pink-500/20 to-purple-500/20 flex items-center justify-center border border-white/10">
                 <img 
-                  src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=500&h=500&fit=crop&q=90" 
+                  src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=500&h=500&fit=crop&q=90" 
                   alt="Digital creator" 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
-              <span className="text-base md:text-lg font-semibold text-white/90">Digital creators</span>
+              <span className="text-sm sm:text-base md:text-lg font-semibold text-white/90">Digital creators</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* What you get */}
-      <section className="relative py-28 px-6 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
+      <section className="relative py-24 sm:py-32 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
         {/* Background orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div className="absolute top-1/4 left-10 w-72 h-72 bg-cyan-500 rounded-full filter blur-3xl opacity-20 animate-blob"></div>
@@ -1294,9 +1572,9 @@ export default function Home() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-5xl md:text-6xl font-black text-center mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-center mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
           >
-            What you get with piqo
+            Why piqo beats traditional stores
           </motion.h2>
           
           <motion.p
@@ -1304,29 +1582,29 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-center text-gray-300 mb-16 max-w-2xl mx-auto text-lg font-medium"
+            className="text-center text-gray-300 mb-12 sm:mb-16 max-w-2xl mx-auto text-base sm:text-lg font-medium px-2"
           >
-            Everything you need to start selling—no tech skills required
+            While others make you build websites, we make buying instant—scan, tap, done.
           </motion.p>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 icon: ScanLine,
-                title: "Custom mobile page",
-                desc: "Your products, services, or downloads—beautifully displayed on mobile.",
+                title: "One scan = instant storefront",
+                desc: "No website needed. Customers scan your QR and see your menu instantly—zero loading, zero apps.",
                 step: "01",
               },
               {
                 icon: CreditCard,
-                title: "Instant checkout",
-                desc: "Customers pay with Apple Pay, Google Pay, or card. Money goes straight to your bank.",
+                title: "Checkout in 3 taps",
+                desc: "Apple Pay, Google Pay, or card. Payment done before they put their phone down. Money hits your bank instantly.",
                 step: "02",
               },
               {
                 icon: BadgeCheck,
-                title: "Your QR code",
-                desc: "Put it anywhere. Tables, cards, flyers, Instagram—scan to buy.",
+                title: "Your QR, everywhere",
+                desc: "Print it, post it, share it. Tables, business cards, Instagram stories—customers buy anywhere they see it.",
                 step: "03",
               },
             ].map((item, i) => (
@@ -1366,8 +1644,75 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Benefits With Numbers */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black via-cyan-950/10 to-black">
+        <div className="max-w-6xl mx-auto">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
+          >
+            The numbers don't lie 📈
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-gray-400 mb-10 sm:mb-16 text-base sm:text-lg px-2"
+          >
+            Real results from creators using piqo
+          </motion.p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-2xl p-6 text-center hover:border-cyan-500/40 transition-all"
+            >
+              <div className="text-5xl font-black bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-2">3.2x</div>
+              <div className="text-gray-300 font-semibold mb-1">More sales</div>
+              <div className="text-sm text-gray-500">vs. traditional checkout</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-6 text-center hover:border-purple-500/40 transition-all"
+            >
+              <div className="text-5xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">8 sec</div>
+              <div className="text-gray-300 font-semibold mb-1">Avg checkout time</div>
+              <div className="text-sm text-gray-500">scan to payment done</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl p-6 text-center hover:border-orange-500/40 transition-all"
+            >
+              <div className="text-5xl font-black bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-2">$0</div>
+              <div className="text-gray-300 font-semibold mb-1">Setup cost</div>
+              <div className="text-sm text-gray-500">forever free to start</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl p-6 text-center hover:border-green-500/40 transition-all"
+            >
+              <div className="text-5xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">90 sec</div>
+              <div className="text-gray-300 font-semibold mb-1">Time to go live</div>
+              <div className="text-sm text-gray-500">setup to first sale</div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Interactive phone demo */}
-      <section className="relative py-24 px-6 overflow-hidden">
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black to-gray-950">
         {/* Animated background gradients - matching create page */}
         <motion.div
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -1405,9 +1750,9 @@ export default function Home() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-5xl md:text-6xl font-black text-center mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-center mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
           >
-            See what piqo creates
+            This is what they see when they scan
           </motion.h2>
           
           <motion.p
@@ -1415,12 +1760,12 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-center text-gray-300 mb-16 max-w-2xl mx-auto text-lg font-medium"
+            className="text-center text-gray-300 mb-12 sm:mb-16 max-w-2xl mx-auto text-base sm:text-lg font-medium px-2"
           >
-            Switch between demo brands to see real examples of what your customers will experience
+            No app downloads. No typing URLs. Just scan → see → buy. Try the demos below.
           </motion.p>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             {/* Phone preview - wrapped in card like create page */}
             <div className="order-2 lg:order-1">
               <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
@@ -1518,8 +1863,91 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-gray-950 via-black to-gray-950">
+        <div className="max-w-4xl mx-auto">
+          <motion.h3
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
+          >
+            Questions? We got you 👇
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-gray-400 mb-10 sm:mb-12 text-base sm:text-lg px-2"
+          >
+            Everything you need to know before you start
+          </motion.p>
+          <div className="space-y-3 sm:space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">👋 Is piqo really free?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Yes! Your first piqo is 100% free forever—no hidden fees, no trials, no limits. When you want to create additional piqos (for more locations or brands), it's just $15/month per extra piqo. To accept payments, connect Stripe (standard processing fees apply).</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.05 }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">⚡ How fast can I actually go live?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Most people are done in 60-120 seconds. Sign up → add your items → get your QR. That's it. You can be making sales in the time it takes to make instant ramen.</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">💳 Do I need Stripe right away?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Nope! You can create your piqo now and connect Stripe whenever you want. Perfect for testing, getting feedback, or going live before handling payments.</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.15 }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">📱 Does this work on all phones?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Yes! iPhone, Android, any phone with a camera. QR codes are universal. Your customers just scan and buy—no app needed, no special software.</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">🤔 What if I'm not tech-savvy?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Perfect! piqo is built for people who hate tech. If you can text, you can use piqo. No coding, no complicated dashboards. Just simple forms and buttons.</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.25 }}
+              className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
+            >
+              <h4 className="text-xl font-bold text-white mb-2">📦 Can I sell physical products?</h4>
+              <p className="text-gray-400 leading-relaxed">Absolutely! Sell merch, products at pop-ups, items at markets—whatever. Customers scan, pay, and you fulfill the order. Simple.</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
-      <section className="relative py-32 px-6 overflow-hidden">
+      <section className="relative py-28 sm:py-36 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black to-gray-950">
         {/* Animated background orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl opacity-30 animate-blob"></div>
@@ -1527,23 +1955,33 @@ export default function Home() {
           <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
         </div>
         
-        <div className="container mx-auto max-w-4xl text-center relative z-10">
+        <div className="container mx-auto max-w-4xl text-center relative z-10 px-2">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-full mb-6 sm:mb-8"
+          >
+            <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-bold text-yellow-300 whitespace-nowrap">First piqo FREE forever • No credit card • Live in 90 seconds</span>
+          </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-6xl md:text-7xl font-black mb-8 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-6 sm:mb-8 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight"
           >
-            Ready to go live?
+            Don't lose another sale.
+            <br />Get your QR now.
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-2xl text-gray-300 mb-12 font-medium"
+            className="text-base sm:text-lg md:text-xl text-gray-300 mb-10 sm:mb-12 font-medium max-w-3xl mx-auto"
           >
-            Create your storefront in 2 minutes. No code, no setup fee*.
+            While your competitors fumble with payment apps, your customers will be checking out in 3 seconds. Start today.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1553,7 +1991,7 @@ export default function Home() {
           >
             <motion.a
               href="/signup"
-              className="inline-flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-xl md:text-2xl shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
+              className="inline-flex items-center gap-2 px-6 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-base sm:text-lg md:text-xl shadow-2xl shadow-cyan-500/30 transition-all group relative overflow-hidden"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -1568,16 +2006,34 @@ export default function Home() {
                   ease: "linear",
                 }}
               />
-              <span className="relative z-10">Start Building Your QR Store</span>
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform relative z-10" />
+              <span className="relative z-10 whitespace-nowrap">Create My QR Code — Free</span>
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform relative z-10" />
             </motion.a>
           </motion.div>
         </div>
       </section>
       {/* Footer */}
-      <footer className="w-full text-center py-6 text-xs text-gray-400">
-        © 2026 piqo-builder LLC. All rights reserved.<br />
-        piqo is a brand name used for a QR-based storefront and mini-app platform.
+      <footer className="w-full text-center py-8 sm:py-12 text-xs sm:text-sm text-gray-400 bg-black border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+            <Link href="/pricing" className="text-white hover:text-cyan-400 transition-colors font-medium text-sm">
+              Pricing
+            </Link>
+            <Link href="/login" className="text-white hover:text-cyan-400 transition-colors font-medium text-sm">
+              Login
+            </Link>
+            <Link href="/signup" className="text-white hover:text-cyan-400 transition-colors font-medium text-sm">
+              Sign Up
+            </Link>
+            <Link href="/dashboard" className="text-white hover:text-cyan-400 transition-colors font-medium text-sm">
+              Dashboard
+            </Link>
+          </div>
+          <div className="text-gray-500 text-xs">
+            © 2026 piqo-builder LLC. All rights reserved.<br />
+            piqo is a brand name used for a QR-based storefront and mini-app platform.
+          </div>
+        </div>
       </footer>
     </>
   );

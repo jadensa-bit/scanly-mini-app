@@ -393,6 +393,54 @@ export async function POST(req: NextRequest) {
       console.log("📊 Existing site has draft:", !!existingSite.data.draft_config);
     }
 
+    // 🚨 SUBSCRIPTION CHECK: Block creation of new piqos if user has reached their limit
+    if (!isEditing) {
+      console.log("🔒 Checking subscription limits for new piqo creation...");
+      
+      // Get user's profile and subscription info
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_tier, piqo_limit')
+        .eq('id', userId)
+        .single();
+
+      const tier = profile?.subscription_tier || 'free';
+      const limit = profile?.piqo_limit || 1;
+
+      console.log("👤 User subscription:", { tier, limit });
+
+      // Count existing piqos
+      let existingCount = 0;
+      for (const table of TABLE_CANDIDATES) {
+        try {
+          const { count } = await supabase
+            .from(table)
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId);
+          if (count) existingCount += count;
+        } catch (e) {
+          // Table might not exist, continue
+        }
+      }
+
+      console.log("📊 User has", existingCount, "existing piqo(s), limit is", limit);
+
+      // Block if they've reached their limit (free tier = 1 piqo)
+      if (tier === 'free' && existingCount >= limit) {
+        console.error("🚫 User has reached piqo limit:", existingCount, ">=", limit);
+        return jsonError(
+          "Piqo limit reached. Upgrade to Pro to create unlimited piqos.",
+          403,
+          { 
+            tier, 
+            limit, 
+            current: existingCount,
+            upgradeUrl: "/pricing"
+          }
+        );
+      }
+    }
+
     // ✅ Pass both saveAsDraft and isEditing flags
     const out = await upsertSite(supabase, handle, config, userId, saveAsDraft, isEditing);
 

@@ -1,0 +1,130 @@
+// Subscription utilities for checking user tier and features
+import { supabase } from '@/lib/supabaseclient';
+
+export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing';
+
+export interface SubscriptionInfo {
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  piqoLimit: number;
+  currentPiqoCount: number;
+  canCreateMore: boolean;
+  features: {
+    unlimitedPiqos: boolean;
+    advancedAnalytics: boolean;
+    customBranding: boolean;
+    prioritySupport: boolean;
+    whiteLabel: boolean;
+    teamAccess: boolean;
+  };
+}
+
+/**
+ * Get user's subscription information
+ */
+export async function getUserSubscription(userId: string): Promise<SubscriptionInfo | null> {
+  try {
+    // Get profile data
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_tier, subscription_status, piqo_limit')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      return null;
+    }
+
+    // Get current piqo count (using sites or scanly_sites based on what exists)
+    let currentPiqoCount = 0;
+    
+    // Try 'sites' table first
+    const { data: sites, error: sitesError } = await supabase
+      .from('sites')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    
+    if (!sitesError && sites !== null) {
+      currentPiqoCount = sites || 0;
+    } else {
+      // Fallback to 'scanly_sites' table
+      const { data: scanlySites, error: scanlySitesError } = await supabase
+        .from('scanly_sites')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      
+      if (!scanlySitesError && scanlySites !== null) {
+        currentPiqoCount = scanlySites || 0;
+      }
+    }
+
+    const tier = (profile.subscription_tier || 'free') as SubscriptionTier;
+    const status = (profile.subscription_status || 'active') as SubscriptionStatus;
+    const piqoLimit = profile.piqo_limit || 1;
+
+    // Define features based on tier
+    const features = {
+      unlimitedPiqos: tier === 'pro' || tier === 'enterprise',
+      advancedAnalytics: tier === 'pro' || tier === 'enterprise',
+      customBranding: tier === 'pro' || tier === 'enterprise',
+      prioritySupport: tier === 'enterprise',
+      whiteLabel: tier === 'enterprise',
+      teamAccess: tier === 'enterprise',
+    };
+
+    // Check if user can create more piqos
+    const canCreateMore = tier === 'free' 
+      ? currentPiqoCount < piqoLimit 
+      : true; // Pro and enterprise have unlimited
+
+    return {
+      tier,
+      status,
+      piqoLimit,
+      currentPiqoCount,
+      canCreateMore,
+      features,
+    };
+  } catch (error) {
+    console.error('Error getting subscription info:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if user can access a specific feature
+ */
+export async function canAccessFeature(userId: string, feature: keyof SubscriptionInfo['features']): Promise<boolean> {
+  const subscription = await getUserSubscription(userId);
+  if (!subscription) return false;
+  return subscription.features[feature];
+}
+
+/**
+ * Check if user can create another piqo
+ */
+export async function canCreatePiqo(userId: string): Promise<boolean> {
+  const subscription = await getUserSubscription(userId);
+  if (!subscription) return false;
+  return subscription.canCreateMore;
+}
+
+/**
+ * Get user's piqo usage stats
+ */
+export async function getPiqoUsage(userId: string): Promise<{ used: number; limit: number; percentage: number } | null> {
+  const subscription = await getUserSubscription(userId);
+  if (!subscription) return null;
+
+  const percentage = subscription.piqoLimit === -1 
+    ? 0 
+    : (subscription.currentPiqoCount / subscription.piqoLimit) * 100;
+
+  return {
+    used: subscription.currentPiqoCount,
+    limit: subscription.piqoLimit,
+    percentage: Math.min(percentage, 100),
+  };
+}

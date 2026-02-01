@@ -72,6 +72,9 @@ export default function Header() {
               </>
             ) : (
               <>
+                <Link href="/pricing" className="text-white hover:text-cyan-400 transition-colors text-sm font-medium">
+                  Pricing
+                </Link>
                 <Link href="/login" className="text-white hover:text-cyan-400 transition-colors text-sm font-medium">
                   Login
                 </Link>
@@ -146,6 +149,13 @@ export default function Header() {
               ) : (
                 <>
                   <Link
+                    href="/pricing"
+                    onClick={closeMobileMenu}
+                    className="block px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors font-medium"
+                  >
+                    Pricing
+                  </Link>
+                  <Link
                     href="/login"
                     onClick={closeMobileMenu}
                     className="block px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors font-medium"
@@ -160,6 +170,7 @@ export default function Header() {
                     Sign Up
                   </Link>
                 </>
+
               )}
             </nav>
           </motion.div>
