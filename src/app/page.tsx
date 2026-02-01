@@ -1260,10 +1260,25 @@ export default function Home() {
                     </motion.div>
 
                     {/* Card footer */}
-                    <div className="mt-6 text-center border-t border-gray-200 pt-4">
+                    <div className="mt-6 text-center border-t border-gray-200 pt-4 space-y-3">
                       <p className="text-xs text-gray-600 font-semibold">
                         📱 Scan to book • Tap to pay • Get confirmation
                       </p>
+                      
+                      {/* Test button and URL display */}
+                      <div className="space-y-2">
+                        <a
+                          href={demoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold rounded-lg hover:shadow-lg transition-all"
+                        >
+                          📱 Tap to Test Demo
+                        </a>
+                        <p className="text-[10px] text-gray-500 break-all">
+                          {demoUrl}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
