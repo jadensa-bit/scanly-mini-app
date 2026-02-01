@@ -175,6 +175,8 @@ export default function DashboardPage() {
     // Filter by completion status
     const isCompleted = completedOrders.has(String(o.id));
     if (!showCompletedOrders && isCompleted) return false;
+    // Exclude delivery orders - they show in Deliveries section
+    if (o.delivery_method === 'delivery') return false;
     return inWeek;
   });
   const groupedOrders = groupByDate(filteredOrders, 'created_at');
