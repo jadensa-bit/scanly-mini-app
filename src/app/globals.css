@@ -147,3 +147,79 @@ body {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Premium glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(30px);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Floating animation for cards */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Shimmer background for premium elements */
+@keyframes shimmer-bg {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-bg 3s ease-in-out infinite;
+}
+
+/* Smooth scale up on hover */
+@keyframes scale-up {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+/* Gradient animation for backgrounds */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}

@@ -422,13 +422,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Header */}
-      <header className="relative bg-gradient-to-r from-white/10 via-white/5 to-white/10 backdrop-blur-2xl border-b border-white/10 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <header className="sticky top-0 z-40 relative bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-white/[0.08] backdrop-blur-3xl border-b border-white/20 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5"></div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 relative">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-2.5 sm:gap-5">
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-xl sm:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-gray-900 to-black rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/20">
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl blur-lg opacity-40 group-hover:opacity-60 transition duration-300 animate-pulse"></div>
+                <div className="relative w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl sm:rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-2xl group-hover:scale-110 transition-transform duration-300">
                   <PiqoLogoFull />
                 </div>
               </div>
@@ -439,11 +440,18 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/create"
-              className="relative group flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-600 hover:via-purple-600 hover:to-pink-600 active:scale-95 text-white font-bold rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-xs sm:text-sm lg:text-base min-h-[44px] sm:min-h-0"
+              className="relative group flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 lg:px-7 py-2.5 sm:py-3 lg:py-3.5 overflow-hidden rounded-xl sm:rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-purple-500/60 hover:scale-105 active:scale-95 text-xs sm:text-sm lg:text-base min-h-[44px] sm:min-h-0 font-extrabold"
             >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">Create New Piqo</span>
-              <span className="sm:hidden">New</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-gradient-x"></div>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400"></div>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-300">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.3),transparent)]"></div>
+              </div>
+              <div className="relative flex items-center gap-1.5 sm:gap-2 text-white z-10">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300" />
+                <span className="hidden sm:inline">Create New Piqo</span>
+                <span className="sm:hidden">New</span>
+              </div>
             </Link>
           </div>
         </div>
@@ -453,72 +461,88 @@ export default function DashboardPage() {
         {/* Tab Navigation */}
         <div className="mb-6 sm:mb-8">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur"></div>
-            <div className="relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-xl rounded-2xl p-2 border border-white/10">
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 rounded-2xl sm:rounded-3xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/90 via-black/90 to-gray-900/90 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-2.5 border border-white/20 shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl sm:rounded-3xl"></div>
               <div className="flex flex-wrap sm:flex-nowrap gap-2">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group/tab ${
                     activeTab === 'overview'
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-xl shadow-purple-500/50 scale-105'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10 hover:scale-105 hover:shadow-lg'
                   }`}
                 >
-                  <span className="flex items-center gap-2 justify-center">
-                    <TrendingUp className="h-4 w-4" />
+                  {activeTab === 'overview' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                  <span className="flex items-center gap-2 justify-center relative z-10">
+                    <TrendingUp className={`h-4 w-4 transition-transform duration-300 ${activeTab === 'overview' ? 'scale-110' : 'group-hover/tab:scale-110'}`} />
                     <span className="hidden sm:inline">Overview</span>
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('stores')}
-                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group/tab ${
                     activeTab === 'stores'
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-xl shadow-purple-500/50 scale-105'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10 hover:scale-105 hover:shadow-lg'
                   }`}
                 >
-                  <span className="flex items-center gap-2 justify-center">
-                    <Store className="h-4 w-4" />
+                  {activeTab === 'stores' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                  <span className="flex items-center gap-2 justify-center relative z-10">
+                    <Store className={`h-4 w-4 transition-transform duration-300 ${activeTab === 'stores' ? 'scale-110' : 'group-hover/tab:scale-110'}`} />
                     <span className="hidden sm:inline">My Stores</span>
                     <span className="sm:hidden">Stores</span>
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('bookings')}
-                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group/tab ${
                     activeTab === 'bookings'
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-xl shadow-purple-500/50 scale-105'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10 hover:scale-105 hover:shadow-lg'
                   }`}
                 >
-                  <span className="flex items-center gap-2 justify-center">
-                    <Calendar className="h-4 w-4" />
+                  {activeTab === 'bookings' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                  <span className="flex items-center gap-2 justify-center relative z-10">
+                    <Calendar className={`h-4 w-4 transition-transform duration-300 ${activeTab === 'bookings' ? 'scale-110' : 'group-hover/tab:scale-110'}`} />
                     Bookings
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group/tab ${
                     activeTab === 'orders'
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-xl shadow-purple-500/50 scale-105'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10 hover:scale-105 hover:shadow-lg'
                   }`}
                 >
-                  <span className="flex items-center gap-2 justify-center">
-                    <ShoppingCart className="h-4 w-4" />
+                  {activeTab === 'orders' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                  <span className="flex items-center gap-2 justify-center relative z-10">
+                    <ShoppingCart className={`h-4 w-4 transition-transform duration-300 ${activeTab === 'orders' ? 'scale-110' : 'group-hover/tab:scale-110'}`} />
                     Orders
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('fulfillment')}
-                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  className={`relative flex-1 sm:flex-initial px-4 sm:px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group/tab ${
                     activeTab === 'fulfillment'
-                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-xl shadow-purple-500/50 scale-105'
+                      : 'text-gray-400 hover:text-white hover:bg-white/10 hover:scale-105 hover:shadow-lg'
                   }`}
                 >
-                  <span className="flex items-center gap-2 justify-center">
-                    <Package className="h-4 w-4" />
+                  {activeTab === 'fulfillment' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-300"></div>
+                  )}
+                  <span className="flex items-center gap-2 justify-center relative z-10">
+                    <Package className={`h-4 w-4 transition-transform duration-300 ${activeTab === 'fulfillment' ? 'scale-110' : 'group-hover/tab:scale-110'}`} />
                     <span className="hidden sm:inline">Fulfillment</span>
                   </span>
                 </button>
@@ -541,8 +565,9 @@ export default function DashboardPage() {
         {!loading && (
           <section className="mb-8 sm:mb-10">
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-              <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/10">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-all duration-500 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-10 border-2 border-white/20 shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(6,182,212,0.1),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.1),transparent_50%)]"></div>
                 <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                   <div className="relative">
                     <div className="absolute inset-0 bg-cyan-500 rounded-lg sm:rounded-xl blur-md opacity-50"></div>
@@ -618,9 +643,10 @@ export default function DashboardPage() {
 
         {/* Stats Section */}
         <section className="mb-8 sm:mb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-cyan-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-cyan-400/50 hover:-translate-y-1 transition-all duration-300">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0, type: "spring", stiffness: 100 }} className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-br from-cyan-400 via-cyan-500 to-cyan-600 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-all duration-500 group-hover:blur-2xl"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-2xl border-2 border-cyan-500/40 rounded-2xl shadow-2xl p-5 sm:p-8 hover:border-cyan-400/70 hover:-translate-y-2 hover:scale-105 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="flex items-center justify-between mb-2 sm:mb-4">
                 <p className="text-cyan-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Published Piqos</p>
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
@@ -630,10 +656,11 @@ export default function DashboardPage() {
               <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 to-cyan-500 group-hover:scale-105 transition-transform duration-300">{totalSites}</p>
             </div>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-purple-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-purple-400/50 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: "spring", stiffness: 100 }} className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-all duration-500 group-hover:blur-2xl"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-2xl border-2 border-purple-500/40 rounded-2xl shadow-2xl p-5 sm:p-8 hover:border-purple-400/70 hover:-translate-y-2 hover:scale-105 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between mb-2 sm:mb-4 relative z-10">
                 <p className="text-purple-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Total Bookings</p>
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-400" />
@@ -642,10 +669,11 @@ export default function DashboardPage() {
               <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-300 to-purple-500 group-hover:scale-105 transition-transform duration-300">{totalBookings}</p>
             </div>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-green-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-green-400/50 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: "spring", stiffness: 100 }} className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-br from-green-400 via-emerald-500 to-green-600 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-all duration-500 group-hover:blur-2xl"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-2xl border-2 border-green-500/40 rounded-2xl shadow-2xl p-5 sm:p-8 hover:border-green-400/70 hover:-translate-y-2 hover:scale-105 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between mb-2 sm:mb-4 relative z-10">
                 <p className="text-green-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Checked In</p>
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-400" />
@@ -654,10 +682,11 @@ export default function DashboardPage() {
               <p className="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-green-300 to-emerald-500 group-hover:scale-105 transition-transform duration-300">{checkedInCount}</p>
             </div>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl sm:rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-pink-500/30 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-7 hover:border-pink-400/50 hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: "spring", stiffness: 100 }} className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-br from-pink-400 via-pink-500 to-pink-600 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-all duration-500 group-hover:blur-2xl"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-2xl border-2 border-pink-500/40 rounded-2xl shadow-2xl p-5 sm:p-8 hover:border-pink-400/70 hover:-translate-y-2 hover:scale-105 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between mb-2 sm:mb-4 relative z-10">
                 <p className="text-pink-400/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Orders</p>
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
                   <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-pink-400" />
