@@ -289,6 +289,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({}); // Track selected add-ons with quantities
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "delivery">("pickup");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -368,8 +369,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     return total + (price * ci.quantity);
   }, 0);
 
-  // Calculate delivery fee
-  const deliveryFee = props.delivery?.enabled 
+  // Calculate delivery fee based on customer's choice
+  const deliveryFee = props.delivery?.enabled && deliveryChoice === "delivery"
     ? (cartTotal >= (props.delivery.freeAbove || 0) ? 0 : (props.delivery.fee || 0))
     : 0;
 
@@ -649,6 +650,8 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             mode: mode,
             customer_name: customerName.trim(),
             customer_email: customerEmail.trim(),
+            delivery_method: props.delivery?.enabled ? deliveryChoice : undefined,
+            delivery_fee: deliveryFee,
             items: cart.map(ci => ({
               item_title: ci.item.title || "",
               item_price: ci.item.price || "",
@@ -676,6 +679,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           // Reset form
           setCustomerName("");
           setCustomerEmail("");
+          setDeliveryChoice("pickup");
           setBookingLoading(false);
           return;
         }
@@ -2008,7 +2012,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     <span className="font-bold text-gray-900">${cartTotal.toFixed(2)}</span>
                   </div>
                   
-                  {props.delivery?.enabled && (
+                  {props.delivery?.enabled && deliveryChoice === "delivery" && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="font-semibold text-gray-700">
                         Delivery:
@@ -2022,12 +2026,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                   )}
                   
-                  {props.delivery?.enabled && props.delivery.estimatedTime && (
-                    <p className="text-xs text-gray-500">
-                      🚚 Est. delivery: {props.delivery.estimatedTime}
-                    </p>
-                  )}
-                  
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-base font-black text-gray-900">Total:</span>
                     <span className="text-2xl font-black" style={{ color: accentSolid }}>
@@ -2035,6 +2033,42 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </span>
                   </div>
                 </div>
+                
+                {/* Delivery/Pickup Choice */}
+                {props.delivery?.enabled && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-700">Fulfillment Method:</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryChoice("pickup")}
+                        className={`px-4 py-3 rounded-xl text-sm font-bold border-2 transition ${
+                          deliveryChoice === "pickup"
+                            ? "border-cyan-500 bg-cyan-50 text-cyan-700"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        🏪 Pickup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryChoice("delivery")}
+                        className={`px-4 py-3 rounded-xl text-sm font-bold border-2 transition ${
+                          deliveryChoice === "delivery"
+                            ? "border-cyan-500 bg-cyan-50 text-cyan-700"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        🚚 Delivery
+                      </button>
+                    </div>
+                    {deliveryChoice === "delivery" && props.delivery.estimatedTime && (
+                      <p className="text-xs text-gray-500 text-center">
+                        Est. delivery: {props.delivery.estimatedTime}
+                      </p>
+                    )}
+                  </div>
+                )}
                 
                 {/* Customer Info for Cart Checkout */}
                 <div className="space-y-2.5">
