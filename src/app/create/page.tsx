@@ -2343,6 +2343,13 @@ useEffect(() => {
                                   availability={availability}
                                   notifications={notifications}
                                   handle={cleanHandle}
+                                  delivery={deliveryEnabled ? {
+                                    enabled: true,
+                                    fee: deliveryFee,
+                                    freeAbove: deliveryFreeAbove,
+                                    estimatedTime: deliveryTime,
+                                    zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
+                                  } : undefined}
                                 />
                               </div>
                             </div>

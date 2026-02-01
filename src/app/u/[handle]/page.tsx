@@ -159,6 +159,7 @@ export default function HandlePage() {
 			availability={cfg.availability}
 			notifications={cfg.notifications}
 			payments={cfg.payments}
+			delivery={cfg.delivery}
 		/>
 	);
 }
