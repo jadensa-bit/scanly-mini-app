@@ -1667,6 +1667,170 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* Deliveries Section */}
+        <section className="mb-12 sm:mb-16">
+          <div className="relative group mb-6">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-20"></div>
+            <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl blur opacity-60"></div>
+                    <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl">
+                      <span className="text-xl sm:text-2xl">🚚</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">Deliveries</h2>
+                    <p className="text-gray-400 text-xs sm:text-sm font-medium mt-0.5">Orders requiring delivery</p>
+                  </div>
+                </div>
+                <div className="text-center bg-cyan-500/20 border border-cyan-500/40 rounded-xl px-6 py-3 shadow-lg">
+                  <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 to-cyan-500">
+                    {orders.filter(o => o.delivery_method === 'delivery').length}
+                  </p>
+                  <p className="text-xs text-cyan-400 uppercase tracking-widest font-bold mt-1">Active</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="inline-block w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-400 font-medium">Loading deliveries...</p>
+              </div>
+            </div>
+          ) : orders.filter(o => o.delivery_method === 'delivery').length === 0 ? (
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
+                  <span className="text-4xl">🚚</span>
+                </div>
+                <p className="text-xl font-bold text-white mb-2">No deliveries yet</p>
+                <p className="text-gray-400 mb-6">Deliveries will appear here when customers choose delivery at checkout.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-gradient-to-br from-gray-900 to-black backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border-b border-cyan-500/30">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Customer</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Items</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Address</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Store</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Amount</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Status</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-cyan-300 uppercase tracking-widest">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {orders.filter(o => o.delivery_method === 'delivery').map((delivery, index) => (
+                        <tr key={String(delivery.id) || `delivery-${index}`} className="hover:bg-white/5 transition-all duration-200">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-700 text-white flex items-center justify-center text-sm font-bold shadow-lg shrink-0">
+                                {(delivery.customer_name || delivery.customer_email || 'U')[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white truncate">{delivery.customer_name || delivery.customer_email?.split('@')[0] || '—'}</p>
+                                <p className="text-xs text-gray-400 truncate">{delivery.customer_email || '—'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-medium text-white">
+                            {delivery.order_items && Array.isArray(delivery.order_items) && delivery.order_items.length > 0 ? (
+                              <div>
+                                {delivery.order_items.map((item: any, idx: number) => (
+                                  <p key={idx} className={`font-semibold ${idx > 0 ? 'mt-1 text-gray-300' : ''}`}>
+                                    {item.quantity && item.quantity > 1 ? `${item.quantity}x ` : ''}{item.title || 'Item'}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="font-semibold">{delivery.item_title || '—'}</p>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-300">
+                            {delivery.delivery_address ? (
+                              <div className="space-y-0.5">
+                                {delivery.delivery_address.street && (
+                                  <p className="font-medium text-white">{delivery.delivery_address.street}</p>
+                                )}
+                                {(delivery.delivery_address.city || delivery.delivery_address.zip) && (
+                                  <p className="text-xs text-gray-400">
+                                    {delivery.delivery_address.city}{delivery.delivery_address.city && delivery.delivery_address.zip && ', '}{delivery.delivery_address.zip}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">No address</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm">
+                              <p className="font-semibold text-white">{delivery.site_brand_name || delivery.handle || '—'}</p>
+                              {delivery.site_brand_name && delivery.handle && (
+                                <p className="text-xs text-gray-400">@{delivery.handle}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm font-bold text-white">
+                            <div>
+                              <p>{delivery.amount_cents ? `$${(delivery.amount_cents / 100).toFixed(2)}` : (delivery.item_price || '—')}</p>
+                              {delivery.delivery_fee_cents && delivery.delivery_fee_cents > 0 && (
+                                <p className="text-xs text-cyan-400">+${(delivery.delivery_fee_cents / 100).toFixed(2)} delivery</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold gap-2 ${
+                              delivery.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              delivery.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              <span className={`w-2 h-2 rounded-full ${
+                                delivery.status === 'completed' ? 'bg-green-600' :
+                                delivery.status === 'pending' ? 'bg-yellow-600' :
+                                'bg-gray-600'
+                              }`}></span>
+                              {delivery.status || 'pending'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(delivery);
+                                setOrderDetailOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 font-semibold text-xs transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-6 py-4 bg-white/5 border-t border-white/10 text-center">
+                  <p className="text-sm text-gray-400">
+                    {orders.filter(o => o.delivery_method === 'delivery').length} active deliver{orders.filter(o => o.delivery_method === 'delivery').length !== 1 ? 'ies' : 'y'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Edit Preview Modal */}
