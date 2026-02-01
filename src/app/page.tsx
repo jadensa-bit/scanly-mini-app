@@ -1180,6 +1180,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* How It Works - 3 Steps */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-black via-purple-950/10 to-black overflow-hidden">
+        <div className="max-w-5xl mx-auto">
           <motion.h3
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
