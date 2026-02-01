@@ -217,6 +217,62 @@ function storageKey(handle: string) {
   return `piqo:site:${handle}`;
 }
 
+// Clean up old localStorage drafts to prevent quota issues
+function cleanupOldDrafts(keepHandle?: string) {
+  if (typeof window === "undefined") return;
+  
+  try {
+    const keys = Object.keys(localStorage);
+    const draftKeys = keys.filter(k => k.startsWith('piqo:site:'));
+    
+    // If we have more than 10 drafts, remove the oldest ones
+    if (draftKeys.length > 10) {
+      const draftsWithTime = draftKeys
+        .filter(k => k !== storageKey(keepHandle || ''))
+        .map(key => {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            return { key, createdAt: data.createdAt || 0 };
+          } catch {
+            return { key, createdAt: 0 };
+          }
+        })
+        .sort((a, b) => a.createdAt - b.createdAt);
+      
+      // Remove oldest drafts (keep newest 10)
+      const toRemove = draftsWithTime.slice(0, draftsWithTime.length - 9);
+      toRemove.forEach(({ key }) => {
+        try {
+          localStorage.removeItem(key);
+          console.log('🧹 Cleaned up old draft:', key);
+        } catch {}
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to cleanup old drafts:', error);
+  }
+}
+
+// Safe localStorage save with cleanup on quota exceeded
+function safeLocalStorageSet(key: string, value: string, handle?: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error: any) {
+    if (error.name === 'QuotaExceededError') {
+      console.warn('⚠️ localStorage quota exceeded, cleaning up old drafts...');
+      cleanupOldDrafts(handle);
+      // Try again after cleanup
+      try {
+        localStorage.setItem(key, value);
+      } catch (retryError) {
+        console.error('Failed to save to localStorage even after cleanup:', retryError);
+      }
+    } else {
+      console.error('localStorage error:', error);
+    }
+  }
+}
+
 // Use the centralized utility for URL generation
 // Removed local buildPublicUrl - now imported from @/lib/storefrontUrls
 
@@ -543,9 +599,7 @@ export default function CreatePage() {
       active: true,
       createdAt: Date.now(),
     };
-    try {
-      localStorage.setItem(storageKey(h), JSON.stringify(draft));
-    } catch {}
+    safeLocalStorageSet(storageKey(h), JSON.stringify(draft), h);
   }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail, deliveryEnabled, deliveryFee, deliveryFreeAbove, deliveryTime, deliveryZones]);
 
   // Debounce handle input to prevent spazzing
@@ -821,7 +875,7 @@ async function startStripeConnect() {
   // ✅ FORCE SAVE DRAFT BEFORE REDIRECT
   if (configDraft) {
     try {
-      localStorage.setItem(storageKey(h), JSON.stringify(configDraft));
+      safeLocalStorageSet(storageKey(h), JSON.stringify(configDraft), h);
     } catch {}
   }
 
@@ -894,7 +948,7 @@ async function startStripeConnect() {
         const base = configDraft;
         if (base) {
           try {
-            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: preview, createdAt: Date.now() }));
+            safeLocalStorageSet(storageKey(h), JSON.stringify({ ...base, brandLogo: preview, createdAt: Date.now() }), h);
           } catch {}
           skipNextPreviewTickRef.current = true;
           setPreviewTick((x) => x + 1);
@@ -938,7 +992,7 @@ async function startStripeConnect() {
             const base = configDraft;
             if (base) {
               try {
-                localStorage.setItem(storageKey(h), JSON.stringify({ ...base, brandLogo: data.url, createdAt: Date.now() }));
+                safeLocalStorageSet(storageKey(h), JSON.stringify({ ...base, brandLogo: data.url, createdAt: Date.now() }), h);
               } catch {}
               skipNextPreviewTickRef.current = true;
               setPreviewTick((x) => x + 1);
@@ -1030,7 +1084,7 @@ async function startStripeConnect() {
         const base = configDraft;
         if (base) {
           try {
-            localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: preview, createdAt: Date.now() }));
+            safeLocalStorageSet(storageKey(h), JSON.stringify({ ...base, profilePic: preview, createdAt: Date.now() }), h);
           } catch {}
           skipNextPreviewTickRef.current = true;
           setPreviewTick((x) => x + 1);
@@ -1056,7 +1110,7 @@ async function startStripeConnect() {
             const base = configDraft;
             if (base) {
               try {
-                localStorage.setItem(storageKey(h), JSON.stringify({ ...base, profilePic: data.url, createdAt: Date.now() }));
+                safeLocalStorageSet(storageKey(h), JSON.stringify({ ...base, profilePic: data.url, createdAt: Date.now() }), h);
               } catch {}
               skipNextPreviewTickRef.current = true;
               setPreviewTick((x) => x + 1);
@@ -1100,9 +1154,7 @@ async function startStripeConnect() {
         const base = configDraft;
         if (base) {
           const updated = { ...base, staffProfiles: (base.staffProfiles || []).map((p, i) => (i === idx ? { ...p, photo: preview } : p)) };
-          try {
-            localStorage.setItem(storageKey(h), JSON.stringify({ ...updated, createdAt: Date.now() }));
-          } catch {}
+          safeLocalStorageSet(storageKey(h), JSON.stringify({ ...updated, createdAt: Date.now() }), h);
           skipNextPreviewTickRef.current = true;
           setPreviewTick((x) => x + 1);
         }
@@ -1242,7 +1294,7 @@ async function startStripeConnect() {
     () =>
       debounce((cfg: BuildConfig) => {
         try {
-          localStorage.setItem(storageKey(cfg.handle), JSON.stringify(cfg));
+          safeLocalStorageSet(storageKey(cfg.handle), JSON.stringify(cfg), cfg.handle);
         } catch {}
 
         // Avoid a second iframe refresh when we already refreshed instantly.
@@ -1302,7 +1354,7 @@ async function startStripeConnect() {
                   const stored = storedRaw ? JSON.parse(storedRaw) : cfg;
                   stored.publishedAt = publishedAt;
                   stored.active = true;
-                  localStorage.setItem(storageKey(cfg.handle), JSON.stringify(stored));
+                  safeLocalStorageSet(storageKey(cfg.handle), JSON.stringify(stored), cfg.handle);
                 } catch (error) {
                   console.error("Failed to update local storage after publish:", error);
                 }
@@ -1693,7 +1745,7 @@ useEffect(() => {
     };
 
     try {
-      localStorage.setItem(storageKey(h), JSON.stringify(config));
+      safeLocalStorageSet(storageKey(h), JSON.stringify(config), h);
     } catch {}
 
     setSaving(true);
