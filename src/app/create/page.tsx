@@ -15,6 +15,7 @@ import {
   Palette,
   Smartphone,
   CheckCircle2,
+  Check,
   AlertTriangle,
   Zap,
   LayoutTemplate,
