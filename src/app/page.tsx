@@ -95,7 +95,7 @@ function InstallBanner() {
             <Download className="w-6 h-6 text-purple-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-base sm:text-lg">Get the piqo-builder App</p>
+            <p className="text-white font-bold text-base sm:text-lg">Get the MyScanly App</p>
             <p className="text-white/90 text-sm">Install for faster access & offline use</p>
           </div>
           <button
@@ -1159,7 +1159,7 @@ export default function Home() {
               href="/signup"
               className="inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-lg sm:text-xl md:text-2xl hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group active:scale-95 w-full sm:w-auto max-w-md"
             >
-              <span className="hidden sm:inline">Get Your First Piqo — Free Forever</span>
+              <span className="hidden sm:inline">Get Your First Store — Free Forever</span>
               <span className="sm:hidden">Start Free</span>
               <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
             </a>
@@ -1447,7 +1447,7 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
-              Why businesses love piqo
+              Why businesses love MyScanly
             </h2>
             <p className="text-lg text-gray-400">It's dead simple. And it works.</p>
           </motion.div>
@@ -1527,7 +1527,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-green-400 flex-shrink-0"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="whitespace-nowrap">♾️ First piqo FREE forever</span>
+              <span className="whitespace-nowrap">♾️ First store FREE forever</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 sm:px-4 py-2 border border-white/15 hover:bg-white/15 hover:border-white/25 transition-all duration-200">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="inline-block text-pink-400 flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1556,7 +1556,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2">
-              Already have a piqo?
+              Already have a store?
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 max-w-2xl mx-auto font-medium px-2">
               Access your dashboard to manage your store, or use QR check-in for customer bookings.
@@ -1566,7 +1566,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Comparison Section - piqo vs Old Way */}
+      {/* Comparison Section - MyScanly vs Old Way */}
       <section className="relative py-20 sm:py-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-gray-900 via-black to-gray-900">
         <div className="max-w-5xl mx-auto">
           <motion.h3
@@ -1575,7 +1575,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-3 sm:mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
           >
-            The old way vs. the piqo way
+            The old way vs. the MyScanly way
           </motion.h3>
           <motion.p
             initial={{ opacity: 0 }}
@@ -1633,7 +1633,7 @@ export default function Home() {
                 <p className="text-red-300 font-bold text-center">⏱️ Total time: 5-15 minutes (if they don't quit)</p>
               </div>
             </motion.div>
-            {/* piqo Way */}
+            {/* MyScanly Way */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -1645,7 +1645,7 @@ export default function Home() {
                 <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-full flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="text-2xl font-black text-cyan-300">piqo Way (Fast ⚡)</h4>
+                <h4 className="text-2xl font-black text-cyan-300">MyScanly Way (Fast ⚡)</h4>
               </div>
               <ul className="space-y-4 relative z-10">
                 <li className="flex items-start gap-3 text-gray-300">
@@ -1670,7 +1670,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start gap-3 text-gray-300">
                   <span className="text-cyan-400 mt-1">✅</span>
-                  <span className="font-medium">$0/month (first piqo FREE forever)</span>
+                  <span className="font-medium">$0/month (first store FREE forever)</span>
                 </li>
               </ul>
               <div className="mt-6 p-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-xl border border-cyan-500/30 relative z-10">
@@ -1907,7 +1907,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-4xl sm:text-5xl md:text-6xl font-black text-center mb-4 sm:mb-6 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2"
           >
-            Why piqo beats traditional stores
+            Why MyScanly beats traditional stores
           </motion.h2>
           
           <motion.p
@@ -1994,7 +1994,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center text-gray-400 mb-10 sm:mb-16 text-base sm:text-lg px-2"
           >
-            Real results from creators using piqo
+            Real results from creators using MyScanly
           </motion.p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <motion.div
@@ -2222,8 +2222,8 @@ export default function Home() {
               viewport={{ once: true }}
               className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
             >
-              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">👋 Is piqo really free?</h4>
-              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Yes! Your first piqo is 100% free forever—no hidden fees, no trials, no limits. When you want to create additional piqos (for more locations or brands), it's just $15/month per extra piqo. To accept payments, connect Stripe (standard processing fees apply).</p>
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">👋 Is MyScanly really free?</h4>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Yes! Your first store is 100% free forever—no hidden fees, no trials, no limits. When you want to create additional stores (for more locations or brands), it's just $15/month per extra store. To accept payments, connect Stripe (standard processing fees apply).</p>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -2243,7 +2243,7 @@ export default function Home() {
               className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
             >
               <h4 className="text-lg sm:text-xl font-bold text-white mb-2">💳 Do I need Stripe right away?</h4>
-              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Nope! You can create your piqo now and connect Stripe whenever you want. Perfect for testing, getting feedback, or going live before handling payments.</p>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Nope! You can create your store now and connect Stripe whenever you want. Perfect for testing, getting feedback, or going live before handling payments.</p>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -2263,7 +2263,7 @@ export default function Home() {
               className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/8 transition-all"
             >
               <h4 className="text-lg sm:text-xl font-bold text-white mb-2">🤔 What if I'm not tech-savvy?</h4>
-              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Perfect! piqo is built for people who hate tech. If you can text, you can use piqo. No coding, no complicated dashboards. Just simple forms and buttons.</p>
+              <p className="text-gray-400 leading-relaxed text-sm sm:text-base">Perfect! MyScanly is built for people who hate tech. If you can text, you can use MyScanly. No coding, no complicated dashboards. Just simple forms and buttons.</p>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -2296,7 +2296,7 @@ export default function Home() {
             className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-full mb-6 sm:mb-8"
           >
             <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-bold text-yellow-300 whitespace-nowrap">First piqo FREE forever • No credit card • Live in 90 seconds</span>
+            <span className="text-xs sm:text-sm font-bold text-yellow-300 whitespace-nowrap">First store FREE forever • No credit card • Live in 90 seconds</span>
           </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -2363,8 +2363,8 @@ export default function Home() {
             </Link>
           </div>
           <div className="text-gray-500 text-xs">
-            © 2026 piqo-builder LLC. All rights reserved.<br />
-            piqo is a brand name used for a QR-based storefront and mini-app platform.
+            © 2026 MyScanly LLC. All rights reserved.<br />
+            MyScanly is a QR-based storefront and mini-app platform.
           </div>
         </div>
       </footer>

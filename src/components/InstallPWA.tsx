@@ -66,7 +66,7 @@ export default function InstallPWA() {
         onClick={handleInstall}
         disabled={isInstalling}
         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:from-cyan-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl active:scale-95 animate-pulse hover:animate-none disabled:opacity-75 disabled:cursor-wait"
-        title={isIOS ? 'Get installation instructions' : 'Download piqo-builder to your device'}
+        title={isIOS ? 'Get installation instructions' : 'Download MyScanly to your device'}
       >
         <svg 
           className="w-5 h-5" 
@@ -106,7 +106,7 @@ export default function InstallPWA() {
             </div>
 
             <h3 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              Add piqo-builder to Home Screen
+              Add MyScanly to Home Screen
             </h3>
             
             <p className="text-center text-gray-600 mb-6 text-sm">

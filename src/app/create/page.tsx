@@ -430,9 +430,9 @@ export default function CreatePage() {
 
   // Declare all state hooks before any useEffect that references them
   const [mode, setMode] = useState<ModeId>("services");
-  const [brandName, setBrandName] = useState("My Piqo");
-  const [handleRaw, setHandleRaw] = useState("my-piqo");
-  const [handleInput, setHandleInput] = useState("my-piqo"); // Local input state for immediate UI updates
+  const [brandName, setBrandName] = useState("My Store");
+  const [handleRaw, setHandleRaw] = useState("my-store");
+  const [handleInput, setHandleInput] = useState("my-store"); // Local input state for immediate UI updates
   const [tagline, setTagline] = useState("Scan → tap → done.");
   const [businessDescription, setBusinessDescription] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -1142,7 +1142,7 @@ async function startStripeConnect() {
 
     return {
       mode,
-      brandName: brandName.trim() || "My Piqo",
+      brandName: brandName.trim() || "My Store",
       handle: h,
       tagline: tagline.trim(),
       businessDescription: businessDescription.trim() || undefined,
@@ -1948,7 +1948,7 @@ useEffect(() => {
               >
                 <Wand2 className="h-3.5 w-3.5 relative z-10" />
               </motion.div>
-              <span className="relative z-10">{isEditMode ? "Editing Piqo" : "Piqo Builder"}</span>
+              <span className="relative z-10">{isEditMode ? "Editing Store" : "Store Builder"}</span>
             </motion.div>
 
             <motion.h1
@@ -2550,7 +2550,7 @@ useEffect(() => {
                     />
                   </label>
 
-                  <div className="text-[11px] text-white/70">Your photo will appear in the top corner of your live piqo</div>
+                  <div className="text-[11px] text-white/70">Your photo will appear in the top corner of your live store</div>
 
                   {profilePic && (
                     <div className="flex items-center gap-3 mt-2">
@@ -3581,7 +3581,7 @@ useEffect(() => {
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {[
-                  { key: "showPoweredBy", label: "Powered by Piqo" },
+                  { key: "showPoweredBy", label: "Powered by MyScanly" },
                   { key: "showStaff", label: "Staff / team section" },
                   { key: "showSocials", label: "Social + contact buttons" },
                   { key: "showHours", label: "Business hours" },
@@ -3625,7 +3625,7 @@ useEffect(() => {
                     maxLength={100}
                   />
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-white/65">Displays as a banner at the top of your piqo</span>
+                    <span className="text-[11px] text-white/65">Displays as a banner at the top of your store</span>
                     <span className="text-[10px] text-white/50">{(appearance.specialMessage || "").length}/100</span>
                   </div>
                 </label>
@@ -4045,7 +4045,7 @@ useEffect(() => {
               </div>
 
               <div className="mt-2 text-[11px] text-white/65">
-                Add your bio and contact info to help customers learn more about you. This appears when they click the "About" button on your piqo.
+                Add your bio and contact info to help customers learn more about you. This appears when they click the "About" button on your store.
               </div>
             </section>
 
@@ -5263,12 +5263,12 @@ useEffect(() => {
                                     </div>
                                   )}
 
-                                  {/* Powered by Piqo Footer */}
+                                  {/* Powered by MyScanly Footer */}
                                   {(appearance.showPoweredBy ?? true) && (
                                     <div className="px-3 py-2 bg-gray-100 text-center">
                                       <div className="text-[8px] text-gray-500 font-medium">
                                         Powered by{" "}
-                                        <span className="font-bold text-gray-700">Piqo</span>
+                                        <span className="font-bold text-gray-700">MyScanly</span>
                                       </div>
                                     </div>
                                   )}
@@ -5419,7 +5419,7 @@ useEffect(() => {
                 ) : (!isEditMode && !canCreateMore) ? (
                   <>
                     <X className="h-6 w-6" />
-                    Piqo limit reached
+                    Store limit reached
                   </>
                 ) : (
                   <>
@@ -5430,7 +5430,7 @@ useEffect(() => {
               </button>
               <div className="mt-3 text-center text-sm font-semibold text-white/80 relative z-10">
                 {(!isEditMode && !canCreateMore) ? (
-                  <span className="text-red-300">Upgrade to Pro to create more piqos</span>
+                  <span className="text-red-300">Upgrade to Pro to create more stores</span>
                 ) : cleanHandle ? (
                   <>Publish to <span className="text-green-300 font-bold">/u/{cleanHandle}</span></>
                 ) : (

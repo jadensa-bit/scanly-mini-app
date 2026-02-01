@@ -21,7 +21,7 @@ export default function PricingPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-full mb-6"
           >
             <Sparkles className="w-4 h-4 text-green-400" />
-            <span className="text-sm font-bold text-green-300">First piqo is FREE forever</span>
+            <span className="text-sm font-bold text-green-300">First store is FREE forever</span>
           </motion.div>
           
           <motion.h1
@@ -76,7 +76,7 @@ export default function PricingPage() {
               <div className="space-y-3 mb-8 flex-1">
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300">1 piqo storefront</span>
+                  <span className="text-gray-300">1 storefront</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" />
@@ -138,7 +138,7 @@ export default function PricingPage() {
                   <span className="text-5xl font-black text-white">$15</span>
                   <span className="text-gray-400">/month</span>
                 </div>
-                <p className="text-purple-400 font-semibold mt-2">Per additional piqo</p>
+                <p className="text-purple-400 font-semibold mt-2">Per additional store</p>
               </div>
 
               <div className="space-y-3 mb-8 flex-1">
@@ -148,7 +148,7 @@ export default function PricingPage() {
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300">Unlimited piqo storefronts</span>
+                  <span className="text-gray-300">Unlimited storefronts</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
@@ -232,7 +232,7 @@ export default function PricingPage() {
               </div>
 
               <a
-                href="mailto:hello@piqo.build"
+                href="mailto:hello@myscanly.com"
                 className="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black rounded-xl font-bold text-center hover:shadow-lg hover:shadow-yellow-500/50 transition-all group flex items-center justify-center gap-2"
               >
                 Contact Sales
@@ -252,23 +252,23 @@ export default function PricingPage() {
           
           <div className="space-y-4">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h3 className="text-xl font-bold text-white mb-2">Is the first piqo really free forever?</h3>
-              <p className="text-gray-400">Yes! Your first piqo storefront is 100% free with no time limits. Create your QR code, add unlimited products, accept payments—all free. Forever.</p>
+              <h3 className="text-xl font-bold text-white mb-2">Is the first store really free forever?</h3>
+              <p className="text-gray-400">Yes! Your first storefront is 100% free with no time limits. Create your QR code, add unlimited products, accept payments—all free. Forever.</p>
             </div>
             
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-bold text-white mb-2">When do I need to upgrade?</h3>
-              <p className="text-gray-400">Only when you want to create a second piqo. If you have multiple locations, different product lines, or manage multiple brands, you'll love Pro ($15/month per additional piqo).</p>
+              <p className="text-gray-400">Only when you want to create a second store. If you have multiple locations, different product lines, or manage multiple brands, you'll love Pro ($15/month per additional store).</p>
             </div>
             
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-bold text-white mb-2">Are there any transaction fees?</h3>
-              <p className="text-gray-400">piqo never charges transaction fees. You only pay standard Stripe processing fees (2.9% + 30¢ per transaction) which go directly to Stripe, not us.</p>
+              <p className="text-gray-400">MyScanly never charges transaction fees. You only pay standard Stripe processing fees (2.9% + 30¢ per transaction) which go directly to Stripe, not us.</p>
             </div>
             
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-xl font-bold text-white mb-2">Can I cancel anytime?</h3>
-              <p className="text-gray-400">Absolutely. Cancel your Pro subscription anytime. Your first piqo will always stay free and active. No penalties, no questions asked.</p>
+              <p className="text-gray-400">Absolutely. Cancel your Pro subscription anytime. Your first store will always stay free and active. No penalties, no questions asked.</p>
             </div>
             
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
@@ -286,7 +286,7 @@ export default function PricingPage() {
             Ready to get started?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Create your first piqo in under 2 minutes. No credit card required.
+            Create your first store in under 2 minutes. No credit card required.
           </p>
           <Link
             href="/signup"

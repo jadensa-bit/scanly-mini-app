@@ -1864,11 +1864,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                           </div>
                         </div>
                       )}
-                      {/* Powered by Piqo Footer */}
+                      {/* Powered by MyScanly Footer */}
                       {(appearance.showPoweredBy ?? true) && (
                         <div className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-50 text-center border-t-2 border-gray-200">
                           <div className="text-xs text-gray-600 font-bold">
-                            Powered by <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">piqo</span>
+                            Powered by <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">MyScanly</span>
                           </div>
                         </div>
                       )}

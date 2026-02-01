@@ -1,6 +1,6 @@
 {
-  "name": "piqo-builder",
-  "short_name": "piqo-builder",
+  "name": "MyScanly",
+  "short_name": "MyScanly",
   "description": "Create instant QR storefronts, services, and bookings",
   "start_url": "/",
   "display": "standalone",
