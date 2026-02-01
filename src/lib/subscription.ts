@@ -1,6 +1,12 @@
 // Subscription utilities for checking user tier and features
 import { supabase } from '@/lib/supabaseclient';
 
+// Special accounts with unlimited access (VIP/Admin)
+const UNLIMITED_ACCOUNTS = [
+  'x@gmail.com',
+  // Add more emails here as needed
+];
+
 export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing';
 
@@ -21,10 +27,41 @@ export interface SubscriptionInfo {
 }
 
 /**
+ * Check if email is in unlimited accounts list
+ */
+async function isUnlimitedEmail(userId: string): Promise<boolean> {
+  try {
+    // Try to get email from current session first
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id === userId && session?.user?.email) {
+      return UNLIMITED_ACCOUNTS.includes(session.user.email.toLowerCase());
+    }
+    
+    // Fallback: check if profiles table has email column
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', userId)
+      .single();
+    
+    if (profile?.email) {
+      return UNLIMITED_ACCOUNTS.includes(profile.email.toLowerCase());
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get user's subscription information
  */
 export async function getUserSubscription(userId: string): Promise<SubscriptionInfo | null> {
   try {
+    // Check if this is a special unlimited account
+    const isUnlimitedAccount = await isUnlimitedEmail(userId);
+
     // Get profile data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -62,22 +99,22 @@ export async function getUserSubscription(userId: string): Promise<SubscriptionI
 
     const tier = (profile.subscription_tier || 'free') as SubscriptionTier;
     const status = (profile.subscription_status || 'active') as SubscriptionStatus;
-    const piqoLimit = profile.piqo_limit || 1;
+    const piqoLimit = isUnlimitedAccount ? -1 : (profile.piqo_limit || 1);
 
-    // Define features based on tier
+    // Define features based on tier or unlimited account status
     const features = {
-      unlimitedPiqos: tier === 'pro' || tier === 'enterprise',
-      advancedAnalytics: tier === 'pro' || tier === 'enterprise',
-      customBranding: tier === 'pro' || tier === 'enterprise',
-      prioritySupport: tier === 'enterprise',
-      whiteLabel: tier === 'enterprise',
-      teamAccess: tier === 'enterprise',
+      unlimitedPiqos: isUnlimitedAccount || tier === 'pro' || tier === 'enterprise',
+      advancedAnalytics: isUnlimitedAccount || tier === 'pro' || tier === 'enterprise',
+      customBranding: isUnlimitedAccount || tier === 'pro' || tier === 'enterprise',
+      prioritySupport: isUnlimitedAccount || tier === 'enterprise',
+      whiteLabel: isUnlimitedAccount || tier === 'enterprise',
+      teamAccess: isUnlimitedAccount || tier === 'enterprise',
     };
 
     // Check if user can create more piqos
-    const canCreateMore = tier === 'free' 
+    const canCreateMore = isUnlimitedAccount || (tier === 'free' 
       ? currentPiqoCount < piqoLimit 
-      : true; // Pro and enterprise have unlimited
+      : true); // Pro and enterprise have unlimited
 
     return {
       tier,
