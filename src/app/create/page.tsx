@@ -190,6 +190,7 @@ mode: ModeId;
     fee: number;
     freeAbove?: number;
     estimatedTime?: string;
+    radius?: number;
     zones?: string[];
   };
 };
@@ -502,6 +503,7 @@ export default function CreatePage() {
   const [brandLogo, setBrandLogo] = useState("");
   const [profilePic, setProfilePic] = useState("");
   const [items, setItems] = useState<BuildItem[]>(pickDefaultItemsForMode("services"));
+  const [deliveryRadius, setDeliveryRadius] = useState(5); // Default 5 miles
   const [appearance, setAppearance] = useState<Appearance>({
     preset: "neon",
     accent: "#22D3EE",
@@ -594,13 +596,14 @@ export default function CreatePage() {
         fee: deliveryFee,
         freeAbove: deliveryFreeAbove,
         estimatedTime: deliveryTime,
+        radius: deliveryRadius,
         zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
       } : undefined,
       active: true,
       createdAt: Date.now(),
     };
     safeLocalStorageSet(storageKey(h), JSON.stringify(draft), h);
-  }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail, deliveryEnabled, deliveryFee, deliveryFreeAbove, deliveryTime, deliveryZones]);
+  }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail, deliveryEnabled, deliveryFee, deliveryFreeAbove, deliveryTime, deliveryRadius, deliveryZones]);
 
   // Debounce handle input to prevent spazzing
   useEffect(() => {
@@ -1265,6 +1268,7 @@ async function startStripeConnect() {
         fee: deliveryFee,
         freeAbove: deliveryFreeAbove,
         estimatedTime: deliveryTime,
+        radius: deliveryRadius,
         zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
       } : undefined,
     };
@@ -1286,6 +1290,7 @@ async function startStripeConnect() {
     deliveryFee,
     deliveryFreeAbove,
     deliveryTime,
+    deliveryRadius,
     deliveryZones,
     profilePic,
   ]);
@@ -2348,6 +2353,7 @@ useEffect(() => {
                                     fee: deliveryFee,
                                     freeAbove: deliveryFreeAbove,
                                     estimatedTime: deliveryTime,
+                                    radius: deliveryRadius,
                                     zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
                                   } : undefined}
                                 />
@@ -4207,6 +4213,24 @@ useEffect(() => {
                         className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
                         placeholder="30-45 min"
                       />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Delivery Radius</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          step="1"
+                          value={deliveryRadius}
+                          onChange={(e) => setDeliveryRadius(parseFloat(e.target.value) || 5)}
+                          className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 pr-16 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                          placeholder="5"
+                        />
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/55 text-sm">miles</span>
+                      </div>
+                      <span className="text-[10px] text-white/50">How far will you deliver?</span>
                     </label>
 
                     <label className="grid gap-1">

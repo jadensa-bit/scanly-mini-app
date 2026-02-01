@@ -390,6 +390,7 @@ export async function GET(req: Request) {
             fee: 5,
             freeAbove: 100,
             estimatedTime: '30-45 min',
+            radius: 5,
             zones: ['Downtown', 'Midtown', 'Uptown']
           }
         }
@@ -462,6 +463,7 @@ export async function GET(req: Request) {
             fee: 0,
             freeAbove: 0,
             estimatedTime: 'Instant digital delivery',
+            radius: 0,
             zones: []
           }
         }

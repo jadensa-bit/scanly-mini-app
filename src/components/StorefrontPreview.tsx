@@ -98,6 +98,7 @@ export type StorefrontPreviewProps = {
     fee: number;
     freeAbove?: number;
     estimatedTime?: string;
+    radius?: number;
     zones?: string[];
   };
 };
@@ -290,6 +291,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryCity, setDeliveryCity] = useState("");
+  const [deliveryZip, setDeliveryZip] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -652,6 +656,11 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             customer_email: customerEmail.trim(),
             delivery_method: props.delivery?.enabled ? deliveryChoice : undefined,
             delivery_fee: deliveryFee,
+            delivery_address: deliveryChoice === "delivery" && props.delivery?.enabled ? {
+              street: deliveryAddress.trim(),
+              city: deliveryCity.trim(),
+              zip: deliveryZip.trim()
+            } : undefined,
             items: cart.map(ci => ({
               item_title: ci.item.title || "",
               item_price: ci.item.price || "",
@@ -680,6 +689,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
           setCustomerName("");
           setCustomerEmail("");
           setDeliveryChoice("pickup");
+          setDeliveryAddress("");
+          setDeliveryCity("");
+          setDeliveryZip("");
           setBookingLoading(false);
           return;
         }
@@ -2067,6 +2079,41 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         Est. delivery: {props.delivery.estimatedTime}
                       </p>
                     )}
+                    {deliveryChoice === "delivery" && props.delivery.radius && (
+                      <p className="text-xs text-gray-500 text-center">
+                        📍 Delivering within {props.delivery.radius} miles
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* Delivery Address - only show if delivery selected */}
+                {deliveryChoice === "delivery" && props.delivery?.enabled && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-700">Delivery Address:</label>
+                    <input
+                      type="text"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      placeholder="Street address"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={deliveryCity}
+                        onChange={(e) => setDeliveryCity(e.target.value)}
+                        placeholder="City"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
+                      />
+                      <input
+                        type="text"
+                        value={deliveryZip}
+                        onChange={(e) => setDeliveryZip(e.target.value)}
+                        placeholder="ZIP code"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
+                      />
+                    </div>
                   </div>
                 )}
                 
