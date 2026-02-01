@@ -60,7 +60,6 @@ type Site = {
 };
 
 import { subscribeToBookings, subscribeToOrders } from './realtime';
-import PiqoLogoFull from '@/components/PiqoLogoFull';
 import { supabase } from '@/lib/supabaseclient';
 
 export default function DashboardPage() {
@@ -429,13 +428,13 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2.5 sm:gap-5">
               <div className="relative group">
                 <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl sm:rounded-3xl blur-lg opacity-40 group-hover:opacity-60 transition duration-300 animate-pulse"></div>
-                <div className="relative w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-xl sm:rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                  <PiqoLogoFull />
+                <div className="relative w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-cyan-500 via-purple-500 to-pink-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                  <Store className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 tracking-tight">Dashboard</h1>
-                <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm mt-0.5 sm:mt-1 lg:mt-2 font-medium">Manage your piqos, bookings & orders in real-time</p>
+                <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm mt-0.5 sm:mt-1 lg:mt-2 font-medium">Manage your stores, appointments & sales</p>
               </div>
             </div>
             <Link
