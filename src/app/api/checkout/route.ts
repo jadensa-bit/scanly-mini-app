@@ -202,6 +202,9 @@ export async function POST(req: Request) {
           customer_name: body?.customer_name || null,
           customer_email: body?.customer_email || null,
           order_items: orderItemsForDb,
+          delivery_method: body?.delivery_method || null,
+          delivery_fee_cents: body?.delivery_fee ? toCents(body.delivery_fee) : 0,
+          delivery_address: body?.delivery_address || null,
         })
         .select()
         .single();
@@ -287,6 +290,9 @@ export async function POST(req: Request) {
         customer_name: body?.customer_name || null,
         customer_email: body?.customer_email || null,
         order_items: orderItemsForDb, // Store multiple items as JSON
+        delivery_method: body?.delivery_method || null,
+        delivery_fee_cents: body?.delivery_fee ? toCents(body.delivery_fee) : 0,
+        delivery_address: body?.delivery_address || null,
       })
       .select()
       .single();

@@ -41,6 +41,13 @@ type Order = {
     note?: string;
   }>;
   amount_cents?: number;
+  delivery_method?: string;
+  delivery_fee_cents?: number;
+  delivery_address?: {
+    street?: string;
+    city?: string;
+    zip?: string;
+  };
 };
 
 type Site = {
@@ -1579,13 +1586,22 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-6 py-4 text-sm">
                         {o.mode ? (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            o.mode === 'products' ? 'bg-orange-100 text-orange-800' :
-                            o.mode === 'digital' ? 'bg-pink-100 text-pink-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {o.mode === 'products' ? '🛍️ Products' : o.mode === 'digital' ? '⚡ Digital' : o.mode}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                              o.mode === 'products' ? 'bg-orange-100 text-orange-800' :
+                              o.mode === 'digital' ? 'bg-pink-100 text-pink-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {o.mode === 'products' ? '🛍️ Products' : o.mode === 'digital' ? '⚡ Digital' : o.mode}
+                            </span>
+                            {o.delivery_method && (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                o.delivery_method === 'delivery' ? 'bg-cyan-100 text-cyan-800' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {o.delivery_method === 'delivery' ? '🚚 Delivery' : '🏪 Pickup'}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
@@ -1857,12 +1873,50 @@ export default function DashboardPage() {
                       <span className="text-gray-600">Subtotal</span>
                       <span className="font-medium text-gray-900">{selectedOrder.item_price || '—'}</span>
                     </div>
+                    {selectedOrder.delivery_method === 'delivery' && selectedOrder.delivery_fee_cents !== undefined && selectedOrder.delivery_fee_cents > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Delivery Fee</span>
+                        <span className="font-medium text-gray-900">${(selectedOrder.delivery_fee_cents / 100).toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="border-t border-gray-200 pt-2 flex justify-between">
                       <span className="font-bold text-gray-900">Total</span>
                       <span className="font-bold text-gray-900 text-lg">{selectedOrder.item_price || '—'}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Delivery Info - Only show if delivery method is set */}
+                {selectedOrder.delivery_method && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fulfillment</p>
+                    <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg p-4 border border-cyan-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-600 text-white flex items-center justify-center">
+                          {selectedOrder.delivery_method === 'delivery' ? '🚚' : '🏪'}
+                        </div>
+                        <span className="font-bold text-gray-900">
+                          {selectedOrder.delivery_method === 'delivery' ? 'Delivery' : 'Pickup'}
+                        </span>
+                      </div>
+                      {selectedOrder.delivery_method === 'delivery' && selectedOrder.delivery_address && (
+                        <div className="pl-10 space-y-1">
+                          <p className="text-sm font-semibold text-gray-900">Delivery Address:</p>
+                          {selectedOrder.delivery_address.street && (
+                            <p className="text-sm text-gray-700">{selectedOrder.delivery_address.street}</p>
+                          )}
+                          {(selectedOrder.delivery_address.city || selectedOrder.delivery_address.zip) && (
+                            <p className="text-sm text-gray-700">
+                              {selectedOrder.delivery_address.city}
+                              {selectedOrder.delivery_address.city && selectedOrder.delivery_address.zip && ', '}
+                              {selectedOrder.delivery_address.zip}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Status & Date */}
                 <div className="grid grid-cols-2 gap-4">
