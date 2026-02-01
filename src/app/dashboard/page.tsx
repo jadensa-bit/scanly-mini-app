@@ -2,8 +2,8 @@
 // Real-time Dashboard Page
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Calendar, ShoppingCart, Eye, Settings, Edit, Trash2, Download, Check, X, ChevronRight, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, Calendar, ShoppingCart, Eye, Settings, Edit, Trash2, Download, Check, X, ChevronRight, Sparkles, Package, TrendingUp, Users, Store } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
 import PiqoLivePreview from '@/components/PiqoLivePreview';
 
@@ -95,6 +95,9 @@ export default function DashboardPage() {
   // Completed orders state
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
   const [showCompletedOrders, setShowCompletedOrders] = useState(true);
+  
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'bookings' | 'orders' | 'fulfillment'>('overview');
 
   // Helper functions for week calculations
   const getWeekBounds = (weekOffset: number) => {
@@ -447,6 +450,93 @@ export default function DashboardPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8 lg:py-10 relative">
+        {/* Tab Navigation */}
+        <div className="mb-6 sm:mb-8">
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur"></div>
+            <div className="relative bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-xl rounded-2xl p-2 border border-white/10">
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    activeTab === 'overview'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Overview</span>
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('stores')}
+                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    activeTab === 'stores'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <Store className="h-4 w-4" />
+                    <span className="hidden sm:inline">My Stores</span>
+                    <span className="sm:hidden">Stores</span>
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('bookings')}
+                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    activeTab === 'bookings'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <Calendar className="h-4 w-4" />
+                    Bookings
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    activeTab === 'orders'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <ShoppingCart className="h-4 w-4" />
+                    Orders
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('fulfillment')}
+                  className={`flex-1 sm:flex-initial px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
+                    activeTab === 'fulfillment'
+                      ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 justify-center">
+                    <Package className="h-4 w-4" />
+                    <span className="hidden sm:inline">Fulfillment</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Overview Tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'overview' && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
         {/* Recent Activity Summary */}
         {!loading && (
           <section className="mb-8 sm:mb-10">
@@ -577,7 +667,20 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Stores Tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'stores' && (
+            <motion.div
+              key="stores"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
         {/* Sites Section */}
         <section className="mb-12 sm:mb-16">
           <div className="bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 border border-white/10">
@@ -1180,7 +1283,20 @@ export default function DashboardPage() {
             </>
           )}
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Bookings Tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'bookings' && (
+            <motion.div
+              key="bookings"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
         {/* Bookings Section */}
         <section className="mb-16">
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
@@ -1409,7 +1525,20 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Orders Tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'orders' && (
+            <motion.div
+              key="orders"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
         {/* Orders Section */}
         <section>
           <div className="bg-gradient-to-r from-pink-500/10 to-orange-500/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 mb-6 border border-white/10">
@@ -1673,7 +1802,20 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        {/* Fulfillment Tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'fulfillment' && (
+            <motion.div
+              key="fulfillment"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
         {/* Deliveries Section */}
         <section className="mb-12 sm:mb-16">
           <div className="relative group mb-6">
@@ -2001,6 +2143,9 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Edit Preview Modal */}
