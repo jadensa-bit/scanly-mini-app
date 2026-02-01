@@ -253,71 +253,203 @@ export async function GET(req: Request) {
       'demo-barber': {
         user_id: 'demo',
         handle: 'demo-barber',
+        owner_email: 'demo@piqo.app',
+        stripe_connect_id: null, // Demo mode - no real payments
         config: {
-          branding: {
-            businessName: 'FreshCuts Studio',
-            tagline: 'Premium Cuts, Premium Vibes',
-            description: 'Award-winning barbershop serving the community since 2019. Walk-ins welcome!',
-            colors: { primary: '#1a1a1a', accent: '#d4af37' },
-            logo: null
-          },
-          contact: {
+          brandName: 'FreshCuts Studio',
+          tagline: '✂️ Premium Cuts, Premium Vibes',
+          businessDescription: 'Award-winning barbershop serving the community since 2019. Book your cut now!',
+          items: [
+            { 
+              type: 'service',
+              title: 'Classic Cut', 
+              price: '$35', 
+              note: 'Precision scissor cut with styling • 30 min',
+              buttonText: 'Book Now'
+            },
+            { 
+              type: 'service',
+              title: 'Cut + Beard Trim', 
+              price: '$50', 
+              note: 'Full service grooming experience • 45 min',
+              badge: 'POPULAR',
+              buttonText: 'Book Now'
+            },
+            { 
+              type: 'service',
+              title: 'Hot Towel Shave', 
+              price: '$40', 
+              note: 'Traditional straight razor shave • 30 min',
+              buttonText: 'Book Now'
+            },
+            { 
+              type: 'addon',
+              title: 'Beard Oil Treatment', 
+              price: '$10', 
+              note: 'Premium conditioning treatment',
+              buttonText: 'Add On'
+            }
+          ],
+          social: {
             phone: '(555) 123-4567',
             address: '123 Main St, Downtown',
-            hours: 'Mon-Sat: 9AM-7PM'
+            instagram: '@freshcuts',
+            bio: 'Mon-Sat: 9AM-7PM • Walk-ins welcome'
           },
-          services: [
-            { id: '1', name: 'Classic Cut', price: 35, description: 'Precision scissor cut with styling', duration: '30 min', image: null },
-            { id: '2', name: 'Cut + Beard Trim', price: 50, description: 'Full service grooming', duration: '45 min', image: null },
-            { id: '3', name: 'Hot Towel Shave', price: 40, description: 'Traditional straight razor shave', duration: '30 min', image: null }
-          ],
-          theme: 'minimal'
+          appearance: {
+            accent: '#d4af37',
+            radius: 12,
+            ctaStyle: 'solid',
+            layout: 'cards',
+            showSocials: true,
+            specialMessage: '🎉 THIS IS A DEMO - Test the booking flow!'
+          },
+          availability: {
+            days: {
+              monday: { enabled: true, start: '09:00', end: '19:00' },
+              tuesday: { enabled: true, start: '09:00', end: '19:00' },
+              wednesday: { enabled: true, start: '09:00', end: '19:00' },
+              thursday: { enabled: true, start: '09:00', end: '19:00' },
+              friday: { enabled: true, start: '09:00', end: '19:00' },
+              saturday: { enabled: true, start: '09:00', end: '19:00' },
+              sunday: { enabled: false }
+            },
+            slotMinutes: 30,
+            advanceDays: 14
+          },
+          payments: {
+            enabled: false, // Demo mode - no real payments
+            depositRequired: false,
+            depositPercentage: 0,
+            currencyCode: 'USD'
+          }
         }
       },
       'demo-products': {
         user_id: 'demo',
         handle: 'demo-products',
+        owner_email: 'demo@piqo.app',
+        stripe_connect_id: null,
         config: {
-          branding: {
-            businessName: 'VibeCo',
-            tagline: 'Streetwear That Speaks',
-            description: 'Curated drops. Limited quantities. Don\'t sleep.',
-            colors: { primary: '#ff6b35', accent: '#004e89' },
-            logo: null
-          },
-          contact: {
-            email: 'hello@vibeco.shop',
-            instagram: '@vibeco'
-          },
-          products: [
-            { id: '1', name: 'Midnight Hoodie', price: 68, description: 'Heavyweight cotton blend, embroidered logo', image: null, stock: 12 },
-            { id: '2', name: 'Acid Wash Tee', price: 35, description: 'Hand-dyed, no two alike', image: null, stock: 8 },
-            { id: '3', name: 'Utility Cargo Pants', price: 85, description: 'Ripstop fabric, 6 pockets', image: null, stock: 5 }
+          brandName: 'VibeCo',
+          tagline: '👕 Streetwear That Speaks',
+          businessDescription: 'Curated drops. Limited quantities. Don\'t sleep on these fits.',
+          items: [
+            { 
+              type: 'product',
+              title: 'Midnight Hoodie', 
+              price: '$68', 
+              note: 'Heavyweight cotton blend • Embroidered logo • Sizes S-XXL',
+              badge: 'LIMITED',
+              buttonText: 'Add to Cart'
+            },
+            { 
+              type: 'product',
+              title: 'Acid Wash Tee', 
+              price: '$35', 
+              note: 'Hand-dyed • No two alike • Unisex fit',
+              badge: 'BEST SELLER',
+              buttonText: 'Add to Cart'
+            },
+            { 
+              type: 'product',
+              title: 'Utility Cargo Pants', 
+              price: '$85', 
+              note: 'Ripstop fabric • 6 pockets • Adjustable waist',
+              buttonText: 'Add to Cart'
+            },
+            { 
+              type: 'product',
+              title: 'VibeCo Cap', 
+              price: '$28', 
+              note: 'Embroidered logo • Adjustable strap • One size',
+              buttonText: 'Add to Cart'
+            }
           ],
-          theme: 'bold'
+          social: {
+            instagram: '@vibeco',
+            email: 'hello@vibeco.shop',
+            bio: '🚀 New drops every Friday • Free shipping over $100'
+          },
+          appearance: {
+            accent: '#ff6b35',
+            radius: 8,
+            ctaStyle: 'gradient',
+            layout: 'tiles',
+            showSocials: true,
+            specialMessage: '🛒 DEMO MODE - Test checkout with any product!'
+          },
+          payments: {
+            enabled: false,
+            depositRequired: false,
+            depositPercentage: 0,
+            currencyCode: 'USD'
+          }
         }
       },
       'demo-digital': {
         user_id: 'demo',
         handle: 'demo-digital',
+        owner_email: 'demo@piqo.app',
+        stripe_connect_id: null,
         config: {
-          branding: {
-            businessName: 'FitFlow',
-            tagline: 'Your Digital Fitness Coach',
-            description: 'Personalized workout plans and nutrition guides. Start your transformation today.',
-            colors: { primary: '#00c9a7', accent: '#845ec2' },
-            logo: null
-          },
-          contact: {
-            email: 'coach@fitflow.fit',
-            website: 'fitflow.fit'
-          },
-          digitalProducts: [
-            { id: '1', name: '30-Day Shred Program', price: 47, description: 'Complete workout plan + meal guide PDF', type: 'PDF', image: null },
-            { id: '2', name: 'Macro Calculator Tool', price: 19, description: 'Custom nutrition calculator spreadsheet', type: 'Spreadsheet', image: null },
-            { id: '3', name: '1-on-1 Coaching Call', price: 97, description: '60-min video consultation + custom plan', type: 'Video', image: null }
+          brandName: 'FitFlow',
+          tagline: '💪 Your Digital Fitness Coach',
+          businessDescription: 'Personalized workout plans and nutrition guides. Start your transformation today.',
+          items: [
+            { 
+              type: 'product',
+              title: '30-Day Shred Program', 
+              price: '$47', 
+              note: 'Complete workout plan + meal guide PDF • Instant download',
+              badge: 'BESTSELLER',
+              buttonText: 'Get Instant Access'
+            },
+            { 
+              type: 'product',
+              title: 'Macro Calculator Tool', 
+              price: '$19', 
+              note: 'Custom nutrition calculator • Excel spreadsheet • Lifetime updates',
+              buttonText: 'Download Now'
+            },
+            { 
+              type: 'service',
+              title: '1-on-1 Coaching Call', 
+              price: '$97', 
+              note: '60-min video consultation • Custom plan • Follow-up included',
+              buttonText: 'Book Session'
+            },
+            { 
+              type: 'product',
+              title: 'Recipe eBook Bundle', 
+              price: '$29', 
+              note: '100+ healthy recipes • Meal prep guide • Shopping lists',
+              buttonText: 'Get eBook'
+            }
           ],
-          theme: 'modern'
+          social: {
+            email: 'coach@fitflow.fit',
+            website: 'fitflow.fit',
+            instagram: '@fitflow',
+            bio: '🔥 10k+ transformations • Results guaranteed'
+          },
+          appearance: {
+            accent: '#00c9a7',
+            accentMode: 'gradient',
+            accentGradient: { c1: '#00c9a7', c2: '#845ec2', angle: 135 },
+            radius: 16,
+            ctaStyle: 'gradient',
+            ctaShine: true,
+            layout: 'cards',
+            showSocials: true,
+            specialMessage: '📱 DEMO - Try adding products to cart!'
+          },
+          payments: {
+            enabled: false,
+            depositRequired: false,
+            depositPercentage: 0,
+            currencyCode: 'USD'
+          }
         }
       }
     };
