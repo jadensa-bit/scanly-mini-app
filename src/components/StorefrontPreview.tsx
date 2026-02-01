@@ -290,7 +290,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   const [selectedAddOns, setSelectedAddOns] = useState<Record<string, number>>({}); // Track selected add-ons with quantities
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryChoice, setDeliveryChoice] = useState<"pickup" | "delivery" | "shipment">("pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryCity, setDeliveryCity] = useState("");
   const [deliveryZip, setDeliveryZip] = useState("");
@@ -656,7 +656,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
             customer_email: customerEmail.trim(),
             delivery_method: props.delivery?.enabled ? deliveryChoice : undefined,
             delivery_fee: deliveryFee,
-            delivery_address: deliveryChoice === "delivery" && props.delivery?.enabled ? {
+            delivery_address: (deliveryChoice === "delivery" || deliveryChoice === "shipment") && props.delivery?.enabled ? {
               street: deliveryAddress.trim(),
               city: deliveryCity.trim(),
               zip: deliveryZip.trim()
@@ -2046,15 +2046,15 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                   </div>
                 </div>
                 
-                {/* Delivery/Pickup Choice */}
+                {/* Delivery/Pickup/Shipment Choice */}
                 {props.delivery?.enabled && (
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-gray-700">Fulfillment Method:</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
                         onClick={() => setDeliveryChoice("pickup")}
-                        className={`px-4 py-3 rounded-xl text-sm font-bold border-2 transition ${
+                        className={`px-3 py-3 rounded-xl text-sm font-bold border-2 transition ${
                           deliveryChoice === "pickup"
                             ? "border-cyan-500 bg-cyan-50 text-cyan-700"
                             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
@@ -2065,13 +2065,24 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                       <button
                         type="button"
                         onClick={() => setDeliveryChoice("delivery")}
-                        className={`px-4 py-3 rounded-xl text-sm font-bold border-2 transition ${
+                        className={`px-3 py-3 rounded-xl text-sm font-bold border-2 transition ${
                           deliveryChoice === "delivery"
                             ? "border-cyan-500 bg-cyan-50 text-cyan-700"
                             : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
                         }`}
                       >
                         🚚 Delivery
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryChoice("shipment")}
+                        className={`px-3 py-3 rounded-xl text-sm font-bold border-2 transition ${
+                          deliveryChoice === "shipment"
+                            ? "border-cyan-500 bg-cyan-50 text-cyan-700"
+                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        📦 Shipment
                       </button>
                     </div>
                     {deliveryChoice === "delivery" && props.delivery.estimatedTime && (
@@ -2084,13 +2095,20 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         📍 Delivering within {props.delivery.radius} miles
                       </p>
                     )}
+                    {deliveryChoice === "shipment" && (
+                      <p className="text-xs text-gray-500 text-center">
+                        📦 Ships nationwide
+                      </p>
+                    )}
                   </div>
                 )}
                 
-                {/* Delivery Address - only show if delivery selected */}
-                {deliveryChoice === "delivery" && props.delivery?.enabled && (
+                {/* Delivery/Shipment Address - show for delivery or shipment */}
+                {(deliveryChoice === "delivery" || deliveryChoice === "shipment") && props.delivery?.enabled && (
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-700">Delivery Address:</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      {deliveryChoice === "delivery" ? "Delivery Address:" : "Shipping Address:"}
+                    </label>
                     <input
                       type="text"
                       value={deliveryAddress}

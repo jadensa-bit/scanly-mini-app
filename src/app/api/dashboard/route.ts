@@ -271,6 +271,9 @@ export async function GET(req: NextRequest) {
             created_at: o.created_at,
             site_brand_name: site?.config?.brandName || null,
             order_items: o.order_items || null, // Include cart items with quantities
+            delivery_method: o.delivery_method || null,
+            delivery_fee_cents: o.delivery_fee_cents || 0,
+            delivery_address: o.delivery_address || null,
           };
         });
         
