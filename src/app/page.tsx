@@ -1206,9 +1206,6 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-12 sm:mb-20"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2">
-              This is the store.
-            </h2>
             <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto px-2">
               One QR code. Infinite possibilities. Scan it and watch the magic happen.
             </p>
