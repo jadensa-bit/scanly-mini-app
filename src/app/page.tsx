@@ -1437,6 +1437,82 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Why Businesses Care - Simple Punch */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 bg-black overflow-hidden">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
+              Why businesses love piqo
+            </h2>
+            <p className="text-lg text-gray-400">It's dead simple. And it works.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+            {[
+              {
+                icon: "🚫",
+                punch: "No app. No website. No marketplace fees.",
+                subtext: "Just a QR code and you're live",
+                gradient: "from-red-500/20 to-orange-500/20",
+                border: "border-red-500/30"
+              },
+              {
+                icon: "💸",
+                punch: "Payments go straight to the owner.",
+                subtext: "Your money, your bank, zero middleman",
+                gradient: "from-green-500/20 to-emerald-500/20",
+                border: "border-green-500/30"
+              },
+              {
+                icon: "🏪",
+                punch: "Built for real-world businesses.",
+                subtext: "Barbershops to bakeries. It just works.",
+                gradient: "from-blue-500/20 to-purple-500/20",
+                border: "border-blue-500/30"
+              }
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className={`relative group p-6 sm:p-8 rounded-2xl bg-gradient-to-br ${item.gradient} backdrop-blur-sm border ${item.border} hover:border-opacity-60 transition-all duration-300`}
+              >
+                <div className="text-5xl sm:text-6xl mb-4">{item.icon}</div>
+                <h3 className="text-xl sm:text-2xl font-black text-white mb-3 leading-tight">
+                  {item.punch}
+                </h3>
+                <p className="text-sm sm:text-base text-gray-400">
+                  {item.subtext}
+                </p>
+
+                {/* Hover glow */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom reassurance */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.6 }}
+            className="mt-12 text-center"
+          >
+            <p className="text-gray-500 text-sm sm:text-base">
+              Not sketchy. Not complicated. Just sales. 💰
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Trust Signal Section */}
       <section className="relative py-12 sm:py-16 px-4 sm:px-6 flex flex-col items-center justify-center bg-gradient-to-b from-black to-gray-950/50">
         <div className="max-w-6xl mx-auto w-full">
