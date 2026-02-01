@@ -1180,6 +1180,248 @@ export default function Home() {
         </div>
       </section>
 
+      {/* THE QR MOMENT - TikTok Gold ✨ */}
+      <section className="relative py-20 sm:py-32 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-black via-purple-950/20 to-black">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full blur-3xl opacity-20"
+            style={{ background: "linear-gradient(135deg, #22D3EE, #A78BFA)" }}
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.15, 0.3, 0.15],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 sm:mb-20"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-2">
+              This is the store.
+            </h2>
+            <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto px-2">
+              One QR code. Infinite possibilities. Scan it and watch the magic happen.
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+            {/* Left: QR Code Display */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center justify-center"
+            >
+              {/* QR Code in different contexts */}
+              <div className="space-y-6 w-full">
+                {/* Printed Card Context */}
+                <motion.div
+                  className="relative mx-auto"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl max-w-sm mx-auto">
+                    {/* Card header */}
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl sm:text-2xl font-black text-gray-900">FreshCuts Studio</h3>
+                      <p className="text-sm text-gray-600 mt-1">Premium cuts, no wait ✨</p>
+                    </div>
+
+                    {/* QR Code */}
+                    <motion.div
+                      className="bg-gradient-to-br from-cyan-100 to-purple-100 rounded-xl p-6 flex justify-center items-center"
+                      animate={{
+                        boxShadow: [
+                          "0 0 20px rgba(6, 182, 212, 0.3)",
+                          "0 0 40px rgba(6, 182, 212, 0.6)",
+                          "0 0 20px rgba(6, 182, 212, 0.3)",
+                        ],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <div className="bg-white p-4 rounded-lg">
+                        <QRCode value={demoUrl} size={180} level="H" />
+                      </div>
+                    </motion.div>
+
+                    {/* Card footer */}
+                    <div className="mt-6 text-center border-t border-gray-200 pt-4">
+                      <p className="text-xs text-gray-600 font-semibold">
+                        📱 Scan to book • Tap to pay • Get confirmation
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Animated scan indicator */}
+                  <motion.div
+                    className="absolute -top-8 -right-8 w-16 h-16 border-2 border-cyan-400 rounded"
+                    animate={{
+                      scale: [0.8, 1.2, 0.8],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <motion.div
+                      className="w-full h-full flex items-center justify-center text-2xl"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      📷
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+
+                {/* Context indicators */}
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all"
+                  >
+                    <div className="text-2xl mb-2">🗂️</div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90">On a card</p>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all"
+                  >
+                    <div className="text-2xl mb-2">🪟</div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90">On a window</p>
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all"
+                  >
+                    <div className="text-2xl mb-2">📲</div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90">On your phone</p>
+                  </motion.div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right: What Happens When They Scan */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col justify-center space-y-6"
+            >
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white px-2">
+                They scan. You get paid.
+              </h3>
+
+              {/* Step-by-step flow */}
+              <div className="space-y-4">
+                {[
+                  {
+                    step: "1",
+                    emoji: "📱",
+                    title: "Customer scans QR",
+                    desc: "Instant access, no app needed",
+                    color: "from-cyan-500 to-blue-600",
+                  },
+                  {
+                    step: "2",
+                    emoji: "🏪",
+                    title: "Your storefront opens",
+                    desc: "Beautifully designed in 60 seconds",
+                    color: "from-purple-500 to-pink-600",
+                  },
+                  {
+                    step: "3",
+                    emoji: "🛍️",
+                    title: "They browse & buy",
+                    desc: "Tap to add, checkout in 3 seconds",
+                    color: "from-pink-500 to-orange-600",
+                  },
+                  {
+                    step: "4",
+                    emoji: "💰",
+                    title: "Money in your bank",
+                    desc: "Instant payouts, no waiting",
+                    color: "from-green-500 to-emerald-600",
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="relative pl-16 sm:pl-20"
+                  >
+                    {/* Step circle */}
+                    <motion.div
+                      className={`absolute left-0 top-0 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center text-xl sm:text-2xl shadow-lg`}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      {item.emoji}
+                    </motion.div>
+
+                    {/* Content */}
+                    <div>
+                      <h4 className="text-base sm:text-lg font-black text-white mb-1">{item.title}</h4>
+                      <p className="text-sm text-gray-400">{item.desc}</p>
+                    </div>
+
+                    {/* Connector line */}
+                    {i < 3 && (
+                      <motion.div
+                        className="absolute left-6 sm:left-8 top-12 sm:top-16 w-0.5 h-12 bg-gradient-to-b from-white/40 to-transparent"
+                        initial={{ scaleY: 0 }}
+                        whileInView={{ scaleY: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 + 0.2 }}
+                      />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="pt-6"
+              >
+                <a
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full font-bold text-base sm:text-lg hover:shadow-2xl hover:shadow-cyan-500/50 transition-all group"
+                >
+                  <span>Create Your QR Code Now</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </a>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Trust Signal Section */}
       <section className="relative py-12 sm:py-16 px-4 sm:px-6 flex flex-col items-center justify-center bg-gradient-to-b from-black to-gray-950/50">
         <div className="max-w-6xl mx-auto w-full">
