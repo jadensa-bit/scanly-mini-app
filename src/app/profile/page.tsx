@@ -209,7 +209,7 @@ export default function ProfilePage() {
   };
 
   const deleteSite = async (handle: string) => {
-    if (!confirm(`Are you sure you want to delete the "${handle}" piqo? This cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete the "${handle}" store? This cannot be undone.`)) {
       return;
     }
 
@@ -231,7 +231,7 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
-        setMessage(`Piqo "${handle}" deleted successfully.`);
+        setMessage(`Store "${handle}" deleted successfully.`);
         // Refresh sites list
         const dashRes = await fetch("/api/dashboard", { headers, credentials: "include" });
         if (dashRes.ok) {
@@ -240,11 +240,11 @@ export default function ProfilePage() {
         }
       } else {
         const data = await res.json();
-        setError(data.error || "Failed to delete piqo");
+        setError(data.error || "Failed to delete store");
       }
     } catch (err) {
       console.error("Delete failed:", err);
-      setError("Failed to delete piqo");
+      setError("Failed to delete store");
     } finally {
       setLoading(false);
     }
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Create Piqo
+                    Create Store
                   </a>
                 </div>
               </div>
@@ -478,11 +478,11 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* Your Piqos */}
+          {/* Your Stores */}
           {sites.length > 0 && (
             <section className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-2xl sm:rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
-              <div className="relative bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-2xl border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 hover:border-purple-400/50 transition-all duration-300">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-2xl sm:rounded-3xl blur opacity-20 group-hover:opacity-30 transition duration-300 animate-glow-pulse"></div>
+              <div className="relative bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-2xl border-2 border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 hover:border-purple-400/50 transition-all duration-300">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -494,8 +494,8 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Your Piqos</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">{sites.length} active storefront{sites.length !== 1 ? 's' : ''}</p>
+                      <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Your Stores</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">{sites.length} active {sites.length !== 1 ? 'storefronts' : 'storefront'}</p>
                     </div>
                   </div>
                 <a
@@ -505,7 +505,7 @@ export default function ProfilePage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  New Piqo
+                  New Store
                 </a>
               </div>
               
@@ -738,7 +738,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-white">Log Out</h3>
-                      <p className="text-xs text-gray-400">Sign out of your piqo account</p>
+                      <p className="text-xs text-gray-400">Sign out of your account</p>
                     </div>
                   </div>
                   <button
@@ -759,7 +759,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-base font-bold text-red-300 mb-2">Delete Account Permanently</h3>
-                    <p className="text-sm text-gray-400 mb-4">Permanently remove your piqo account and all associated data. This action cannot be undone and all your piqos, orders, and bookings will be lost forever.</p>
+                    <p className="text-sm text-gray-400 mb-4">Permanently remove your account and all associated data. This action cannot be undone and all your stores, orders, and bookings will be lost forever.</p>
                     
                     <button
                       onClick={handleDeleteAccount}
