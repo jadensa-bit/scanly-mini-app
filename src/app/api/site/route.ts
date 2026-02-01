@@ -384,6 +384,13 @@ export async function GET(req: Request) {
             depositRequired: false,
             depositPercentage: 0,
             currencyCode: 'USD'
+          },
+          delivery: {
+            enabled: true,
+            fee: 5,
+            freeAbove: 100,
+            estimatedTime: '30-45 min',
+            zones: ['Downtown', 'Midtown', 'Uptown']
           }
         }
       },
@@ -449,6 +456,13 @@ export async function GET(req: Request) {
             depositRequired: false,
             depositPercentage: 0,
             currencyCode: 'USD'
+          },
+          delivery: {
+            enabled: true,
+            fee: 0,
+            freeAbove: 0,
+            estimatedTime: 'Instant digital delivery',
+            zones: []
           }
         }
       }
