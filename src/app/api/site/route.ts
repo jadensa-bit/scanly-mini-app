@@ -248,6 +248,92 @@ export async function GET(req: Request) {
       console.log("✅ User authenticated for edit:", userId);
     }
 
+    // Demo handles: return hardcoded demo data instead of querying DB
+    const DEMO_CONFIGS: Record<string, any> = {
+      'demo-barber': {
+        user_id: 'demo',
+        handle: 'demo-barber',
+        config: {
+          branding: {
+            businessName: 'FreshCuts Studio',
+            tagline: 'Premium Cuts, Premium Vibes',
+            description: 'Award-winning barbershop serving the community since 2019. Walk-ins welcome!',
+            colors: { primary: '#1a1a1a', accent: '#d4af37' },
+            logo: null
+          },
+          contact: {
+            phone: '(555) 123-4567',
+            address: '123 Main St, Downtown',
+            hours: 'Mon-Sat: 9AM-7PM'
+          },
+          services: [
+            { id: '1', name: 'Classic Cut', price: 35, description: 'Precision scissor cut with styling', duration: '30 min', image: null },
+            { id: '2', name: 'Cut + Beard Trim', price: 50, description: 'Full service grooming', duration: '45 min', image: null },
+            { id: '3', name: 'Hot Towel Shave', price: 40, description: 'Traditional straight razor shave', duration: '30 min', image: null }
+          ],
+          theme: 'minimal'
+        }
+      },
+      'demo-products': {
+        user_id: 'demo',
+        handle: 'demo-products',
+        config: {
+          branding: {
+            businessName: 'VibeCo',
+            tagline: 'Streetwear That Speaks',
+            description: 'Curated drops. Limited quantities. Don\'t sleep.',
+            colors: { primary: '#ff6b35', accent: '#004e89' },
+            logo: null
+          },
+          contact: {
+            email: 'hello@vibeco.shop',
+            instagram: '@vibeco'
+          },
+          products: [
+            { id: '1', name: 'Midnight Hoodie', price: 68, description: 'Heavyweight cotton blend, embroidered logo', image: null, stock: 12 },
+            { id: '2', name: 'Acid Wash Tee', price: 35, description: 'Hand-dyed, no two alike', image: null, stock: 8 },
+            { id: '3', name: 'Utility Cargo Pants', price: 85, description: 'Ripstop fabric, 6 pockets', image: null, stock: 5 }
+          ],
+          theme: 'bold'
+        }
+      },
+      'demo-digital': {
+        user_id: 'demo',
+        handle: 'demo-digital',
+        config: {
+          branding: {
+            businessName: 'FitFlow',
+            tagline: 'Your Digital Fitness Coach',
+            description: 'Personalized workout plans and nutrition guides. Start your transformation today.',
+            colors: { primary: '#00c9a7', accent: '#845ec2' },
+            logo: null
+          },
+          contact: {
+            email: 'coach@fitflow.fit',
+            website: 'fitflow.fit'
+          },
+          digitalProducts: [
+            { id: '1', name: '30-Day Shred Program', price: 47, description: 'Complete workout plan + meal guide PDF', type: 'PDF', image: null },
+            { id: '2', name: 'Macro Calculator Tool', price: 19, description: 'Custom nutrition calculator spreadsheet', type: 'Spreadsheet', image: null },
+            { id: '3', name: '1-on-1 Coaching Call', price: 97, description: '60-min video consultation + custom plan', type: 'Video', image: null }
+          ],
+          theme: 'modern'
+        }
+      }
+    };
+
+    // Check if this is a demo handle
+    if (DEMO_CONFIGS[handle]) {
+      console.log(`✅ Serving demo config for: ${handle}`);
+      return noStoreJson({
+        ok: true,
+        site: DEMO_CONFIGS[handle],
+        config: DEMO_CONFIGS[handle].config,
+        hasDraft: false,
+        table: 'demo'
+      });
+    }
+
     const out = await findSiteByHandle(supabase, handle);
 
     if (out.error) {

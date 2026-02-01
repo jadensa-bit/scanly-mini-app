@@ -1255,7 +1255,7 @@ export default function Home() {
                       }}
                     >
                       <div className="bg-white p-4 rounded-lg">
-                        <QRCode value="https://piqo-builder.vercel.app/signup" size={180} level="H" />
+                        <QRCode value="https://piqo-builder.vercel.app/u/demo-barber" size={180} level="H" />
                       </div>
                     </motion.div>
 
@@ -1268,15 +1268,47 @@ export default function Home() {
                       {/* Test button and URL display */}
                       <div className="space-y-2">
                         <a
-                          href="https://piqo-builder.vercel.app/signup"
+                          href="https://piqo-builder.vercel.app/u/demo-barber"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold rounded-lg hover:shadow-lg transition-all"
                         >
-                          📱 Create Your Store Now
+                          📱 Try Live Demo
                         </a>
                         <p className="text-[10px] text-gray-500 break-all">
-                          Start your free piqo in 60 seconds
+                          piqo-builder.vercel.app/u/demo-barber
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Animated scan indicator */}
+                  <motion.div
+                    className="absolute -top-8 -right-8 w-16 h-16 border-2 border-cyan-400 rounded"
+                    animate={{
+                      scale: [0.8, 1.2, 0.8],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <motion.div
+                      className="w-full h-full flex items-center justify-center text-2xl"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      📷
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+
                 {/* Context indicators */}
                 <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
                   <motion.div
