@@ -93,6 +93,13 @@ export type StorefrontPreviewProps = {
     depositPercentage: number;
     currencyCode: string;
   };
+  delivery?: {
+    enabled: boolean;
+    fee: number;
+    freeAbove?: number;
+    estimatedTime?: string;
+    zones?: string[];
+  };
 };
 
 // Utility functions (typed)
@@ -360,6 +367,13 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
     const price = parseFloat(String(ci.item.price || '0').replace(/[^0-9.]/g, ''));
     return total + (price * ci.quantity);
   }, 0);
+
+  // Calculate delivery fee
+  const deliveryFee = props.delivery?.enabled 
+    ? (cartTotal >= (props.delivery.freeAbove || 0) ? 0 : (props.delivery.fee || 0))
+    : 0;
+
+  const cartTotalWithDelivery = cartTotal + deliveryFee;
 
   const cartItemCount = cart.reduce((count, ci) => count + ci.quantity, 0);
 
@@ -1988,11 +2002,38 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
 
               {/* Cart Footer */}
               <div className="sticky bottom-0 border-t-2 bg-white p-5 space-y-3 shadow-lg">
-                <div className="flex justify-between items-center pb-3 border-b-2 border-gray-200">
-                  <span className="text-base font-black text-gray-900">Total:</span>
-                  <span className="text-2xl font-black" style={{ color: accentSolid }}>
-                    ${cartTotal.toFixed(2)}
-                  </span>
+                <div className="space-y-2 pb-3 border-b-2 border-gray-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-semibold text-gray-700">Subtotal:</span>
+                    <span className="font-bold text-gray-900">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  
+                  {props.delivery?.enabled && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-semibold text-gray-700">
+                        Delivery:
+                        {deliveryFee === 0 && props.delivery.freeAbove && cartTotal >= props.delivery.freeAbove && (
+                          <span className="ml-1 text-xs text-green-600 font-bold">FREE!</span>
+                        )}
+                      </span>
+                      <span className="font-bold text-gray-900">
+                        {deliveryFee === 0 ? 'FREE' : `$${deliveryFee.toFixed(2)}`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {props.delivery?.enabled && props.delivery.estimatedTime && (
+                    <p className="text-xs text-gray-500">
+                      🚚 Est. delivery: {props.delivery.estimatedTime}
+                    </p>
+                  )}
+                  
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-base font-black text-gray-900">Total:</span>
+                    <span className="text-2xl font-black" style={{ color: accentSolid }}>
+                      ${cartTotalWithDelivery.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* Customer Info for Cart Checkout */}

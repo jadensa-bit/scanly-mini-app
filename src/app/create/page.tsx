@@ -185,6 +185,13 @@ mode: ModeId;
   // ✅ new
   availability?: Availability;
   notifications?: Notifications;
+  delivery?: {
+    enabled: boolean;
+    fee: number;
+    freeAbove?: number;
+    estimatedTime?: string;
+    zones?: string[];
+  };
 };
 
 import { buildStorefrontUrl } from "@/lib/storefrontUrls";
@@ -500,6 +507,13 @@ export default function CreatePage() {
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [staffExpanded, setStaffExpanded] = useState(false);
 
+  // Delivery options state
+  const [deliveryEnabled, setDeliveryEnabled] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState(5);
+  const [deliveryFreeAbove, setDeliveryFreeAbove] = useState(50);
+  const [deliveryTime, setDeliveryTime] = useState("30-45 min");
+  const [deliveryZones, setDeliveryZones] = useState("");
+
   // Real-time draft save: persist all edits to localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -519,13 +533,20 @@ export default function CreatePage() {
       availability,
       notifications,
       ownerEmail,
+      delivery: deliveryEnabled ? {
+        enabled: true,
+        fee: deliveryFee,
+        freeAbove: deliveryFreeAbove,
+        estimatedTime: deliveryTime,
+        zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
+      } : undefined,
       active: true,
       createdAt: Date.now(),
     };
     try {
       localStorage.setItem(storageKey(h), JSON.stringify(draft));
     } catch {}
-  }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail]);
+  }, [mode, brandName, handleRaw, tagline, businessDescription, items, appearance, staffProfiles, brandLogo, social, availability, notifications, ownerEmail, deliveryEnabled, deliveryFee, deliveryFreeAbove, deliveryTime, deliveryZones]);
 
   // Debounce handle input to prevent spazzing
   useEffect(() => {
@@ -1187,6 +1208,13 @@ async function startStripeConnect() {
         onBookings: notifications.onBookings !== false,
         smsPhone: (notifications.smsPhone || "").trim() || undefined,
       },
+      delivery: deliveryEnabled ? {
+        enabled: true,
+        fee: deliveryFee,
+        freeAbove: deliveryFreeAbove,
+        estimatedTime: deliveryTime,
+        zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
+      } : undefined,
     };
   }, [
     cleanHandle,
@@ -1202,6 +1230,12 @@ async function startStripeConnect() {
     social,
     availability,
     notifications,
+    deliveryEnabled,
+    deliveryFee,
+    deliveryFreeAbove,
+    deliveryTime,
+    deliveryZones,
+    profilePic,
   ]);
 
   const saveDraftDebounced = useMemo(
@@ -4048,6 +4082,100 @@ useEffect(() => {
                 Add your bio and contact info to help customers learn more about you. This appears when they click the "About" button on your store.
               </div>
             </section>
+
+            {/* Delivery Options - for products/digital modes */}
+            {(mode === "products" || mode === "digital") && (
+              <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
+                    <svg className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>
+                    Delivery & Shipping
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={deliveryEnabled}
+                      onChange={(e) => setDeliveryEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-white/20 bg-black/30 text-cyan-500 focus:ring-cyan-500/50"
+                    />
+                    <span className="text-xs text-white/70">Enable</span>
+                  </label>
+                </div>
+
+                {deliveryEnabled && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="grid gap-1">
+                        <span className="text-xs text-white/80">Delivery Fee</span>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/55 text-sm">$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={deliveryFee}
+                            onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
+                            className="w-full rounded-2xl border border-white/12 bg-black/40 pl-8 pr-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            placeholder="5.00"
+                          />
+                        </div>
+                      </label>
+
+                      <label className="grid gap-1">
+                        <span className="text-xs text-white/80">Free Above</span>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/55 text-sm">$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={deliveryFreeAbove}
+                            onChange={(e) => setDeliveryFreeAbove(parseFloat(e.target.value) || 0)}
+                            className="w-full rounded-2xl border border-white/12 bg-black/40 pl-8 pr-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                            placeholder="50"
+                          />
+                        </div>
+                      </label>
+                    </div>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Estimated Delivery Time</span>
+                      <input
+                        value={deliveryTime}
+                        onChange={(e) => setDeliveryTime(e.target.value)}
+                        className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                        placeholder="30-45 min"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-xs text-white/80">Delivery Zones (optional)</span>
+                      <input
+                        value={deliveryZones}
+                        onChange={(e) => setDeliveryZones(e.target.value)}
+                        className="w-full rounded-2xl border border-white/12 bg-black/40 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/40 focus:border-white/25"
+                        placeholder="Downtown, Midtown, Uptown (comma separated)"
+                      />
+                      <span className="text-[10px] text-white/50">Leave blank for no restrictions</span>
+                    </label>
+
+                    <div className="mt-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                      <p className="text-xs text-cyan-300 font-medium">
+                        💡 Free delivery over ${deliveryFreeAbove} • ${deliveryFee} fee below
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!deliveryEnabled && (
+                  <p className="text-xs text-white/50">
+                    Enable delivery to offer shipping or local delivery options to your customers.
+                  </p>
+                )}
+              </section>
+            )}
 
             {/* Team Management - only for services */}
             {mode === "services" && (
