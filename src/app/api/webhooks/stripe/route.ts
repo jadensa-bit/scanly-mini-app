@@ -144,24 +144,28 @@ export async function POST(req: Request) {
         stripe_customer_id: subscription.customer as string,
       };
 
+      // Access period timestamps safely
+      const currentPeriodEnd = (subscription as any).current_period_end;
+      const currentPeriodStart = (subscription as any).current_period_start;
+
       if (event.type === 'customer.subscription.deleted') {
         // Subscription cancelled - downgrade to free
         updateData.subscription_tier = 'free';
         updateData.subscription_status = 'cancelled';
         updateData.piqo_limit = 1;
-        if (subscription.current_period_end) {
-          updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        if (currentPeriodEnd) {
+          updateData.subscription_end_date = new Date(currentPeriodEnd * 1000).toISOString();
         }
       } else if (subscription.status === 'active') {
         // Subscription active - upgrade to selected tier
         updateData.subscription_tier = tier;
         updateData.subscription_status = 'active';
         updateData.piqo_limit = tier === 'free' ? 1 : 999;
-        if (subscription.current_period_start) {
-          updateData.subscription_start_date = new Date(subscription.current_period_start * 1000).toISOString();
+        if (currentPeriodStart) {
+          updateData.subscription_start_date = new Date(currentPeriodStart * 1000).toISOString();
         }
-        if (subscription.current_period_end) {
-          updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        if (currentPeriodEnd) {
+          updateData.subscription_end_date = new Date(currentPeriodEnd * 1000).toISOString();
         }
       } else {
         // Handle other statuses (past_due, etc.)
