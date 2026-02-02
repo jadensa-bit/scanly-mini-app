@@ -36,9 +36,10 @@ import {
   X,
   CalendarClock,
   ShoppingBag,
+  Crown,
 } from "lucide-react";
 import StorefrontPreview from "@/components/StorefrontPreview";
-import { PiqoLimitBanner } from "@/components/SubscriptionGate";
+import { PiqoLimitBanner, SubscriptionGate, FeatureBadge } from "@/components/SubscriptionGate";
 import { supabase } from "@/lib/supabaseclient";
 
 type ModeId = "services" | "booking" | "digital" | "products";
@@ -770,55 +771,91 @@ export default function CreatePage() {
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro' | 'enterprise'>('free');
   const [canCreateMore, setCanCreateMore] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   
-  useEffect(() => {
-    async function checkSubscription() {
-      try {
-        // Get auth token
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setSubscriptionLoading(false);
-          return;
-        }
-        
-        const res = await fetch('/api/subscription', {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
+  // Reusable function to check/refresh subscription
+  const checkSubscription = useCallback(async () => {
+    try {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setSubscriptionLoading(false);
+        return;
+      }
+      
+      const res = await fetch('/api/subscription', {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        credentials: 'include',
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const subscription = data.subscription;
+        setExistingPiqoCount(subscription.currentPiqoCount || 0);
+        setSubscriptionTier(subscription.tier);
+        setCanCreateMore(subscription.canCreateMore);
+        console.log('👤 Subscription:', subscription.tier, '| Piqos:', subscription.currentPiqoCount, '/', subscription.piqoLimit, '| Can create:', subscription.canCreateMore);
+      } else {
+        // Fallback to old dashboard API
+        const dashRes = await fetch('/api/dashboard', {
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });
-        
-        if (res.ok) {
-          const data = await res.json();
-          const subscription = data.subscription;
-          setExistingPiqoCount(subscription.currentPiqoCount || 0);
-          setSubscriptionTier(subscription.tier);
-          setCanCreateMore(subscription.canCreateMore);
-          console.log('👤 Subscription:', subscription.tier, '| Piqos:', subscription.currentPiqoCount, '/', subscription.piqoLimit, '| Can create:', subscription.canCreateMore);
-        } else {
-          // Fallback to old dashboard API
-          const dashRes = await fetch('/api/dashboard', {
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-          });
-          if (dashRes.ok) {
-            const data = await dashRes.json();
-            const count = data?.sites?.length || 0;
-            setExistingPiqoCount(count);
-            // Free tier: can create if count < 1
-            setCanCreateMore(count < 1);
-            console.log('👤 User has', count, 'existing piqos | Can create:', count < 1);
-          }
+        if (dashRes.ok) {
+          const data = await dashRes.json();
+          const count = data?.sites?.length || 0;
+          setExistingPiqoCount(count);
+          // Free tier: can create if count < 1
+          setCanCreateMore(count < 1);
+          console.log('👤 User has', count, 'existing piqos | Can create:', count < 1);
         }
-      } catch (err) {
-        console.warn('Could not check subscription:', err);
-      } finally {
-        setSubscriptionLoading(false);
       }
+    } catch (err) {
+      console.warn('Could not check subscription:', err);
+    } finally {
+      setSubscriptionLoading(false);
     }
-    checkSubscription();
   }, []);
+  
+  // Check subscription on mount
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
+
+  // Detect successful upgrade and refresh subscription
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const upgradeParam = params.get('upgrade');
+    
+    if (upgradeParam === 'success') {
+      // Show success message
+      setUpgradeSuccess(true);
+      setToast('🎉 Successfully upgraded to Pro! All features unlocked.');
+      
+      // Refresh subscription status after a short delay (to allow webhook to process)
+      setTimeout(() => {
+        console.log('🔄 Refreshing subscription after upgrade...');
+        checkSubscription();
+      }, 2000);
+      
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('upgrade');
+      url.searchParams.delete('session_id');
+      window.history.replaceState({}, '', url.toString());
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setUpgradeSuccess(false);
+        setToast(null);
+      }, 5000);
+    }
+  }, [checkSubscription]);
 
   const publicUrl = useMemo(() => buildStorefrontUrl(cleanHandle || "yourname"), [cleanHandle]);
   const qrUrl = useMemo(() => qrPngUrl(publicUrl, 520), [publicUrl]);
@@ -2085,6 +2122,30 @@ useEffect(() => {
             {/* Buttons moved to preview section */}
           </div>
         </header>
+
+        {/* Upgrade Success Banner */}
+        {upgradeSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-6xl mx-auto mt-6 rounded-2xl border border-green-500/35 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-6 py-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-white flex items-center gap-2">
+                  🎉 Welcome to Pro!
+                  <Crown className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div className="text-sm text-green-50/90 mt-1">
+                  All premium features are now unlocked. Create unlimited piqos, add team members, social links, delivery options, and more!
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Subscription Banner */}
         <div className="mt-6">
@@ -3497,15 +3558,26 @@ useEffect(() => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => applyAppearancePatchInstant({ accentMode: "gradient" })}
+                    onClick={() => {
+                      if (subscriptionTier === 'free') {
+                        // Show a friendly message instead of hard blocking
+                        setToast("🌟 Gradient accents are a Pro feature! Upgrade to unlock.");
+                        setTimeout(() => setToast(null), 3000);
+                        return;
+                      }
+                      applyAppearancePatchInstant({ accentMode: "gradient" });
+                    }}
                     className={cn(
-                      "rounded-2xl border px-3 py-2.5 text-xs font-semibold transition",
+                      "rounded-2xl border px-3 py-2.5 text-xs font-semibold transition relative",
                       (appearance.accentMode || "solid") === "gradient" 
                         ? "border-white/35 bg-white/12" 
                         : "border-white/12 bg-black/30 hover:bg-white/10"
                     )}
                   >
                     Gradient
+                    {subscriptionTier === 'free' && (
+                      <Crown className="w-3 h-3 absolute -top-1 -right-1 text-yellow-400" />
+                    )}
                   </button>
                 </div>
 
@@ -3546,10 +3618,18 @@ useEffect(() => {
                     </div>
                   </>
                 ) : (
-                  /* Gradient colors */
+                  /* Gradient colors - Pro feature */
+                  <SubscriptionGate 
+                    feature="Gradient Accents"
+                    userTier={subscriptionTier}
+                    requiredTier="pro"
+                  >
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1">
-                      <span className="text-xs text-white/80">Color 1</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/80">Color 1</span>
+                        <FeatureBadge tier="pro" />
+                      </div>
                       <input
                         type="color"
                         value={appearance.accentGradient?.c1 || "#22D3EE"}
@@ -3605,6 +3685,7 @@ useEffect(() => {
                       }}
                     />
                   </div>
+                  </SubscriptionGate>
                 )}
               </div>
             </section>
@@ -4042,10 +4123,16 @@ useEffect(() => {
             </section>
 
             {/* Social links */}
+            <SubscriptionGate 
+              feature="Social Links & Contact Info"
+              userTier={subscriptionTier}
+              requiredTier="pro"
+            >
             <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
                 <Globe className="h-4 w-4" />
                 Social + contact (optional)
+                <FeatureBadge tier="pro" />
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -4147,9 +4234,15 @@ useEffect(() => {
                 Add your bio and contact info to help customers learn more about you. This appears when they click the "About" button on your store.
               </div>
             </section>
+            </SubscriptionGate>
 
             {/* Delivery Options - for products/digital modes */}
             {(mode === "products" || mode === "digital") && (
+              <SubscriptionGate 
+                feature="Delivery & Shipping Options"
+                userTier={subscriptionTier}
+                requiredTier="pro"
+              >
               <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
@@ -4157,6 +4250,7 @@ useEffect(() => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                     </svg>
                     Delivery & Shipping
+                    <FeatureBadge tier="pro" />
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -4258,15 +4352,22 @@ useEffect(() => {
                   </p>
                 )}
               </section>
+              </SubscriptionGate>
             )}
 
             {/* Team Management - only for services */}
             {mode === "services" && (
+              <SubscriptionGate 
+                feature="Team Members"
+                userTier={subscriptionTier}
+                requiredTier="pro"
+              >
               <section className="rounded-3xl border border-white/12 bg-white/8 backdrop-blur-xl p-5">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/90">
                     <Users className="h-4 w-4 text-blue-400" />
                     Team Members
+                    <FeatureBadge tier="pro" />
                   </div>
                   <div className="text-[11px] text-white/70">{staffProfiles.length} added</div>
                 </div>
@@ -4452,6 +4553,7 @@ useEffect(() => {
                   </div>
                 </div>
               </section>
+              </SubscriptionGate>
             )}
 
             {/* Next Button */}

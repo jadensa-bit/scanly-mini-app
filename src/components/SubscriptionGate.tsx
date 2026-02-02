@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import { Crown, Check, X, Sparkles, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseclient";
 
 interface SubscriptionGateProps {
   feature: string;
@@ -12,9 +14,54 @@ interface SubscriptionGateProps {
 }
 
 export function SubscriptionGate({ feature, userTier, requiredTier, children }: SubscriptionGateProps) {
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  
   const hasAccess = 
     (requiredTier === 'pro' && (userTier === 'pro' || userTier === 'enterprise')) ||
     (requiredTier === 'enterprise' && userTier === 'enterprise');
+
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    try {
+      // Get auth session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // User not logged in - redirect to pricing page
+        window.location.href = '/pricing';
+        return;
+      }
+
+      // Create checkout session
+      const res = await fetch('/api/subscription/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          tier: requiredTier,
+          returnUrl: window.location.pathname + window.location.search,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        // Fallback to pricing page
+        window.location.href = '/pricing';
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      // Fallback to pricing page
+      window.location.href = '/pricing';
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   if (hasAccess) {
     return <>{children}</>;
@@ -41,14 +88,24 @@ export function SubscriptionGate({ feature, userTier, requiredTier, children }: 
           <p className="text-sm text-gray-300 mb-4">
             Upgrade to {requiredTier === 'pro' ? 'Pro' : 'Enterprise'} to unlock this feature
           </p>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all"
+          <button
+            onClick={handleUpgrade}
+            disabled={isUpgrading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Sparkles className="w-4 h-4" />
-            Upgrade Now
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+            {isUpgrading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Upgrade Now
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
         </motion.div>
       </div>
     </div>

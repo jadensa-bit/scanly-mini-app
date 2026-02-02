@@ -125,11 +125,93 @@ export async function POST(req: Request) {
   if (dedupe.deduped) return NextResponse.json({ ok: true, received: true, deduped: true });
 
   try {
+    // Handle subscription events for Pro/Enterprise upgrades
+    if (event.type === 'customer.subscription.created' || 
+        event.type === 'customer.subscription.updated' || 
+        event.type === 'customer.subscription.deleted') {
+      
+      const subscription = event.data.object as Stripe.Subscription;
+      const userId = subscription.metadata?.supabase_user_id;
+      const tier = subscription.metadata?.subscription_tier || 'pro';
+
+      if (!userId) {
+        console.warn('⚠️ Subscription event missing supabase_user_id in metadata');
+        return NextResponse.json({ ok: true, received: true, warning: 'Missing user ID' });
+      }
+
+      let updateData: any = {
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer as string,
+      };
+
+      if (event.type === 'customer.subscription.deleted') {
+        // Subscription cancelled - downgrade to free
+        updateData.subscription_tier = 'free';
+        updateData.subscription_status = 'cancelled';
+        updateData.piqo_limit = 1;
+        updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+      } else if (subscription.status === 'active') {
+        // Subscription active - upgrade to selected tier
+        updateData.subscription_tier = tier;
+        updateData.subscription_status = 'active';
+        updateData.piqo_limit = tier === 'free' ? 1 : 999;
+        updateData.subscription_start_date = new Date(subscription.current_period_start * 1000).toISOString();
+        updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+      } else {
+        // Handle other statuses (past_due, etc.)
+        updateData.subscription_status = subscription.status;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Failed to update subscription:', error);
+        return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
+      }
+
+      console.log(`✅ Subscription ${event.type} processed for user ${userId} - tier: ${updateData.subscription_tier}`);
+      return NextResponse.json({ ok: true, received: true, type: event.type });
+    }
+
     if (event.type !== "checkout.session.completed") {
       return NextResponse.json({ ok: true, received: true, type: event.type });
     }
 
     const session = event.data.object as Stripe.Checkout.Session;
+
+    // Check if this is a subscription checkout (not an order/booking/tip)
+    if (session.mode === 'subscription') {
+      const userId = session.metadata?.supabase_user_id;
+      const tier = session.metadata?.subscription_tier || 'pro';
+
+      if (!userId) {
+        console.warn('⚠️ Subscription checkout missing supabase_user_id in metadata');
+        return NextResponse.json({ ok: true, received: true, warning: 'Missing user ID' });
+      }
+
+      // Update user's subscription in profiles table
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_tier: tier,
+          subscription_status: 'active',
+          piqo_limit: tier === 'free' ? 1 : 999,
+          stripe_customer_id: session.customer as string,
+          subscription_start_date: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Failed to update subscription on checkout:', error);
+        return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
+      }
+
+      console.log(`✅ Subscription checkout completed for user ${userId} - upgraded to ${tier}`);
+      return NextResponse.json({ ok: true, received: true, type: 'subscription_checkout' });
+    }
 
     const handle = (session.metadata?.handle || "").toString().trim();
 

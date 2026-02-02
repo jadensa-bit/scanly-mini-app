@@ -3,8 +3,53 @@
 import { motion } from "framer-motion";
 import { Check, Sparkles, Zap, Crown, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseclient";
 
 export default function PricingPage() {
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const handleUpgrade = async (tier: 'pro' | 'enterprise') => {
+    setIsUpgrading(true);
+    try {
+      // Get auth session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // User not logged in - redirect to signup
+        window.location.href = '/signup';
+        return;
+      }
+
+      // Create checkout session
+      const res = await fetch('/api/subscription/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          tier,
+          returnUrl: '/create',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        alert('Failed to start checkout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
       {/* Hero Section */}
@@ -175,6 +220,14 @@ export default function PricingPage() {
                 Start Free, Upgrade Later
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
+              
+              <button
+                onClick={() => handleUpgrade('pro')}
+                disabled={isUpgrading}
+                className="w-full mt-3 px-6 py-2 border border-purple-500/30 text-purple-400 rounded-xl font-semibold text-center hover:bg-purple-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpgrading ? 'Processing...' : 'Already have an account? Upgrade Now'}
+              </button>
             </div>
           </motion.div>
 

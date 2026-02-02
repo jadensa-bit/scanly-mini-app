@@ -1,6 +1,6 @@
 {
-  "name": "MyScanly",
-  "short_name": "MyScanly",
+  "name": "piqo - Instant QR Storefronts",
+  "short_name": "piqo",
   "description": "Create instant QR storefronts, services, and bookings",
   "start_url": "/",
   "display": "standalone",

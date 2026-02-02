@@ -1,129 +1,54 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Futuristic dark background with depth -->
     <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#050505;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0a0014;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
     </linearGradient>
-    
-    <!-- Neon gradient (electric blue to vivid magenta) -->
-    <linearGradient id="mainGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00f0ff;stop-opacity:1" />
-      <stop offset="25%" style="stop-color:#0099ff;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#7c3aed;stop-opacity:1" />
-      <stop offset="75%" style="stop-color:#c026d3;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ff006e;stop-opacity:1" />
+    <linearGradient id="qrGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.98" />
+      <stop offset="100%" style="stop-color:#f0f9ff;stop-opacity:0.95" />
     </linearGradient>
-    
-    <!-- Reverse gradient for contrast -->
-    <linearGradient id="accentGrad512" x1="100%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#ff006e;stop-opacity:0.9" />
-      <stop offset="50%" style="stop-color:#7c3aed;stop-opacity:0.7" />
-      <stop offset="100%" style="stop-color:#00f0ff;stop-opacity:0.5" />
-    </linearGradient>
-    
-    <!-- Intense neon glow -->
-    <filter id="neonGlow512" x="-100%" y="-100%" width="300%" height="300%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="25" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 30 0" result="glow"/>
+    <filter id="shadow512">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.25"/>
+    </filter>
+    <filter id="glow512">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 12 -5" result="glow"/>
       <feMerge>
-        <feMergeNode in="glow"/>
         <feMergeNode in="glow"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>
-    
-    <!-- Premium 3D depth -->
-    <filter id="depth512" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="18"/>
-      <feOffset dx="0" dy="20" result="offsetblur"/>
-      <feFlood flood-color="#000000" flood-opacity="0.7"/>
-      <feComposite in2="offsetblur" operator="in"/>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    
-    <!-- Holographic shine -->
-    <radialGradient id="holoShine512" cx="35%" cy="25%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
-      <stop offset="30%" style="stop-color:#00f0ff;stop-opacity:0.4" />
-      <stop offset="60%" style="stop-color:#7c3aed;stop-opacity:0.2" />
-      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
-    </radialGradient>
-    
-    <!-- Metallic text gradient -->
-    <linearGradient id="textGrad512" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#f0f0ff;stop-opacity:0.98" />
-      <stop offset="100%" style="stop-color:#d0d0ff;stop-opacity:0.95" />
-    </linearGradient>
-    
-    <!-- Inner shadow for depth -->
-    <filter id="innerShadow512">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
-      <feOffset dx="0" dy="8" result="offsetblur"/>
-      <feFlood flood-color="#000000" flood-opacity="0.4"/>
-      <feComposite in2="offsetblur" operator="in"/>
-      <feComposite in2="SourceAlpha" operator="in" result="innerShadow"/>
     </filter>
   </defs>
-  
-  <!-- Deep cosmic background -->
-  <rect width="512" height="512" fill="url(#bgGrad512)" rx="120"/>
-  
-  <!-- Pulsing neon glow layer 1 -->
-  <circle cx="256" cy="240" r="240" fill="url(#mainGrad512)" opacity="0.15" filter="url(#neonGlow512)"/>
-  
-  <!-- Pulsing neon glow layer 2 -->
-  <circle cx="256" cy="280" r="210" fill="url(#accentGrad512)" opacity="0.12" filter="url(#neonGlow512)"/>
-  
-  <!-- Main icon container with premium depth -->
-  <rect x="60" y="60" width="392" height="392" rx="95" fill="url(#mainGrad512)" filter="url(#depth512)"/>
-  
-  <!-- Inner frame for dimension -->
-  <rect x="68" y="68" width="376" height="376" rx="88" fill="none" stroke="url(#accentGrad512)" stroke-width="3" opacity="0.6"/>
-  
-  <!-- Secondary inner layer -->
-  <rect x="80" y="80" width="352" height="352" rx="82" fill="url(#accentGrad512)" opacity="0.18"/>
-  
-  <!-- Holographic reflection overlay -->
-  <ellipse cx="200" cy="150" rx="200" ry="180" fill="url(#holoShine512)"/>
-  
-  <!-- Ultra-bold "p" with neon effect -->
-  <text x="256" y="380" 
-        font-family="-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Arial Black, Impact, sans-serif" 
-        font-size="320" 
-        font-weight="900" 
-        fill="url(#textGrad512)" 
-        text-anchor="middle" 
-        letter-spacing="-25"
-        style="paint-order: stroke fill"
-        stroke="#ffffff" 
-        stroke-width="8" 
-        stroke-opacity="0.25">p</text>
-  
-  <!-- Neon highlight on letter -->
-  <text x="253" y="373" 
-        font-family="-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Arial Black, Impact, sans-serif" 
-        font-size="320" 
-        font-weight="900" 
-        fill="#00f0ff" 
-        fill-opacity="0.15"
-        text-anchor="middle" 
-        letter-spacing="-25">p</text>
-  
-  <!-- Premium border accent -->
-  <rect x="60" y="60" width="392" height="392" rx="95" fill="none" stroke="url(#mainGrad512)" stroke-width="4" opacity="0.5"/>
-  
-  <!-- Outer glow border -->
-  <rect x="56" y="56" width="400" height="400" rx="98" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.15"/>
-  
-  <!-- Premium border with gradient -->
-  <rect width="512" height="512" fill="none" stroke="url(#mainGrad512)" stroke-width="4" rx="120" opacity="0.3"/>
-  
-  <!-- Inner border for extra refinement -->
-  <rect x="6" y="6" width="500" height="500" fill="none" stroke="#ffffff" stroke-width="1" rx="115" opacity="0.1"/>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)"/>
+  <g filter="url(#shadow512)">
+    <rect x="96" y="96" width="320" height="320" rx="40" fill="url(#qrGrad512)"/>
+    <rect x="128" y="128" width="84" height="84" rx="12" fill="#0ea5e9"/>
+    <rect x="146" y="146" width="48" height="48" rx="6" fill="#ffffff"/>
+    <rect x="300" y="128" width="84" height="84" rx="12" fill="#8b5cf6"/>
+    <rect x="318" y="146" width="48" height="48" rx="6" fill="#ffffff"/>
+    <rect x="128" y="300" width="84" height="84" rx="12" fill="#ec4899"/>
+    <rect x="146" y="318" width="48" height="48" rx="6" fill="#ffffff"/>
+    <rect x="240" y="240" width="24" height="24" rx="4" fill="#0ea5e9"/>
+    <rect x="272" y="240" width="24" height="24" rx="4" fill="#8b5cf6"/>
+    <rect x="240" y="272" width="24" height="24" rx="4" fill="#8b5cf6"/>
+    <rect x="272" y="272" width="24" height="24" rx="4" fill="#ec4899"/>
+    <rect x="228" y="160" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="252" y="160" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="276" y="160" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="228" y="336" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="252" y="336" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="276" y="336" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="160" y="228" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="160" y="252" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="160" y="276" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="336" y="228" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="336" y="252" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+    <rect x="336" y="276" width="16" height="16" rx="3" fill="#6366f1" opacity="0.8"/>
+  </g>
+  <g filter="url(#glow512)">
+    <circle cx="424" cy="424" r="52" fill="#ffffff" opacity="0.95"/>
+    <text x="424" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-size="64" font-weight="900" fill="url(#bgGrad512)" text-anchor="middle">p</text>
+  </g>
 </svg>

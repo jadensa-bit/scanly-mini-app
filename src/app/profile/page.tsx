@@ -133,63 +133,103 @@ export default function ProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
+      setError('Please upload an image file (JPG, PNG, GIF, or WebP)');
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image must be less than 5MB');
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
     try {
       setUploadingPic(true);
       setError('');
+      setMessage('');
 
       // Upload to Supabase storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `profile-pictures/${fileName}`;
 
+      console.log('📤 Uploading profile picture to:', filePath);
+
       const { error: uploadError } = await supabase.storage
         .from('uploads')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('uploads')
         .getPublicUrl(filePath);
 
-      // Update user metadata
+      console.log('🔗 Public URL generated:', publicUrl);
+
+      // Update auth user metadata first
       const { error: updateError } = await supabase.auth.updateUser({
         data: { profile_picture: publicUrl }
       });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Auth update error:', updateError);
+        throw new Error(`Failed to update user metadata: ${updateError.message}`);
+      }
 
-      // Also update profiles table
+      console.log('✅ Auth metadata updated');
+
+      // Update profiles table
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user.id);
 
       if (profileError) {
-        console.error('Failed to update profile table:', profileError);
-        // Continue anyway since auth metadata was updated
+        console.error('Profile table update error:', profileError);
+        // Try to create the profile if it doesn't exist
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: user.id, 
+            avatar_url: publicUrl,
+            name: user.user_metadata?.name || '',
+            email: user.email || ''
+          });
+        
+        if (insertError) {
+          console.error('Profile insert error:', insertError);
+          throw new Error(`Failed to save to profile: ${insertError.message}`);
+        }
+        console.log('✅ Profile created with avatar');
+      } else {
+        console.log('✅ Profile table updated');
       }
 
+      // Update local state
       setProfilePicture(publicUrl);
-      setMessage('Profile picture updated successfully!');
+      setMessage('✨ Profile picture updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
       
       // Re-fetch user to ensure latest metadata
       const { data: { user: updatedUser } } = await supabase.auth.getUser();
-      setUser(updatedUser);
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+
+      console.log('✅ Profile picture upload complete!');
     } catch (err: any) {
-      console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload profile picture');
+      console.error('Profile picture upload error:', err);
+      setError(err.message || 'Failed to upload profile picture. Please try again.');
+      setTimeout(() => setError(''), 5000);
     } finally {
       setUploadingPic(false);
     }
