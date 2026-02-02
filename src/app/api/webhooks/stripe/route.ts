@@ -149,14 +149,20 @@ export async function POST(req: Request) {
         updateData.subscription_tier = 'free';
         updateData.subscription_status = 'cancelled';
         updateData.piqo_limit = 1;
-        updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        if (subscription.current_period_end) {
+          updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        }
       } else if (subscription.status === 'active') {
         // Subscription active - upgrade to selected tier
         updateData.subscription_tier = tier;
         updateData.subscription_status = 'active';
         updateData.piqo_limit = tier === 'free' ? 1 : 999;
-        updateData.subscription_start_date = new Date(subscription.current_period_start * 1000).toISOString();
-        updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        if (subscription.current_period_start) {
+          updateData.subscription_start_date = new Date(subscription.current_period_start * 1000).toISOString();
+        }
+        if (subscription.current_period_end) {
+          updateData.subscription_end_date = new Date(subscription.current_period_end * 1000).toISOString();
+        }
       } else {
         // Handle other statuses (past_due, etc.)
         updateData.subscription_status = subscription.status;
