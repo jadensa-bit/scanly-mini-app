@@ -15,19 +15,17 @@ function mustEnv(k: string) {
 }
 
 
-let stripe: Stripe;
-try {
-  const key = mustEnv("STRIPE_SECRET_KEY");
-  console.log(`[stripe-status] Using STRIPE_SECRET_KEY: ${key ? key.slice(0, 6) + '...' : 'MISSING'}`);
-  stripe = new Stripe(key);
-} catch (e) {
-  console.error("[stripe-status] Failed to initialize Stripe:", e);
-  throw e;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let stripe: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let supabase: any;
 
-const supabase = createClient(mustEnv("SUPABASE_URL"), mustEnv("SUPABASE_SERVICE_ROLE_KEY"), {
-  auth: { persistSession: false },
-});
+function initClients() {
+  if (!stripe) stripe = new Stripe(mustEnv("STRIPE_SECRET_KEY"));
+  if (!supabase) supabase = createClient(mustEnv("SUPABASE_URL"), mustEnv("SUPABASE_SERVICE_ROLE_KEY"), {
+    auth: { persistSession: false },
+  });
+}
 
 function safeHandle(input: unknown) {
   // ✅ match your builder: allow dash + underscore
@@ -50,6 +48,7 @@ async function tryRetrieveAccount(accountId: string) {
 
 export async function GET(req: Request) {
   try {
+    initClients();
     const { searchParams } = new URL(req.url);
 
     const handle = safeHandle(searchParams.get("handle"));
