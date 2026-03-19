@@ -43,11 +43,11 @@ function LiveBadge() {
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.85 }}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-500/30 bg-green-500/10 text-green-300 text-sm font-medium"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium"
     >
       <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
       </span>
       {count} stores live today
     </motion.div>
@@ -173,7 +173,7 @@ function InteractivePhoneMock() {
             onClick={() => setActiveId(m.id)}
             className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
               activeId === m.id
-                ? "bg-green-500 text-white shadow-[0_0_16px_rgba(34,197,94,0.5)]"
+                ? "bg-blue-500 text-white shadow-[0_0_16px_rgba(59,130,246,0.5)]"
                 : "text-white/50 hover:text-white/70"
             }`}
           >
@@ -185,7 +185,7 @@ function InteractivePhoneMock() {
       {/* Phone frame */}
       <div className="relative mx-auto w-[272px]">
         {/* glow */}
-        <div className="absolute inset-0 rounded-[36px] bg-green-500/15 blur-2xl scale-110 pointer-events-none" />
+        <div className="absolute inset-0 rounded-[36px] bg-blue-500/15 blur-2xl scale-110 pointer-events-none" />
 
         <div
           className="relative rounded-[36px] border border-white/15 bg-[#0d0d0d] shadow-2xl overflow-hidden"
@@ -239,40 +239,40 @@ function InteractivePhoneMock() {
               {/* Profile info */}
               <div className="px-4 pt-1 pb-2">
                 {/* Avatar overlapping banner */}
-                <div className="flex items-end justify-between -mt-5 mb-2">
-                  <div className="w-11 h-11 rounded-full bg-[#1a1a1a] border-2 border-[#0d0d0d] flex items-center justify-center text-xl shadow-lg">
+                <div className="flex items-end justify-between -mt-5 mb-2.5">
+                  <div className="w-12 h-12 rounded-full bg-[#1a1f2e] border-2 border-[#0d0d0d] flex items-center justify-center text-2xl shadow-xl">
                     {mode.avatar}
                   </div>
-                  <div className="flex items-center gap-1 bg-green-500/15 border border-green-500/30 rounded-full px-2 py-1">
-                    <Star className="w-2.5 h-2.5 fill-green-400 text-green-400" />
-                    <span className="text-[9px] text-green-300 font-bold">{mode.rating}</span>
-                    <span className="text-[9px] text-white/35">({mode.reviews})</span>
+                  <div className="flex items-center gap-1 bg-blue-500/12 border border-blue-500/25 rounded-full px-2.5 py-1">
+                    <Star className="w-2.5 h-2.5 fill-blue-400 text-blue-400" />
+                    <span className="text-[9px] text-blue-300 font-bold">{mode.rating}</span>
+                    <span className="text-[9px] text-white/30">({mode.reviews})</span>
                   </div>
                 </div>
-                <p className="text-white font-black text-sm leading-tight">{mode.name}</p>
-                <p className="text-white/40 text-[9px] mb-0.5">{mode.handle}</p>
-                <p className="text-white/55 text-[9px] leading-relaxed">{mode.tagline}</p>
+                <p className="text-white font-black text-base leading-tight mb-0.5">{mode.name}</p>
+                <p className="text-white/35 text-[10px] mb-1">{mode.handle}</p>
+                <p className="text-white/50 text-[10px] leading-relaxed">{mode.tagline}</p>
               </div>
 
               {/* Divider */}
               <div className="h-px bg-white/6 mx-3 mb-2" />
 
               {/* Items */}
-              <div className="px-3 space-y-1.5 pb-1">
+              <div className="px-3 space-y-2 pb-1">
                 {mode.items.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 p-2 rounded-xl bg-white/4 border border-white/6"
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.05] border border-white/8"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-[10px] font-semibold leading-tight truncate">{item.name}</p>
+                      <p className="text-white text-[11px] font-bold leading-tight truncate">{item.name}</p>
                       {item.badge && (
-                        <span className="text-[8px] text-white/40">{item.badge}</span>
+                        <span className="text-[8px] text-white/45">{item.badge}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-green-400 font-black text-[11px]">{item.price}</span>
-                      <button className="px-2.5 py-1 rounded-lg bg-green-500 text-white text-[8px] font-black leading-none">
+                      <span className="text-blue-400 font-black text-xs">{item.price}</span>
+                      <button className="px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[9px] font-black leading-none shadow-[0_0_8px_rgba(59,130,246,0.4)]">
                         {mode.actionLabel}
                       </button>
                     </div>
@@ -281,9 +281,17 @@ function InteractivePhoneMock() {
               </div>
 
               {/* Payment row */}
-              <div className="mx-3 mt-2 mb-2 p-2 rounded-xl bg-white/4 border border-white/6 flex items-center gap-2">
-                <CreditCard className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-                <span className="text-[9px] text-white/40">Apple Pay · Google Pay · Card</span>
+              <div className="mx-3 mt-2 mb-2 p-2.5 rounded-xl bg-white/[0.04] border border-white/8 flex items-center gap-2">
+                <CreditCard className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
+                <span className="text-[9px] text-white/35">Apple Pay · Google Pay · Card</span>
+                <div className="ml-auto flex gap-1">
+                  <div className="w-6 h-3.5 rounded bg-white/10 flex items-center justify-center">
+                    <span className="text-[6px] text-white/40 font-bold">AP</span>
+                  </div>
+                  <div className="w-6 h-3.5 rounded bg-white/10 flex items-center justify-center">
+                    <span className="text-[6px] text-white/40 font-bold">GP</span>
+                  </div>
+                </div>
               </div>
 
               {/* Footer */}
@@ -301,9 +309,9 @@ function InteractivePhoneMock() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -52, opacity: 0 }}
                 transition={{ type: "spring", bounce: 0.38 }}
-                className="absolute top-10 left-3 right-3 z-30 bg-[#1a1a1a] border border-white/12 rounded-xl shadow-2xl px-3 py-2 flex items-center gap-2"
+                className="absolute top-10 left-3 right-3 z-30 bg-[#12182a] border border-blue-500/25 rounded-xl shadow-2xl px-3 py-2 flex items-center gap-2"
               >
-                <div className="w-7 h-7 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-xs flex-shrink-0">
+                <div className="w-7 h-7 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-xs flex-shrink-0">
                   {mode.avatar}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -312,8 +320,8 @@ function InteractivePhoneMock() {
                   </p>
                   <p className="text-white/40 text-[9px] truncate">{mode.items[0].name} · Just now</p>
                 </div>
-                <div className="px-1.5 py-0.5 rounded-full bg-green-500/20 border border-green-500/30">
-                  <span className="text-[8px] text-green-400 font-black">LIVE</span>
+                <div className="px-1.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30">
+                  <span className="text-[8px] text-blue-400 font-black">LIVE</span>
                 </div>
               </motion.div>
             )}
@@ -327,15 +335,15 @@ function InteractivePhoneMock() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Home() {
   return (
-    <div className="bg-[#0a0a0a] text-white min-h-screen font-[var(--font-space)]">
+    <div className="bg-[#08090c] text-white min-h-screen font-[var(--font-space)]">
 
       {/* ── HERO ── */}
       <section className="relative min-h-[100svh] flex flex-col items-center justify-center px-5 pt-24 pb-16 overflow-hidden text-center">
         {/* Orbs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-20 left-1/4 w-[480px] h-[480px] bg-green-600/12 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-[380px] h-[380px] bg-green-500/8 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl" />
+          <div className="absolute -top-20 left-1/4 w-[500px] h-[500px] bg-blue-600/14 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-blue-900/8 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 max-w-2xl mx-auto">
@@ -346,7 +354,7 @@ export default function Home() {
             transition={{ duration: 0.45 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-sm text-white/60 font-medium mb-6"
           >
-            <QrCode className="w-3.5 h-3.5 text-green-400" />
+            <QrCode className="w-3.5 h-3.5 text-blue-400" />
             QR-powered mini storefronts
           </motion.div>
 
@@ -357,9 +365,9 @@ export default function Home() {
             transition={{ duration: 0.65, delay: 0.1 }}
             className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.04] tracking-tight mb-5"
           >
-            Turn one QR code into{" "}
-            <span className="text-green-400">
-              your money page.
+            Get paid every time{" "}
+            <span className="text-blue-400">
+              someone scans your QR.
             </span>
           </motion.h1>
 
@@ -370,8 +378,8 @@ export default function Home() {
             transition={{ duration: 0.55, delay: 0.22 }}
             className="text-lg sm:text-xl text-white/55 leading-relaxed mb-8 max-w-lg mx-auto"
           >
-            Sell products, take bookings, or get paid from your phone.
-            <br className="hidden sm:block" /> No website. No app. No friction.
+            List what you sell, share one QR code, and collect payments direct to your bank.
+            <br className="hidden sm:block" /> No website. No app. 90 seconds to set up.
           </motion.p>
 
           {/* CTAs */}
@@ -383,17 +391,17 @@ export default function Home() {
           >
             <Link
               href="/signup"
-              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-green-500 hover:bg-green-400 text-white font-bold text-base sm:text-lg shadow-[0_0_40px_rgba(34,197,94,0.35)] hover:shadow-[0_0_56px_rgba(34,197,94,0.55)] transition-all active:scale-95 w-full sm:w-auto"
+              className="group relative inline-flex items-center justify-center gap-2 px-9 py-4 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-black text-lg shadow-[0_0_48px_rgba(59,130,246,0.45)] hover:shadow-[0_0_64px_rgba(59,130,246,0.65)] transition-all active:scale-[0.97] w-full sm:w-auto"
             >
-              Start Free
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              Start Free — it&apos;s free
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/u/demo-barber"
-              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-white/12 bg-white/4 text-white/80 font-semibold text-base hover:bg-white/8 hover:text-white transition-all active:scale-95 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-white/15 bg-white/[0.04] text-white/75 font-semibold text-base hover:bg-white/8 hover:text-white hover:border-white/25 transition-all active:scale-[0.97] w-full sm:w-auto"
             >
-              <ScanLine className="w-4 h-4 text-white/45" />
-              See Demo
+              <ScanLine className="w-4 h-4 text-white/40" />
+              See Live Demo
             </Link>
           </motion.div>
 
@@ -402,9 +410,9 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-sm text-white/30 mb-6"
+            className="text-sm text-white/28 mb-6 tracking-wide"
           >
-            Free to start&nbsp;&nbsp;·&nbsp;&nbsp;No credit card&nbsp;&nbsp;·&nbsp;&nbsp;Live in minutes
+            Free forever&nbsp;&nbsp;·&nbsp;&nbsp;No credit card&nbsp;&nbsp;·&nbsp;&nbsp;Live in 90 seconds
           </motion.p>
 
           <LiveBadge />
@@ -418,7 +426,7 @@ export default function Home() {
           className="relative z-10 mt-16 w-full flex justify-center"
         >
           <div className="relative mx-auto w-[272px]">
-            <div className="absolute inset-0 rounded-[36px] bg-green-500/12 blur-2xl scale-110 pointer-events-none" />
+            <div className="absolute inset-0 rounded-[36px] bg-blue-500/12 blur-2xl scale-110 pointer-events-none" />
             <div className="relative rounded-[36px] border border-white/12 bg-[#0d0d0d] shadow-2xl overflow-hidden py-3 px-3">
               {/* status */}
               <div className="flex items-center justify-between px-2 pb-2">
@@ -453,8 +461,8 @@ export default function Home() {
                       <p className="text-white text-[10px] font-semibold truncate">{item.n}</p>
                       {item.b && <p className="text-[8px] text-white/35">{item.b}</p>}
                     </div>
-                    <span className="text-green-400 font-black text-xs flex-shrink-0">{item.p}</span>
-                    <button className="px-2 py-0.5 rounded-lg bg-green-500 text-white text-[8px] font-black flex-shrink-0">Book</button>
+                    <span className="text-blue-400 font-black text-xs flex-shrink-0">{item.p}</span>
+                    <button className="px-2 py-0.5 rounded-lg bg-blue-500 text-white text-[8px] font-black flex-shrink-0">Book</button>
                   </div>
                 ))}
               </div>
@@ -469,14 +477,14 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="relative py-24 px-5 overflow-hidden">
-        <div className="pointer-events-none absolute top-0 right-0 w-72 h-72 bg-green-600/8 rounded-full blur-3xl" />
+      <section className="relative py-24 px-5 overflow-hidden bg-[#0c0f17]">
+        <div className="pointer-events-none absolute top-0 right-0 w-72 h-72 bg-blue-600/8 rounded-full blur-3xl" />
         <div className="max-w-3xl mx-auto">
           <FadeIn className="text-center mb-14">
-            <p className="text-sm font-semibold text-green-400 mb-3 uppercase tracking-widest">How it works</p>
+            <p className="text-sm font-semibold text-blue-400 mb-3 uppercase tracking-widest">How it works</p>
             <h2 className="text-4xl sm:text-5xl font-black leading-tight">
-              Up and running in{" "}
-              <span className="text-green-400">3 steps.</span>
+              From zero to selling{" "}
+              <span className="text-blue-400">in 3 steps.</span>
             </h2>
           </FadeIn>
 
@@ -502,8 +510,8 @@ export default function Home() {
               },
             ].map((step, i) => (
               <FadeIn key={i} delay={i * 0.08}>
-                <div className="relative rounded-2xl border border-white/8 bg-white/[0.03] p-6 h-full hover:border-green-500/25 transition-colors group">
-                  <div className="w-12 h-12 rounded-xl mb-5 bg-green-500/15 border border-green-500/25 flex items-center justify-center text-green-400 group-hover:bg-green-500/20 transition-colors">
+                <div className="relative rounded-2xl border border-white/8 bg-white/[0.03] p-6 h-full hover:border-blue-500/25 transition-colors group">
+                  <div className="w-12 h-12 rounded-xl mb-5 bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 group-hover:bg-blue-500/20 transition-colors">
                     {step.icon}
                   </div>
                   <div className="absolute top-4 right-5 text-5xl font-black text-white/[0.04] select-none">{step.num}</div>
@@ -517,9 +525,9 @@ export default function Home() {
           <FadeIn delay={0.3} className="text-center mt-10">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-green-500 hover:bg-green-400 text-white font-bold text-sm shadow-[0_0_30px_rgba(34,197,94,0.3)] hover:shadow-[0_0_44px_rgba(34,197,94,0.5)] transition-all active:scale-95"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-black text-base shadow-[0_0_36px_rgba(59,130,246,0.4)] hover:shadow-[0_0_52px_rgba(59,130,246,0.6)] transition-all active:scale-[0.97]"
             >
-              Get started — it&apos;s free
+              Get started free
               <ArrowRight className="w-4 h-4" />
             </Link>
           </FadeIn>
@@ -530,10 +538,10 @@ export default function Home() {
       <section className="relative py-24 px-5">
         <div className="max-w-3xl mx-auto">
           <FadeIn className="text-center mb-14">
-            <p className="text-sm font-semibold text-green-400 mb-3 uppercase tracking-widest">Who it&apos;s for</p>
+            <p className="text-sm font-semibold text-blue-400 mb-3 uppercase tracking-widest">Who it&apos;s for</p>
             <h2 className="text-4xl sm:text-5xl font-black leading-tight">
-              If you sell from your phone,{" "}
-              <span className="text-green-400">this is for you.</span>
+              Built for people who{" "}
+              <span className="text-blue-400">sell from their phone.</span>
             </h2>
           </FadeIn>
 
@@ -561,8 +569,8 @@ export default function Home() {
               },
             ].map((card, i) => (
               <FadeIn key={i} delay={i * 0.07}>
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 sm:p-6 h-full hover:border-green-500/25 transition-all group">
-                  <div className="w-10 h-10 rounded-xl bg-green-500/12 border border-green-500/20 flex items-center justify-center text-green-400 mb-4 group-hover:bg-green-500/20 transition-colors">
+                <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 sm:p-6 h-full hover:border-blue-500/25 transition-all group">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/12 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4 group-hover:bg-blue-500/20 transition-colors">
                     {card.icon}
                   </div>
                   <h3 className="text-base font-bold text-white mb-1.5">{card.label}</h3>
@@ -575,22 +583,21 @@ export default function Home() {
       </section>
 
       {/* ── INTERACTIVE PHONE DEMO ── */}
-      <section className="relative py-24 px-5 overflow-hidden">
+      <section className="relative py-24 px-5 overflow-hidden bg-[#0c0f17]">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-1/2 left-0 w-96 h-96 bg-green-500/6 rounded-full blur-3xl -translate-y-1/2" />
-          <div className="absolute top-1/2 right-0 w-96 h-96 bg-green-500/6 rounded-full blur-3xl -translate-y-1/2" />
+          <div className="absolute top-1/2 left-0 w-96 h-96 bg-blue-500/6 rounded-full blur-3xl -translate-y-1/2" />
+          <div className="absolute top-1/2 right-0 w-96 h-96 bg-blue-500/6 rounded-full blur-3xl -translate-y-1/2" />
         </div>
 
         <div className="max-w-5xl mx-auto">
           <FadeIn className="text-center mb-14">
-            <p className="text-sm font-semibold text-green-400 mb-3 uppercase tracking-widest">What customers see</p>
+            <p className="text-sm font-semibold text-blue-400 mb-3 uppercase tracking-widest">What customers see</p>
             <h2 className="text-4xl sm:text-5xl font-black leading-tight mb-4">
-              Exactly what your store
-              <br />
-              <span className="text-green-400">looks like to buyers.</span>
+              This is what opens{" "}
+              <span className="text-blue-400">when they scan your QR.</span>
             </h2>
-            <p className="text-white/45 max-w-sm mx-auto text-base">
-              They scan your QR, this is what opens. Switch between seller types below.
+            <p className="text-white/40 max-w-sm mx-auto text-base">
+              A real storefront — not a link tree. Tap the tabs to see different seller types.
             </p>
           </FadeIn>
 
@@ -605,28 +612,28 @@ export default function Home() {
               {[
                 {
                   icon: <ScanLine className="w-5 h-5" />,
-                  title: "Works in any camera app",
-                  body: "No app download. No typing URLs. Point, scan, done — even on the cheapest phones.",
+                  title: "Opens in their camera — no app needed",
+                  body: "Point, scan, your page loads. No App Store. No typing. Works on every phone.",
                 },
                 {
                   icon: <Zap className="w-5 h-5" />,
                   title: "Checkout in under 10 seconds",
-                  body: "Apple Pay, Google Pay, or card. They tap once, you get paid. Nothing faster.",
+                  body: "Apple Pay, Google Pay, or card. One tap. That&apos;s it. Nothing faster exists.",
                 },
                 {
                   icon: <CreditCard className="w-5 h-5" />,
-                  title: "Money goes straight to you",
-                  body: "Powered by Stripe. Direct to your bank — no platform holding your cash.",
+                  title: "Money straight to your bank",
+                  body: "Powered by Stripe. No middleman. No holds. Direct to your account.",
                 },
                 {
                   icon: <Smartphone className="w-5 h-5" />,
-                  title: "Looks professional on every phone",
-                  body: "Polished, fast, mobile-first — whether they scan at your chair, table, or door.",
+                  title: "Looks premium on every phone",
+                  body: "Whether they scan at your chair, your table, your storefront, or your IG story.",
                 },
               ].map((f, i) => (
                 <FadeIn key={i} delay={i * 0.08}>
-                  <div className="flex gap-3.5 p-4 rounded-2xl border border-white/7 bg-white/[0.03] hover:border-green-500/20 transition-colors">
-                    <div className="mt-0.5 flex-shrink-0 text-green-400">{f.icon}</div>
+                  <div className="flex gap-3.5 p-4 rounded-2xl border border-white/7 bg-white/[0.03] hover:border-blue-500/20 transition-colors">
+                    <div className="mt-0.5 flex-shrink-0 text-blue-400">{f.icon}</div>
                     <div>
                       <h3 className="font-bold text-white text-sm mb-0.5">{f.title}</h3>
                       <p className="text-xs text-white/40 leading-relaxed">{f.body}</p>
@@ -638,10 +645,10 @@ export default function Home() {
               <FadeIn delay={0.35}>
                 <Link
                   href="/u/demo-barber"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/12 bg-white/4 text-white/70 text-sm font-semibold hover:text-white hover:bg-white/8 transition-all mt-1"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-blue-500/25 bg-blue-500/8 text-blue-300 text-sm font-semibold hover:bg-blue-500/15 hover:text-blue-200 transition-all mt-1"
                 >
                   <ScanLine className="w-4 h-4" />
-                  Try a live demo
+                  Try a real live demo
                 </Link>
               </FadeIn>
             </div>
@@ -650,18 +657,18 @@ export default function Home() {
       </section>
 
       {/* ── STATS ── */}
-      <section className="py-16 px-5">
+      <section className="py-16 px-5 border-y border-white/[0.05]">
         <div className="max-w-2xl mx-auto grid grid-cols-3 gap-3 sm:gap-5">
           {[
             { value: "$0", label: "To start", sub: "free forever" },
-            { value: "90s", label: "To go live", sub: "from signup" },
-            { value: "8s", label: "Avg checkout", sub: "scan to paid" },
+            { value: "90s", label: "To go live", sub: "signup to live" },
+            { value: "<10s", label: "To check out", sub: "scan to paid" },
           ].map((s, i) => (
             <FadeIn key={i} delay={i * 0.07}>
-              <div className="rounded-2xl border border-green-500/15 bg-green-500/5 p-4 sm:p-5 text-center">
-                <div className="text-3xl sm:text-4xl font-black text-green-400 mb-0.5">{s.value}</div>
-                <div className="text-white font-semibold text-sm">{s.label}</div>
-                <div className="text-white/35 text-xs">{s.sub}</div>
+              <div className="rounded-2xl border border-blue-500/15 bg-blue-500/[0.06] p-4 sm:p-6 text-center">
+                <div className="text-3xl sm:text-4xl font-black text-blue-400 mb-1">{s.value}</div>
+                <div className="text-white font-bold text-sm">{s.label}</div>
+                <div className="text-white/35 text-xs mt-0.5">{s.sub}</div>
               </div>
             </FadeIn>
           ))}
@@ -669,14 +676,14 @@ export default function Home() {
       </section>
 
       {/* ── SOCIAL PROOF ── */}
-      <section className="relative py-24 px-5">
-        <div className="pointer-events-none absolute bottom-0 left-1/4 w-80 h-80 bg-green-600/6 rounded-full blur-3xl" />
+      <section className="relative py-24 px-5 bg-[#0c0f17]">
+        <div className="pointer-events-none absolute bottom-0 left-1/4 w-80 h-80 bg-blue-600/6 rounded-full blur-3xl" />
         <div className="max-w-3xl mx-auto">
           <FadeIn className="text-center mb-12">
-            <p className="text-sm font-semibold text-green-400 mb-3 uppercase tracking-widest">Real sellers</p>
+            <p className="text-sm font-semibold text-blue-400 mb-3 uppercase tracking-widest">Real stories</p>
             <h2 className="text-4xl sm:text-5xl font-black leading-tight">
-              They set it up.{" "}
-              <span className="text-green-400">They got paid.</span>
+              They set up in minutes.{" "}
+              <span className="text-blue-400">They got paid the same day.</span>
             </h2>
           </FadeIn>
 
@@ -702,9 +709,9 @@ export default function Home() {
               },
             ].map((t, i) => (
               <FadeIn key={i} delay={i * 0.08}>
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 h-full flex flex-col">
+                <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 h-full flex flex-col hover:border-white/15 transition-colors">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-white/8 flex items-center justify-center text-lg flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-white/8 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">  
                       {t.avatar}
                     </div>
                     <div>
@@ -715,7 +722,7 @@ export default function Home() {
                   <p className="text-sm text-white/55 leading-relaxed flex-1">&ldquo;{t.quote}&rdquo;</p>
                   <div className="flex gap-0.5 mt-3">
                     {Array.from({ length: 5 }).map((_, j) => (
-                      <Star key={j} className="w-3 h-3 fill-green-400 text-green-400" />
+                      <Star key={j} className="w-3 h-3 fill-blue-400 text-blue-400" />
                     ))}
                   </div>
                 </div>
@@ -728,44 +735,41 @@ export default function Home() {
       {/* ── FINAL CTA ── */}
       <section className="relative py-28 sm:py-36 px-5 overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-green-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-blue-500/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <FadeIn>
-            <p className="text-sm font-semibold text-green-400 mb-4 uppercase tracking-widest">Your move</p>
+            <p className="text-sm font-semibold text-blue-400 mb-4 uppercase tracking-widest">No reason not to try</p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.08] mb-5">
               Stop losing sales because
               <br />
-              <span className="text-green-400">people don&apos;t know where to buy.</span>
+              <span className="text-blue-400">people don&apos;t know where to pay you.</span>
             </h2>
-            <p className="text-white/45 text-base sm:text-lg mb-3 max-w-md mx-auto leading-relaxed">
-              One QR code. Your page. Their money in your account.
-            </p>
-            <p className="text-white/25 text-sm mb-10">
-              Free to start. No credit card. Live in 90 seconds.
+            <p className="text-white/45 text-base sm:text-lg mb-10 max-w-md mx-auto leading-relaxed">
+              One QR. Your page. Their cash in your account. Free to start, live in 90 seconds.
             </p>
 
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2 px-10 py-4 rounded-full bg-green-500 hover:bg-green-400 text-white font-bold text-lg shadow-[0_0_60px_rgba(34,197,94,0.4)] hover:shadow-[0_0_80px_rgba(34,197,94,0.6)] transition-all active:scale-95"
+              className="group inline-flex items-center justify-center gap-2 px-12 py-5 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-black text-xl shadow-[0_0_70px_rgba(59,130,246,0.5)] hover:shadow-[0_0_90px_rgba(59,130,246,0.7)] transition-all active:scale-[0.97]"
             >
-              Create My Page
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              Create My Page — Free
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-6 text-sm text-white/30">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-7 text-sm text-white/30">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-500/60" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400/70" />
                 Free forever
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-500/60" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400/70" />
                 No credit card
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-500/60" />
-                Live in 90 seconds
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400/70" />
+                Cancel anytime
               </span>
             </div>
           </FadeIn>
