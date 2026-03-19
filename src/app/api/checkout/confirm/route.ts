@@ -7,18 +7,19 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const STRIPE_SECRET_KEY = (process.env.STRIPE_SECRET_KEY ?? "").trim();
-const SUPABASE_URL = (process.env.SUPABASE_URL ?? "").trim();
-const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+function getStripe() {
+  const key = (process.env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!key) throw new Error("STRIPE_SECRET_KEY is missing.");
+  return new Stripe(key);
+}
 
-if (!STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is missing.");
-if (!SUPABASE_URL) throw new Error("SUPABASE_URL is missing.");
-if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
-
-const stripe = new Stripe(STRIPE_SECRET_KEY);
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+function getSupabase() {
+  const url = (process.env.SUPABASE_URL ?? "").trim();
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+  if (!url) throw new Error("SUPABASE_URL is missing.");
+  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing.");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
 function safeParseJson(s: string | null | undefined) {
   try {
@@ -31,6 +32,8 @@ function safeParseJson(s: string | null | undefined) {
 // GET /api/checkout/confirm?session_id=cs_test_...
 export async function GET(req: Request) {
   try {
+    const stripe = getStripe();
+    const supabase = getSupabase();
     const { searchParams } = new URL(req.url);
     const sessionId = String(searchParams.get("session_id") || "").trim();
 

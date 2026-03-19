@@ -16,33 +16,43 @@ function mustEnv(key: string) {
 }
 
 /* --------------------
-   required envs
+   clients (lazy init to avoid build-time errors)
 -------------------- */
-const STRIPE_SECRET_KEY = mustEnv("STRIPE_SECRET_KEY");
-if (!STRIPE_SECRET_KEY.startsWith("sk_")) {
-  throw new Error("STRIPE_SECRET_KEY must start with sk_ (sk_test_ or sk_live_).");
+function getStripe() {
+  const key = mustEnv("STRIPE_SECRET_KEY");
+  if (!key.startsWith("sk_")) {
+    throw new Error("STRIPE_SECRET_KEY must start with sk_ (sk_test_ or sk_live_).");
+  }
+  return new Stripe(key);
 }
 
-const SUPABASE_URL = mustEnv("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
+function getSupabaseAdmin() {
+  return createClient(mustEnv("SUPABASE_URL"), mustEnv("SUPABASE_SERVICE_ROLE_KEY"), {
+    auth: { persistSession: false },
+  });
+}
 
-// IMPORTANT: If you ever saw redirects to a weird domain (like bedpage.com/404),
-// it’s usually because NEXT_PUBLIC_APP_URL is set wrong.
-// In dev, keep it "http://localhost:3000"
-const APP_URL = (getEnv("NEXT_PUBLIC_APP_URL") || "http://localhost:3000").replace(/\/+$/, "");
+function getAppUrl() {
+  return (getEnv("NEXT_PUBLIC_APP_URL") || "http://localhost:3000").replace(/\/+$/, "");
+}
 
-// Optional platform fee (in basis points). Example: 500 = 5%
-// If you’re not charging a fee yet, leave it empty or set to 0.
-const PLATFORM_FEE_BPS = Number(getEnv("PLATFORM_FEE_BPS") || "0");
+function getPlatformFeeBps() {
+  return Number(getEnv("PLATFORM_FEE_BPS") || "0");
+}
 
-/* --------------------
-   clients
--------------------- */
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// Lazy-initialized module-level clients
+let stripe: Stripe;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let supabase: any;
+let APP_URL: string;
+let PLATFORM_FEE_BPS: number;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+function initClients() {
+  if (!stripe) stripe = getStripe();
+  if (!supabase) supabase = getSupabaseAdmin();
+  APP_URL = getAppUrl();
+  PLATFORM_FEE_BPS = getPlatformFeeBps();
+}
 
 /* --------------------
    helpers
@@ -120,6 +130,7 @@ async function fetchStripeAccountIdByHandle(handle: string): Promise<string | nu
 -------------------- */
 export async function POST(req: Request) {
   try {
+    initClients();
     const body = await req.json().catch(() => ({}));
 
     const handle = normalizeHandle(body?.handle);

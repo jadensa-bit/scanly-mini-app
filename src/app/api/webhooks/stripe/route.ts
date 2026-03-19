@@ -6,7 +6,9 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendReceipt, sendBookingConfirmation, formatPhoneNumber, isValidPhoneNumber } from "@/lib/sms";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!);
+}
 
 function jsonError(message: string, status = 400, extra?: any) {
   return NextResponse.json({ ok: false, error: message, ...(extra ?? {}) }, { status });
@@ -103,6 +105,7 @@ async function tryDedupeEvent(supabase: any, eventId: string) {
 }
 
 export async function POST(req: Request) {
+  const stripe = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) return jsonError("Missing STRIPE_WEBHOOK_SECRET in env", 500);
 

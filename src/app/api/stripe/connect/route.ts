@@ -18,21 +18,38 @@ function mustEnv(k: string) {
 }
 
 
-const STRIPE_SECRET_KEY = mustEnv("STRIPE_SECRET_KEY");
-const SUPABASE_URL = mustEnv("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
-console.log(`[stripe-connect] Using STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY ? STRIPE_SECRET_KEY.slice(0, 7) + '...' : 'MISSING'}`);
-console.log(`[stripe-connect] Using SUPABASE_URL: ${SUPABASE_URL}`);
-console.log(`[stripe-connect] Environment check: ${process.env.NODE_ENV || 'development'}`);
-
 /* --------------------
-   clients
+   clients (lazy init to avoid build-time errors)
 -------------------- */
-const stripe = new Stripe(STRIPE_SECRET_KEY);
+let _stripe: Stripe | null = null;
+let _supabase: ReturnType<typeof createClient> | null = null;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+function getStripe() {
+  if (!_stripe) {
+    const key = mustEnv("STRIPE_SECRET_KEY");
+    _stripe = new Stripe(key);
+  }
+  return _stripe;
+}
+
+function getSupabase() {
+  if (!_supabase) {
+    const url = mustEnv("SUPABASE_URL");
+    const key = mustEnv("SUPABASE_SERVICE_ROLE_KEY");
+    _supabase = createClient(url, key, { auth: { persistSession: false } });
+  }
+  return _supabase;
+}
+
+// Lazy-initialized module-level clients (helpers reference these directly)
+let stripe: Stripe;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let supabase: any;
+
+function initClients() {
+  if (!stripe) stripe = getStripe();
+  if (!supabase) supabase = getSupabase();
+}
 
 /* --------------------
    utils
@@ -159,6 +176,7 @@ async function verifyStripeAccount(accountId: string) {
 -------------------- */
 export async function POST(req: Request) {
   try {
+    initClients();
     const body = await req.json().catch(() => ({}));
 
     const handle = safeHandle(body?.handle);

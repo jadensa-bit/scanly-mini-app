@@ -3,14 +3,11 @@ export const runtime = "nodejs";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecret) {
-  // Don’t throw at import time in production builds; handle in POST.
-  console.warn("⚠️ Missing STRIPE_SECRET_KEY in env");
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Missing STRIPE_SECRET_KEY in env");
+  return new Stripe(key);
 }
-
-const stripe = new Stripe(stripeSecret || "sk_test_missing");
 
 function jsonError(message: string, status = 400, extra?: any) {
   return NextResponse.json({ ok: false, error: message, ...(extra ?? {}) }, { status });
@@ -54,6 +51,7 @@ export async function POST(req: Request) {
       return jsonError("Missing STRIPE_SECRET_KEY in .env.local", 500);
     }
 
+    const stripe = getStripe();
     const body = (await req.json().catch(() => null)) as Body | null;
     if (!body) return jsonError("Invalid JSON body", 400);
 
