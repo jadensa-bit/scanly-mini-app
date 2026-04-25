@@ -1,11 +1,8 @@
 // Supabase Realtime subscription for dashboard
-import { createClient } from '@/lib/supabaseclient';
+import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 
 export function subscribeToBookings(onUpdate: (booking: any) => void, siteHandles: string[] = []) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createBrowserSupabaseClient();
   return supabase
     .channel('bookings-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, async (payload) => {
@@ -66,10 +63,7 @@ export function subscribeToBookings(onUpdate: (booking: any) => void, siteHandle
 }
 
 export function subscribeToOrders(onUpdate: (order: any) => void, siteHandles: string[] = []) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createBrowserSupabaseClient();
   return supabase
     .channel('orders-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'scanly_orders' }, async (payload) => {

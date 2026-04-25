@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserProfile } from '@/lib/createProfile';
-import { supabase } from '@/lib/supabaseclient';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch profile
-    const profileResult = await getUserProfile(user.id);
+    const profileResult = await getUserProfile(user.id, supabase);
 
     if (!profileResult.success) {
       return NextResponse.json(

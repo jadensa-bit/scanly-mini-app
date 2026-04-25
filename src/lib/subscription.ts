@@ -1,5 +1,5 @@
 // Subscription utilities for checking user tier and features
-import { supabase } from '@/lib/supabaseclient';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Special accounts with unlimited access (VIP/Admin)
 const UNLIMITED_ACCOUNTS = [
@@ -29,7 +29,7 @@ export interface SubscriptionInfo {
 /**
  * Check if email is in unlimited accounts list
  */
-async function isUnlimitedEmail(userId: string): Promise<boolean> {
+async function isUnlimitedEmail(userId: string, supabase: SupabaseClient): Promise<boolean> {
   try {
     // Try to get email from current session first
     const { data: { session } } = await supabase.auth.getSession();
@@ -57,10 +57,10 @@ async function isUnlimitedEmail(userId: string): Promise<boolean> {
 /**
  * Get user's subscription information
  */
-export async function getUserSubscription(userId: string): Promise<SubscriptionInfo | null> {
+export async function getUserSubscription(userId: string, supabase: SupabaseClient): Promise<SubscriptionInfo | null> {
   try {
     // Check if this is a special unlimited account
-    const isUnlimitedAccount = await isUnlimitedEmail(userId);
+    const isUnlimitedAccount = await isUnlimitedEmail(userId, supabase);
 
     // Get profile data
     const { data: profile, error: profileError } = await supabase

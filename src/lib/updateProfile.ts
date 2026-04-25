@@ -1,7 +1,7 @@
 // Utility to update a profile in the Supabase 'profiles' table
-import { supabase } from '@/lib/supabaseclient';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-export async function updateProfile({ id, name, email, avatar_url }: { id: string, name?: string, email?: string, avatar_url?: string }) {
+export async function updateProfile({ id, name, email, avatar_url, supabase }: { id: string, name?: string, email?: string, avatar_url?: string, supabase: SupabaseClient }) {
   const updates: any = {};
   if (name !== undefined) updates.name = name;
   if (email !== undefined) updates.email = email;
@@ -9,7 +9,7 @@ export async function updateProfile({ id, name, email, avatar_url }: { id: strin
   return await supabase.from('profiles').update(updates).eq('id', id);
 }
 
-export async function getProfile(id: string) {
+export async function getProfile(id: string, supabase: SupabaseClient) {
   const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
   return { data, error };
 }

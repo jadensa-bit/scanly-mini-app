@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import StorefrontPreview from "@/components/StorefrontPreview";
 import { PiqoLimitBanner, SubscriptionGate, FeatureBadge } from "@/components/SubscriptionGate";
-import { supabase } from "@/lib/supabaseclient";
+import { createBrowserSupabaseClient } from "@/lib/supabaseclient";
 
 type ModeId = "services" | "booking" | "digital" | "products";
 
@@ -139,6 +139,8 @@ type SocialLinks = {
   address?: string;
   email?: string;
   bio?: string;
+  ownerName?: string;
+  shopPhotos?: string[];
 };
 
 type WeekdayId = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
@@ -492,6 +494,7 @@ function safeTime(v: string) {
 export default function CreatePage() {
   const hasHydratedRef = useRef(false);
   const router = useRouter();
+  const supabase = createBrowserSupabaseClient();
 
   // Declare all state hooks before any useEffect that references them
   const [mode, setMode] = useState<ModeId>("services");
@@ -538,6 +541,8 @@ export default function CreatePage() {
     onBookings: true,
     smsPhone: "",
   });
+  const [ownerName, setOwnerName] = useState("");
+  const [shopPhotos, setShopPhotos] = useState<string[]>([]);
   const [social, setSocial] = useState<SocialLinks>({
     instagram: "",
     tiktok: "",
@@ -692,7 +697,11 @@ export default function CreatePage() {
             if (config.staffProfiles) setStaffProfiles(config.staffProfiles);
             if (config.brandLogo) setBrandLogo(config.brandLogo);
             if (config.profilePic) setProfilePic(config.profilePic);
-            if (config.social) setSocial(config.social);
+            if (config.social) {
+              setSocial(config.social);
+              if (config.social.ownerName) setOwnerName(config.social.ownerName);
+              if (config.social.shopPhotos) setShopPhotos(config.social.shopPhotos);
+            }
             if (config.availability) {
               console.log("✅ Hydrating availability:", config.availability);
               setAvailability(config.availability);
@@ -1276,6 +1285,8 @@ async function startStripeConnect() {
         address: (social.address || "").trim() || undefined,
         email: (social.email || "").trim() || undefined,
         bio: (social.bio || "").trim() || undefined,
+        ownerName: (ownerName || "").trim() || undefined,
+        shopPhotos: shopPhotos.length > 0 ? shopPhotos : undefined,
       },
 
       availability: availability ? {
@@ -1330,6 +1341,8 @@ async function startStripeConnect() {
     deliveryRadius,
     deliveryZones,
     profilePic,
+    ownerName,
+    shopPhotos,
   ]);
 
   const saveDraftDebounced = useMemo(
@@ -1775,6 +1788,8 @@ useEffect(() => {
         address: (social.address || "").trim() || undefined,
         email: (social.email || "").trim() || undefined,
         bio: (social.bio || "").trim() || undefined,
+        ownerName: (ownerName || "").trim() || undefined,
+        shopPhotos: shopPhotos.length > 0 ? shopPhotos : undefined,
       },
 
       availability,
@@ -2617,12 +2632,12 @@ useEffect(() => {
                     onChange={(e) => setBusinessDescription(e.target.value)}
                     rows={3}
                     className="rounded-2xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 hover:border-white/25 resize-none"
-                    placeholder="Ex: Premium barbershop in downtown. Walk-ins welcome!"
-                    maxLength={150}
+                    placeholder="Ex: Premium barbershop in downtown. Walk-ins welcome! Share more about your business..."
+                    maxLength={500}
                   />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-white/60">Appears in hero section under brand name</span>
-                    <span className="text-[10px] text-white/50">{(businessDescription || "").length}/150</span>
+                    <span className="text-xs text-white/60">Appears as clickable info in hero section. Customers can click to view full description.</span>
+                    <span className="text-[10px] text-white/50">{(businessDescription || "").length}/500</span>
                   </div>
                 </label>
 

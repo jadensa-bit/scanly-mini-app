@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseclient';
+import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 import PiqoLogoFull from '@/components/PiqoLogoFull';
 import { motion } from 'framer-motion';
 
@@ -16,6 +16,7 @@ export default function PublicProfilePage() {
   const params = useParams();
   const router = useRouter();
   const handle = params?.handle as string;
+  const supabase = createBrowserSupabaseClient();
   
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);

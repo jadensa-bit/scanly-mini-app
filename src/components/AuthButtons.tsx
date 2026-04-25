@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseclient";
+import { createBrowserSupabaseClient } from "@/lib/supabaseclient";
 import { Store, ScanLine } from "lucide-react";
 
 export default function AuthButtons() {
   const [user, setUser] = useState<any>(null);
+  const supabase = createBrowserSupabaseClient();
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
+  }, [supabase]);
   if (user) {
     return (
       <div className="flex flex-col sm:flex-row gap-6 justify-center">

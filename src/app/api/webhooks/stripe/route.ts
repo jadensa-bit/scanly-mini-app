@@ -226,6 +226,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, received: true, type: 'subscription_checkout' });
     }
 
+    // Handle one-time piqo pro upgrade ($15)
+    if (session.mode === 'payment' && session.metadata?.upgrade_type === 'one_time_pro') {
+      const userId = session.metadata?.supabase_user_id;
+
+      if (!userId) {
+        console.warn('⚠️ One-time upgrade checkout missing supabase_user_id in metadata');
+        return NextResponse.json({ ok: true, received: true, warning: 'Missing user ID' });
+      }
+
+      // Update user's subscription to pro tier (one-time payment, so no recurring)
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_tier: 'pro',
+          subscription_status: 'active',
+          piqo_limit: 999, // Unlimited piqos for pro
+          stripe_customer_id: session.customer as string,
+          subscription_start_date: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Failed to upgrade to pro:', error);
+        return NextResponse.json({ error: 'Failed to upgrade subscription' }, { status: 500 });
+      }
+
+      console.log(`✅ One-time pro upgrade completed for user ${userId}`);
+      return NextResponse.json({ ok: true, received: true, type: 'one_time_upgrade' });
+    }
+
     const handle = (session.metadata?.handle || "").toString().trim();
 
     // supports orders, bookings, and tips:

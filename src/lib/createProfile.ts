@@ -1,11 +1,12 @@
 // Utility to manage user profiles in the Supabase 'profiles' table
-import { supabase } from '@/lib/supabaseclient';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface CreateProfileParams {
   id: string;
   name: string;
   email?: string;
   avatar_url?: string;
+  supabase: SupabaseClient;
 }
 
 interface ProfileResponse {
@@ -15,11 +16,12 @@ interface ProfileResponse {
 }
 
 // Create a new profile after signup
-export async function createProfile({ 
-  id, 
-  name, 
-  email, 
-  avatar_url 
+export async function createProfile({
+  id,
+  name,
+  email,
+  avatar_url,
+  supabase
 }: CreateProfileParams): Promise<ProfileResponse> {
   try {
     const { data, error } = await supabase
@@ -49,7 +51,7 @@ export async function createProfile({
 }
 
 // Get user profile for dashboard
-export async function getUserProfile(userId: string): Promise<ProfileResponse> {
+export async function getUserProfile(userId: string, supabase: SupabaseClient): Promise<ProfileResponse> {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -68,7 +70,7 @@ export async function getUserProfile(userId: string): Promise<ProfileResponse> {
 }
 
 // Get all user creations (bookings, storefronts, etc.)
-export async function getUserCreations(userId: string): Promise<ProfileResponse> {
+export async function getUserCreations(userId: string, supabase: SupabaseClient): Promise<ProfileResponse> {
   try {
     // Fetch bookings created by this user
     const { data: bookings, error: bookingsError } = await supabase

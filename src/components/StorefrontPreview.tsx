@@ -270,6 +270,9 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
   // Creator info modal
   const [showCreatorInfo, setShowCreatorInfo] = useState(false);
   
+  // Business description modal state
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  
   // Image modal state
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
@@ -979,14 +982,27 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         </motion.p>
                       )}
                       {businessDescription && (
-                        <motion.p
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          transition={{ delay: 0.4 }}
-                          className="text-white/80 text-xs mt-1 mb-2 line-clamp-2 drop-shadow"
-                        >
-                          {businessDescription}
-                        </motion.p>
+                        <div className="flex items-start gap-2 justify-center">
+                          <motion.p
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-white/80 text-xs mt-1 line-clamp-2 drop-shadow cursor-pointer hover:text-white/90 transition-colors flex-1"
+                            onClick={() => setShowDescriptionModal(true)}
+                          >
+                            {businessDescription}
+                          </motion.p>
+                          <motion.button
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.45, type: "spring", stiffness: 300 }}
+                            onClick={() => setShowDescriptionModal(true)}
+                            className="flex-shrink-0 mt-1 p-2 bg-white/30 hover:bg-white/50 active:bg-white/40 rounded-full transition-all shadow-md"
+                            title="View full description"
+                          >
+                            <Sparkles className="h-4 w-4 text-white" />
+                          </motion.button>
+                        </div>
                       )}
                     </div>
                     {/* About Creator button for hero header */}
@@ -1034,7 +1050,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                         <p className="text-sm text-gray-600 font-medium line-clamp-2">{tagline}</p>
                       )}
                       {businessDescription && (
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 font-medium">
+                        <p 
+                          className="text-xs text-gray-500 mt-0.5 line-clamp-2 font-medium cursor-pointer hover:text-gray-700 transition-colors"
+                          onClick={() => setShowDescriptionModal(true)}
+                        >
                           {businessDescription}
                         </p>
                       )}
@@ -2794,6 +2813,60 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Business Description Modal */}
+      <AnimatePresence>
+        {showDescriptionModal && businessDescription && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDescriptionModal(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 relative">
+                <button
+                  onClick={() => setShowDescriptionModal(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">About {brandName || "Us"}</h3>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                  {businessDescription}
+                </p>
+              </div>
+
+              {/* Footer Button */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => setShowDescriptionModal(false)}
+                  className="w-full px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+                >
+                  Got it!
+                </button>
               </div>
             </motion.div>
           </motion.div>

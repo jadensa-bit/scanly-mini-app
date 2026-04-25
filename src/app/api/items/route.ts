@@ -1,12 +1,9 @@
 // Items API endpoint for services/products
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseclient';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = await createClient();
   const { searchParams } = new URL(req.url);
   const handle = searchParams.get('handle');
   const { data: items, error } = await supabase

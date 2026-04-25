@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseclient';
+import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import InstallPWA from './InstallPWA';
@@ -11,6 +11,7 @@ export default function Header() {
   const [user, setUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const supabase = createBrowserSupabaseClient();
 
   useEffect(() => {
     const getUser = async () => {
@@ -24,7 +25,7 @@ export default function Header() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

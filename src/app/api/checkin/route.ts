@@ -1,13 +1,10 @@
 // QR check-in API endpoint
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseclient';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: Request) {
   const { bookingId, qrCode } = await req.json();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = await createClient();
   // Validate booking and mark as checked-in
   const { data, error } = await supabase
     .from('bookings')
