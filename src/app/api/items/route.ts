@@ -17,10 +17,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const { creator_handle, name, description, price, type } = await req.json();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = await createClient();
   // Add a new item
   const { data, error } = await supabase
     .from('items')

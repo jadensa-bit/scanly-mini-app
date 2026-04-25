@@ -27,7 +27,8 @@ export default function StandaloneRedirect() {
     if (isAllowedPage) return;
 
     // Check if user is logged in and redirect to dashboard
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then((result: any) => {
+      const user = result.data?.user;
       if (user) {
         // Logged in users always go to dashboard when opening the app
         router.replace('/dashboard');

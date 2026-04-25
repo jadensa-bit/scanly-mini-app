@@ -57,7 +57,7 @@ function LoginForm() {
       if (!profile && !profileError) {
         // No profile exists, create one with name from user_metadata or email prefix
         const name = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
-        await createProfile({ id: user.id, name });
+        await createProfile({ id: user.id, name, supabase });
       }
     }
 

@@ -1,4 +1,5 @@
 // Subscription utilities for checking user tier and features
+import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Special accounts with unlimited access (VIP/Admin)
@@ -6,6 +7,15 @@ const UNLIMITED_ACCOUNTS = [
   'x@gmail.com',
   // Add more emails here as needed
 ];
+
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    { auth: { persistSession: false } }
+  );
+}
+
 
 export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'trialing';
@@ -134,7 +144,7 @@ export async function getUserSubscription(userId: string, supabase: SupabaseClie
  * Check if user can access a specific feature
  */
 export async function canAccessFeature(userId: string, feature: keyof SubscriptionInfo['features']): Promise<boolean> {
-  const subscription = await getUserSubscription(userId);
+  const subscription = await getUserSubscription(userId, getSupabase());
   if (!subscription) return false;
   return subscription.features[feature];
 }
@@ -143,7 +153,7 @@ export async function canAccessFeature(userId: string, feature: keyof Subscripti
  * Check if user can create another piqo
  */
 export async function canCreatePiqo(userId: string): Promise<boolean> {
-  const subscription = await getUserSubscription(userId);
+  const subscription = await getUserSubscription(userId, getSupabase());
   if (!subscription) return false;
   return subscription.canCreateMore;
 }
@@ -152,7 +162,7 @@ export async function canCreatePiqo(userId: string): Promise<boolean> {
  * Get user's piqo usage stats
  */
 export async function getPiqoUsage(userId: string): Promise<{ used: number; limit: number; percentage: number } | null> {
-  const subscription = await getUserSubscription(userId);
+  const subscription = await getUserSubscription(userId, getSupabase());
   if (!subscription) return null;
 
   const percentage = subscription.piqoLimit === -1 
