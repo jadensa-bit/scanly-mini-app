@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseclient';
+import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 import PiqoLogoFull from './PiqoLogoFull';
 import Link from 'next/link';
 import { Mail, Lock, User, Check, X, Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ interface FieldValidation {
 
 export default function SignupForm() {
   const router = useRouter();
+  const supabase = createBrowserSupabaseClient();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -124,6 +125,10 @@ export default function SignupForm() {
       });
 
       if (signInError) {
+        const message = String(signInError.message || signInError);
+        if (message.toLowerCase().includes('refresh token not found') || message.toLowerCase().includes('invalid refresh token')) {
+          await supabase.auth.signOut();
+        }
         console.error('Sign in error:', signInError);
         // Still redirect even if sign in fails - session might be created
       }

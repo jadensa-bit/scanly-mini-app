@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { supabase } from '@/lib/supabaseclient';
+import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createProfile } from '@/lib/createProfile';
 import PiqoLogoFull from '@/components/PiqoLogoFull';
@@ -19,6 +19,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
+  const supabase = createBrowserSupabaseClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +34,13 @@ function LoginForm() {
     });
 
     if (error) {
-      setError(error.message);
+      const message = error.message || 'Login failed';
+      if (message.toLowerCase().includes('refresh token not found') || message.toLowerCase().includes('invalid refresh token')) {
+        await supabase.auth.signOut();
+        setError('Invalid refresh token detected. Your session has been cleared. Please refresh the page and try again.');
+      } else {
+        setError(message);
+      }
       setLoading(false);
       
       // Email confirmation is disabled, so don't show resend button

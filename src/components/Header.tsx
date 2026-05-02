@@ -15,8 +15,21 @@ export default function Header() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          const message = String(error.message || error);
+          if (message.toLowerCase().includes('refresh token not found') || message.toLowerCase().includes('invalid refresh token')) {
+            console.warn('Clearing stale Supabase session due to invalid refresh token');
+            await supabase.auth.signOut();
+            setUser(null);
+            return;
+          }
+        }
+        setUser(user);
+      } catch (err) {
+        console.warn('Supabase auth getUser failed:', err);
+      }
     };
     getUser();
 
