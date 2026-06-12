@@ -1768,6 +1768,7 @@ useEffect(() => {
       brandName: brandName.trim(),
       handle: h,
       tagline: tagline.trim(),
+      businessDescription: businessDescription.trim() || undefined,
       items: items.filter((x) => (x.title || "").trim().length > 0),
       active: true,
       createdAt: Date.now(),
@@ -1799,6 +1800,14 @@ useEffect(() => {
         onBookings: notifications.onBookings !== false,
         smsPhone: (notifications.smsPhone || "").trim() || undefined,
       },
+      delivery: deliveryEnabled ? {
+        enabled: true,
+        fee: deliveryFee,
+        freeAbove: deliveryFreeAbove,
+        estimatedTime: deliveryTime,
+        radius: deliveryRadius,
+        zones: deliveryZones ? deliveryZones.split(',').map(z => z.trim()).filter(Boolean) : []
+      } : undefined,
     };
 
     try {
