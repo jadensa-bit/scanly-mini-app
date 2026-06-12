@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/supabaseclient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import InstallPWA from './InstallPWA';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
@@ -65,7 +64,6 @@ export default function Header() {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <InstallPWA />
             {user ? (
               <>
                 <Link href="/dashboard" className="text-white hover:text-cyan-400 transition-colors text-sm font-medium">
@@ -101,7 +99,6 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-3">
-            <InstallPWA />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
