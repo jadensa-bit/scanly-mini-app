@@ -20,18 +20,18 @@ export const supabase = (() => {
 })();
 
 // Server-side client for API routes and server actions
-let serverSupabaseClient: ReturnType<typeof createSupabaseClient> | null = null;
+let serverSupabaseClient: any = null;
 
-export function createServerSupabaseClient() {
+export function createServerSupabaseClient(): any {
   if (serverSupabaseClient) {
     return serverSupabaseClient;
   }
-  
+
   serverSupabaseClient = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  
+  ) as any;
+
   return serverSupabaseClient;
 }
 

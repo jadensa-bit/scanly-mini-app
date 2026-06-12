@@ -122,9 +122,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const { creator_handle, start_time, end_time, team_member_id } = await req.json();
-  // use the already initialized supabase client
+  // use the service-role Supabase client for server-side writes
+  const adminSupabase = getSupabase();
   // Add a new slot
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from('slots')
     .insert([{ creator_handle, start_time, end_time, team_member_id }]);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
