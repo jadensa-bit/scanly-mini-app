@@ -1,7 +1,6 @@
 // Booking slots API endpoint
 import { NextResponse } from 'next/server';
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { supabase } from '@/lib/supabaseclient';
 
 function getSupabase() {
   const url = process.env.SUPABASE_URL;

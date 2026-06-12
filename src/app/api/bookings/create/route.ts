@@ -1,6 +1,6 @@
 // Booking creation API endpoint
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseclient';
+import { createServerSupabaseClient } from '@/lib/supabaseclient';
 
 export async function POST(req: Request) {
   const { handle, slot_id, team_member_id, team_member_name, customer_name, customer_email, item_title } = await req.json();
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
   });
   
   try {
+    const supabase = createServerSupabaseClient();
     // Create a booking for a slot
     const { data, error } = await supabase
       .from('bookings')

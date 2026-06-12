@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseclient';
+import { createServerSupabaseClient } from '@/lib/supabaseclient';
 
 export async function GET(
   request: NextRequest,
@@ -8,6 +8,7 @@ export async function GET(
   const { handle } = await params;
 
   try {
+    const supabase = createServerSupabaseClient();
     // Fetch the site configuration
     const { data: site, error } = await supabase
       .from('sites')
