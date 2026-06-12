@@ -190,28 +190,45 @@ function getBadgeStyle(badge: string): { background: string; color: string; emoj
   }
 }
 
+// Format a slot's date in ISO YYYY-MM-DD for comparison
+function getSlotDateISO(slot: any): string {
+  const date = new Date(slot.start_time);
+  return date.toISOString().split('T')[0];
+}
+
+// Format a slot's time for display in the local browser timezone
+function getSlotTimeLabel(slot: any): string {
+  return new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Convert a slot to minutes since midnight in local time
+function getSlotTimeMinutes(slot: any): number {
+  const slotDate = new Date(slot.start_time);
+  const slotHour = slotDate.getHours();
+  const slotMinute = slotDate.getMinutes();
+  return slotHour * 60 + slotMinute;
+}
+
 // Check if a slot falls within a staff member's working hours
 function slotMatchesStaffSchedule(slot: any, staffMember: any): boolean {
   if (!staffMember || !staffMember.workingDays) return true; // No custom schedule
-  
+
   const slotDate = new Date(slot.start_time);
   const dayOfWeek = slotDate.getDay(); // 0=Sun, 1=Mon, etc.
   const dayMap: Record<number, string> = { 0: 'sun', 1: 'mon', 2: 'tue', 3: 'wed', 4: 'thu', 5: 'fri', 6: 'sat' };
   const dayKey = dayMap[dayOfWeek];
-  
+
   const staffDay = staffMember.workingDays[dayKey];
   if (!staffDay || !staffDay.enabled) return false; // Staff doesn't work this day
-  
+
   // Check if slot time is within staff's working hours for this day
-  const slotHour = slotDate.getUTCHours();
-  const slotMinute = slotDate.getUTCMinutes();
-  const slotTimeMinutes = slotHour * 60 + slotMinute;
-  
+  const slotTimeMinutes = getSlotTimeMinutes(slot);
+
   const [startHour, startMin] = staffDay.start.split(':').map(Number);
   const [endHour, endMin] = staffDay.end.split(':').map(Number);
   const startMinutes = startHour * 60 + startMin;
   const endMinutes = endHour * 60 + endMin;
-  
+
   return slotTimeMinutes >= startMinutes && slotTimeMinutes < endMinutes;
 }
 
@@ -2390,10 +2407,18 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                 {slots
                                   .filter((slot: any) => {
                                     // Filter by selected date
-                                    if (new Date(slot.start_time).toLocaleDateString() !== new Date(selectedDate).toLocaleDateString()) {
+                                    if (getSlotDateISO(slot) !== selectedDate) {
                                       return false;
                                     }
-                                    
+
+                                    // Filter out already booked slots and invalid slot objects
+                                    if (slot.is_booked) {
+                                      return false;
+                                    }
+                                    if (!slot.start_time || !slot.end_time) {
+                                      return false;
+                                    }
+
                                     // Filter by selected staff member's working hours if applicable
                                     if (selectedTeamMember) {
                                       const selectedStaff = staffProfiles.find(sp => sp.name === teamMembers.find((tm: any) => tm.id === selectedTeamMember)?.name);
@@ -2401,9 +2426,10 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                         return false;
                                       }
                                     }
-                                    
+
                                     return true;
                                   })
+                                  .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                   .map((slot: any) => (
                                   <button
                                     key={slot.id}
@@ -2414,7 +2440,7 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                         : "bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-200"
                                     }`}
                                   >
-                                    {new Date(slot.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    {getSlotTimeLabel(slot)}
                                   </button>
                                 ))}
                               </div>
