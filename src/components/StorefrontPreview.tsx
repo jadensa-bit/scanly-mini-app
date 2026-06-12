@@ -2404,7 +2404,6 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
                                     
                                     return true;
                                   })
-                                  .slice(0, 9)
                                   .map((slot: any) => (
                                   <button
                                     key={slot.id}
