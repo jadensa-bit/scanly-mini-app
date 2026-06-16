@@ -508,10 +508,24 @@ export default function StorefrontPreview(props: StorefrontPreviewProps) {
         }
         
         const fetchedSlots = slotsData.slots || [];
+        if (fetchedSlots.length > 0 && !selectedDate) {
+  const firstDate = new Date(fetchedSlots[0].start_time)
+    .toISOString()
+    .split("T")[0];
+
+  setSelectedDate(firstDate);
+}
         setSlotsData(slotsData); // Store full response including reason
         setSlots(fetchedSlots);
         setTeamMembers(teamData.team || []);
-        
+        console.log("SLOT DEBUG", {
+  totalSlots: slots.length,
+  selectedDate,
+  matchingSlots: slots.filter(
+    (s) =>
+      new Date(s.start_time).toISOString().split("T")[0] === selectedDate
+  ).length,
+});
         // Check if slots API returned a specific reason for no slots
         if (slotsData.reason === 'MISSING_AVAILABILITY' || slotsData.reason === 'NO_ENABLED_DAYS') {
           console.log(`⚠️ Availability not configured: ${slotsData.reason}`);
